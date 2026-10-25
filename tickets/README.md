@@ -31,6 +31,7 @@ One file per ticket, numbered in dependency order. Work the **frontier**: any ti
 
 ## Rules for whoever picks these up
 
+- **OOD and TDD are the definition of done** — see `AGENTS.md` §0 and §8. A ticket whose code runs but whose design crosses a boundary, or which adds no test, is not done.
 - Take **one ticket at a time**. Do not start a ticket whose blockers are open.
 - Each ticket is a vertical slice: it ends with something demoable, not with a layer finished.
 - Tests are the two seams described in the Phase 1 spec, not one per class. A ticket that adds observable behaviour adds or extends a seam test.
