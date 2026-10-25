@@ -69,7 +69,17 @@ Node 20+ required (developed on v24).
 
 ## Documentation
 
-- `AGENTS.md` — rules for AI coding agents working in this repo
+- `AGENTS.md` — the working agreement every AI agent in this repo must follow (OOD + regression-lock tests)
+- `docs/PHASES.md` — the five-phase ladder with exit criteria per phase
+- `docs/FILE-STRUCTURE.md` — one class per file, port interfaces, where each thing lives
 - `docs/ARCHITECTURE.md` — component boundaries and data flow
-- `docs/EVENT-SCHEMA.md` — the shape every capture path emits (build this first)
+- `docs/EVENT-SCHEMA.md` — the shape every capture path emits
 - `docs/adr/` — decision records
+
+## Commit gate
+
+`.githooks/pre-commit` runs typecheck + tests. Enable it once per clone:
+
+```bash
+git config core.hooksPath .githooks
+```

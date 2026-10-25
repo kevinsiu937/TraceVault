@@ -1,0 +1,12 @@
+# 07 — Honest gaps
+
+**What to build:** Absence of evidence stops looking like absence of activity. When capture was not running — service down, plugin not loaded, an interval with no data — the timeline shows an explicit gap instead of an unbroken line. A reader can tell the difference between "the agent did nothing" and "we were not watching".
+
+**Blocked by:** 03 — Session boundaries and open sessions. 04 — The session timeline page.
+
+**Status:** ready-for-agent
+
+- [ ] An interval in which capture was unavailable appears in the timeline as an explicit gap with a reason
+- [ ] A session recorded while the service was down is reported as uncovered, not as empty
+- [ ] Gaps are data in the store, not a rendering trick on the page
+- [ ] Seam-B test covers gap creation; seam-A test covers gap rendering
