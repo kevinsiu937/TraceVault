@@ -28,6 +28,8 @@ config.local.yaml
 
 # Agent state that can leak local paths
 .opencode/
+.omo/
+.codegraph/
 *.transcript
 transcript.jsonl
 
@@ -43,3 +45,6 @@ desktop.ini
 logs/
 tmp/
 scratch/
+
+# Test fixture: a tiny synthetic agent store with scrubbed paths
+!tests/fixtures/opencode-store/*.db
