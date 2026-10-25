@@ -2,32 +2,40 @@
 
 One file per ticket, numbered in dependency order. Work the **frontier**: any ticket whose blockers are all done.
 
-| # | Ticket | Blocked by | Start now? |
+| # | Ticket | Blocked by | Status |
 |---|---|---|---|
-| 01 | Walking skeleton: one tool call, end to end | — | ✅ **frontier** |
-| 02 | Every tool type, with outcomes | 01 | no |
-| 03 | Session boundaries and open sessions | 01 | no |
-| 04 | The session timeline page | 02, 03 | no |
-| 05 | Ordering, sequence numbers and duplicate observations | 04 | no |
-| 06 | Append-only integrity | 01 | no |
-| 07 | Honest gaps | 03, 04 | no |
-| 08 | Live timeline | 04 | no |
-| 09 | One command to install, one to remove | 01 | no |
-| 10 | Phase 1 exit verification | 05, 06, 07, 08, 09 | no |
+| 01 | Walking skeleton: one tool call, end to end | — | done |
+| 02 | Every tool type, with outcomes | 01 | open — live denial not reproduced |
+| 03 | Session boundaries and open sessions | 01 | done |
+| 04 | The session timeline page | 02, 03 | done |
+| 05 | Ordering, sequence numbers and duplicate observations | 04 | done |
+| 06 | Append-only integrity | 01 | done |
+| 07 | Honest gaps | 03, 04 | open — service-down coverage |
+| 08 | Live timeline | 04 | open — scroll/position unmeasured |
+| 09 | One command to install, one to remove | 01 | done |
+| 10 | Phase 1 exit verification | 05, 06, 07, 08, 09 | blocked by 07/08 |
+| 11 | Every session OpenCode ever ran (history import) | 02, 03 | done |
+| 12 | A timeline you can read at a glance | 04, 11 | done |
+| 13 | Filters: show me only what I care about | 12 | done |
+
+**Frontier now:** 02, 07, 08.
 
 ## Dependency shape
 
 ```
-01 ─┬─► 02 ─┐
-    ├─► 03 ─┴─► 04 ─┬─► 05 ─┐
-    │               ├─► 07 ◄── 03
-    │               └─► 08 ─┤
+01 ─┬─► 02 ─┬─► 04 ─┬─► 05 ─┐
+    │       │       ├─► 08 ─┤
+    │       │       └─► 07 ◄┼── 03
+    │       └─► 11 ──► 12 ──► 13
+    ├─► 03 ──┘              │
     ├─► 06 ─────────────────┤
     └─► 09 ─────────────────┤
                             └─► 10
 ```
 
 01 is the tracer bullet: it cuts every layer once so the rest is filling in a path that already exists.
+
+**11 → 12 → 13 is the "see everything" chain:** import all of OpenCode's history, render it visually, then let the reader filter it. 11 can start as soon as 02 and 03 land; 12 is the page; 13 is what makes it usable at volume.
 
 ## Rules for whoever picks these up
 
