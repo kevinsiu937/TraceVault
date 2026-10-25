@@ -1,0 +1,244 @@
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
+import { PayloadDigest } from "../../src/capture/PayloadDigest.js";
+import { PluginHookCapture } from "../../src/capture/PluginHookCapture.js";
+import { ToolClassifier } from "../../src/capture/ToolClassifier.js";
+import { EventFactory } from "../../src/schema/EventFactory.js";
+import { InvestigationService } from "../../src/service/InvestigationService.js";
+import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
+import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
+
+const BASH_FIXTURE = new URL("../fixtures/tool-execute-after-bash.json", import.meta.url);
+const BASH_ERROR_FIXTURE = new URL("../fixtures/tool-execute-after-bash-error.json", import.meta.url);
+const RECEIVED_AT = new Date("2026-10-25T11:32:04.812Z");
+
+function readFixture(url: URL): unknown {
+  return JSON.parse(readFileSync(url, "utf8"));
+}
+
+function toolAfter(
+  tool: string,
+  args: Record<string, unknown>,
+  callID = `call_${tool}`,
+  sessionID = "ses_surface",
+): unknown {
+  return {
+    hook: "tool.execute.after",
+    input: { tool, sessionID, callID, args },
+    output: { title: "title", metadata: { truncated: false } },
+  };
+}
+
+describe("seam B: hook payload in, stored events out", () => {
+  let directory: string;
+  let store: SqliteEventStore;
+  let service: InvestigationService;
+
+  beforeEach(() => {
+    directory = mkdtempSync(join(tmpdir(), "tracevault-capture-"));
+    store = new SqliteEventStore(join(directory, "events.db"));
+    const factory = new EventFactory();
+    const capture = new PluginHookCapture(
+      new HookPayloadParser(),
+      new ToolClassifier(new PayloadDigest()),
+      factory,
+    );
+    service = new InvestigationService(capture, store, factory, new TimelineBuilder());
+  });
+
+  afterEach(() => {
+    store.close();
+    rmSync(directory, { recursive: true, force: true });
+  });
+
+  it("stores exactly one hook.script event for a recorded bash call", () => {
+    expect(service.recordHookPayload(readFixture(BASH_FIXTURE), RECEIVED_AT)).toBe("stored");
+
+    const events = store.listBySession("ses_e8cd974edffegftWNtrKV3BXUe");
+    expect(events).toHaveLength(1);
+    expect(events[0]).toMatchObject({
+      schema_version: 1,
+      type: "hook.script",
+      session_id: "ses_e8cd974edffegftWNtrKV3BXUe",
+      agent: { name: "opencode", version: "unknown" },
+      capture_path: "plugin_hook",
+      timestamp: "2026-10-25T11:32:04.812Z",
+      seq: null,
+      correlation_id: "chatcmpl-tool-97b767f4350cf67d",
+      raw_extra: {},
+    });
+    expect(events[0]?.id).toMatch(/^evt_[0-9A-HJKMNP-TV-Z]{26}$/);
+    expect(events[0]?.prev_hash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("puts the command, exit code and ok outcome in the hook payload", () => {
+    service.recordHookPayload(readFixture(BASH_FIXTURE), RECEIVED_AT);
+
+    const [event] = store.listBySession("ses_e8cd974edffegftWNtrKV3BXUe");
+    expect(event?.data).toEqual({
+      hook: "tool.execute.after",
+      target_tool: "bash",
+      target: "echo tracevault-fixture",
+      exit_code: 0,
+      outcome: "ok",
+    });
+  });
+
+  it("marks a non-zero exit as an error", () => {
+    service.recordHookPayload(readFixture(BASH_ERROR_FIXTURE), RECEIVED_AT);
+
+    const [event] = store.listBySession("ses_e8cc84dd5ffezMElbZGxc6lO2I");
+    expect(event?.data).toMatchObject({ target: "cmd /c exit 1", exit_code: 1, outcome: "error" });
+  });
+
+  it("classifies a read as a document.access event", () => {
+    service.recordHookPayload(toolAfter("read", { filePath: "src/cli/index.ts" }), RECEIVED_AT);
+
+    const [event] = store.listBySession("ses_surface");
+    expect(event?.type).toBe("document.access");
+    expect(event?.data).toMatchObject({ path: "src/cli/index.ts", operation: "read", outcome: "ok" });
+  });
+
+  it("classifies an edit as a write to the same path", () => {
+    service.recordHookPayload(
+      toolAfter("edit", { filePath: "src/cli/index.ts", oldString: "a", newString: "b" }),
+      RECEIVED_AT,
+    );
+
+    const [event] = store.listBySession("ses_surface");
+    expect(event?.data).toMatchObject({ path: "src/cli/index.ts", operation: "write" });
+  });
+
+  it("records a web fetch with the URL as its target", () => {
+    service.recordHookPayload(toolAfter("webfetch", { url: "https://example.com" }), RECEIVED_AT);
+
+    const [event] = store.listBySession("ses_surface");
+    expect(event?.type).toBe("hook.script");
+    expect(event?.data).toMatchObject({ target_tool: "webfetch", target: "https://example.com", outcome: "ok" });
+  });
+
+  it("records an MCP tool call with server and tool name", () => {
+    service.recordHookPayload(
+      toolAfter("context7_resolve-library-id", { libraryName: "express", query: "routing" }),
+      RECEIVED_AT,
+    );
+
+    const [event] = store.listBySession("ses_surface");
+    expect(event?.type).toBe("mcp.call");
+    expect(event?.data).toMatchObject({ server: "context7", tool: "resolve-library-id", outcome: "ok" });
+    expect(event?.data).toMatchObject({ args_digest: expect.stringMatching(/^sha256:[0-9a-f]{64}$/) });
+  });
+
+  it("records a failed tool call as an error with no success fields", () => {
+    service.recordHookPayload(
+      {
+        hook: "tool.failed",
+        input: {
+          tool: "read",
+          sessionID: "ses_surface",
+          callID: "call_failed_read",
+          args: { filePath: "missing.txt" },
+        },
+        error: "File not found: missing.txt",
+      },
+      RECEIVED_AT,
+    );
+
+    const [event] = store.listBySession("ses_surface");
+    expect(event?.type).toBe("document.access");
+    expect(event?.data).toEqual({ path: "missing.txt", operation: "read", outcome: "error" });
+  });
+
+  it("stores the title forwarded with session.created", () => {
+    service.recordHookPayload(
+      { hook: "session.created", sessionID: "ses_title", title: "Fix the leak" },
+      RECEIVED_AT,
+    );
+
+    expect(service.listSessions()[0]).toMatchObject({ sessionId: "ses_title", title: "Fix the leak" });
+  });
+
+  it("marks a completed session with an end and reopens it when a later event arrives", () => {
+    service.recordHookPayload({ hook: "session.created", sessionID: "ses_life" }, RECEIVED_AT);
+    service.recordHookPayload(toolAfter("read", { filePath: "a.ts" }, "call_life", "ses_life"), RECEIVED_AT);
+    service.recordHookPayload(
+      { hook: "session.idle", sessionID: "ses_life" },
+      new Date("2026-10-25T11:40:00.000Z"),
+    );
+
+    const closed = service.listSessions().find((session) => session.sessionId === "ses_life");
+    expect(closed).toMatchObject({ sessionId: "ses_life", endedAt: "2026-10-25T11:40:00.000Z", eventCount: 1 });
+
+    service.recordHookPayload(toolAfter("read", { filePath: "b.ts" }, "call_after_idle", "ses_life"), new Date("2026-10-25T11:41:00.000Z"));
+    expect(service.listSessions().find((session) => session.sessionId === "ses_life")?.endedAt).toBeNull();
+  });
+
+  it("records a second observation as a duplicate and shows the action once in the timeline", () => {
+    service.recordHookPayload(readFixture(BASH_FIXTURE), RECEIVED_AT);
+    service.recordHookPayload(readFixture(BASH_FIXTURE), RECEIVED_AT);
+
+    const sessionId = "ses_e8cd974edffegftWNtrKV3BXUe";
+    const stored = store.listBySession(sessionId);
+    expect(stored.filter((event) => event.type === "hook.script")).toHaveLength(2);
+    expect(stored.filter((event) => event.type === "capture.duplicate")).toHaveLength(1);
+    expect(service.getTimeline(sessionId)).toHaveLength(1);
+    expect(service.listSessions()[0]?.eventCount).toBe(2);
+  });
+
+  it("records a capture gap as data the timeline can show", () => {
+    service.recordHookPayload(
+      {
+        hook: "capture.gap",
+        sessionID: "ses_gap",
+        from: "2026-10-25T10:00:00.000Z",
+        to: "2026-10-25T10:05:00.000Z",
+        reason: "service unavailable",
+      },
+      new Date("2026-10-25T10:05:00.000Z"),
+    );
+
+    const [event] = store.listBySession("ses_gap");
+    expect(event?.type).toBe("capture.gap");
+    expect(event?.data).toEqual({
+      capture_path: "plugin_hook",
+      from: "2026-10-25T10:00:00.000Z",
+      to: "2026-10-25T10:05:00.000Z",
+      reason: "service unavailable",
+    });
+  });
+
+  it("records a denied tool call as denied, not as an error", () => {
+    service.recordHookPayload(
+      {
+        hook: "tool.failed",
+        input: {
+          tool: "read",
+          sessionID: "ses_surface",
+          callID: "call_denied",
+          args: { filePath: "secret.txt" },
+        },
+        error: "The user rejected permission to use this specific tool call",
+      },
+      RECEIVED_AT,
+    );
+
+    const [event] = store.listBySession("ses_surface");
+    expect(event?.data).toMatchObject({ outcome: "denied" });
+  });
+
+  it("orders two events with identical timestamps deterministically", () => {
+    service.recordHookPayload(toolAfter("read", { filePath: "first.ts" }, "call_first"), RECEIVED_AT);
+    service.recordHookPayload(toolAfter("read", { filePath: "second.ts" }, "call_second"), RECEIVED_AT);
+
+    expect(service.getTimeline("ses_surface").map((entry) => entry.target)).toEqual(["first.ts", "second.ts"]);
+  });
+
+  it("rejects a payload it cannot read without storing anything", () => {
+    expect(service.recordHookPayload({}, RECEIVED_AT)).toBe("rejected");
+    expect(store.listSessions()).toEqual([]);
+  });
+});

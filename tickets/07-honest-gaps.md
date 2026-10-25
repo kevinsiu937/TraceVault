@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-- [ ] An interval in which capture was unavailable appears in the timeline as an explicit gap with a reason
+- [x] An interval in which capture was unavailable appears in the timeline as an explicit gap with a reason
 - [ ] A session recorded while the service was down is reported as uncovered, not as empty
-- [ ] Gaps are data in the store, not a rendering trick on the page
-- [ ] Seam-B test covers gap creation; seam-A test covers gap rendering
+- [x] Gaps are data in the store, not a rendering trick on the page
+- [x] Seam-B test covers gap creation; seam-A test covers gap rendering

@@ -8,11 +8,11 @@ While wiring it, measure and record what the hook actually provides: does it fir
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done — next frontier is ticket 02.
 
-- [ ] A real OpenCode session that runs one shell command produces exactly one stored event
-- [ ] The session appears in the dashboard's session list on `127.0.0.1`
-- [ ] The event carries type, target, outcome, timestamp, session identity and agent identity
-- [ ] The hook's firing point and available identifiers are recorded in the repo's design notes
-- [ ] The first seam-B test exists: a recorded payload in, the expected stored event out, written beside the code and passing
-- [ ] `npm run build`, `npm run typecheck` and `npm test` all pass
+- [x] A real OpenCode session that runs one shell command produces exactly one stored event
+- [x] The session appears in the dashboard's session list on `127.0.0.1`
+- [x] The event carries type, target, outcome, timestamp, session identity and agent identity
+- [x] The hook's firing point and available identifiers are recorded in the repo's design notes ([ADR 0002](../docs/adr/0002-hook-capture-point.md))
+- [x] The first seam-B test exists: a recorded payload in, the expected stored event out, written beside the code and passing
+- [x] `npm run build`, `npm run typecheck` and `npm test` all pass

@@ -68,7 +68,7 @@ npm run build
 npm test
 ```
 
-Node 20+ required (developed on v24).
+Node 24+ required (`node:sqlite`; developed on v24).
 
 ## Documentation
 

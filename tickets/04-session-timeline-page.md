@@ -6,10 +6,10 @@ This is the first ticket where the reader can answer "what did it do, in what or
 
 **Blocked by:** 02 — Every tool type, with outcomes. 03 — Session boundaries and open sessions.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Clicking a session shows its events in execution order, not insertion order
-- [ ] Every row shows type, target, outcome and time, legible without further clicking
-- [ ] Denied and error rows are distinguishable from successes at a glance
-- [ ] A session with a thousand events renders without a visible stall
-- [ ] Seam-A test exists: a request for a session's page, against a temporary database, contains the expected rows in the expected order
+- [x] Clicking a session shows its events in execution order, not insertion order
+- [x] Every row shows type, target, outcome and time, legible without further clicking
+- [x] Denied and error rows are distinguishable from successes at a glance
+- [x] A session with a thousand events renders without a visible stall
+- [x] Seam-A test exists: a request for a session's page, against a temporary database, contains the expected rows in the expected order

@@ -1,0 +1,21 @@
+{
+  "hook": "tool.execute.after",
+  "input": {
+    "tool": "bash",
+    "sessionID": "ses_e8cc84dd5ffezMElbZGxc6lO2I",
+    "callID": "call_00_7dCpHMoCOu0QlCVB3uwj6508",
+    "args": {
+      "command": "cmd /c exit 1"
+    }
+  },
+  "output": {
+    "title": "cmd /c exit 1",
+    "metadata": {
+      "output": "(no output)",
+      "exit": 1,
+      "truncated": false
+    },
+    "output": "(no output)",
+    "attachments": []
+  }
+}

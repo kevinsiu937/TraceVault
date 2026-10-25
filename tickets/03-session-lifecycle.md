@@ -8,8 +8,8 @@ Resuming a paused session must not split one story into two — confirm how the 
 
 **Status:** ready-for-agent
 
-- [ ] A completed session shows a start and an end
-- [ ] A session interrupted mid-run appears as open, not as complete
-- [ ] A resumed session reads as one session, matching how the agent itself reports it
-- [ ] Session list is ordered newest first and shows start, end/open, event count and agent
-- [ ] Seam-B test covers start/end and the interrupted case
+- [x] A completed session shows a start and an end
+- [x] A session interrupted mid-run appears as open, not as complete
+- [x] A resumed session reads as one session, matching how the agent itself reports it
+- [x] Session list is ordered newest first and shows start, end/open, event count and agent
+- [x] Seam-B test covers start/end and the interrupted case

@@ -86,10 +86,11 @@ Traffic to an external MCP server. Captured by the proxy, since plugin hooks do 
 A hook or script the agent ran as part of its own dispatch.
 ```jsonc
 "data": {
-  "hook": "tool.execute.before",
+  "hook": "tool.execute.after",
   "target_tool": "bash",
+  "target": "echo tracevault-fixture",
   "exit_code": 0,
-  "duration_ms": 12
+  "outcome": "ok"                    // ok | error
 }
 ```
 

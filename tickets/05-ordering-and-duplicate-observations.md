@@ -8,8 +8,8 @@ A fixture set is frozen here: payloads captured from a real session, stored as f
 
 **Status:** ready-for-agent
 
-- [ ] Two events with identical timestamps order deterministically and the order is asserted in a test
-- [ ] A duplicated observation appears once in the timeline and is recorded as a duplicate in the store
-- [ ] The collapse happens at read time; stored evidence is unchanged
-- [ ] Recorded payload fixtures from a real session are committed under the fixtures directory
-- [ ] Seam-B tests cover ordering and the duplicate case
+- [x] Two events with identical timestamps order deterministically and the order is asserted in a test
+- [x] A duplicated observation appears once in the timeline and is recorded as a duplicate in the store
+- [x] The collapse happens at read time; stored evidence is unchanged
+- [x] Recorded payload fixtures from a real session are committed under the fixtures directory
+- [x] Seam-B tests cover ordering and the duplicate case
