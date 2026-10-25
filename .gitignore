@@ -1,0 +1,45 @@
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Local data — captured events are machine-local, never committed
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite3
+data/
+sessions/
+captures/
+
+# Reports and generated artifacts
+reports/
+*.pdf
+!docs/**/*.pdf
+
+# Secrets and machine state
+.env
+.env.*
+*.pem
+*.key
+config.local.yaml
+!.env.example
+
+# Agent state that can leak local paths
+.opencode/
+*.transcript
+transcript.jsonl
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs and scratch
+*.log
+logs/
+tmp/
+scratch/
