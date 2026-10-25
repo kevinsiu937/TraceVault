@@ -102,3 +102,38 @@ Local HTTP API + WebSocket push. Three tabs: Sessions, Report, Simulations (disa
 2. A flag always resolves to a rule id plus event ids.
 3. An event, once written, is never rewritten.
 4. Any capture path failing is visible as data, not as absence.
+
+## Structure rules
+
+1. **One class per file**, name matches filename. No grab-bag utility files.
+2. **Every stage boundary is an interface** (`CapturePort`, `EventStorePort`, `InvestigationServicePort`). Concrete classes implement them; nothing imports a concrete class across a boundary.
+3. **The composition root is the only place that chooses implementations** — `cli/`. One file to read to see how the system is assembled.
+4. **Imports point one way:** `cli → dashboard → service → store`, and `cli → plugin → capture → schema`. An upward import is a bug, not a style choice.
+5. **No barrel files.** They hide the dependency graph and make "which file do I change?" unanswerable — the exact problem this layout exists to prevent.
+6. **Folders appear when a file needs them.** No placeholder directories for later phases.
+7. **A file you can read in one sitting.** Past ~200 lines a class is holding more than one responsibility.
+
+## Expected layout at the end of Phase 1
+
+```
+src/schema/       Event, EventType, EventFactory, EventValidator, payloads/
+src/capture/      CapturePort, HookPayloadParser, PluginHookCapture
+src/store/        EventStorePort, SqliteEventStore, CanonicalJson, HashChain, StoreVerifier
+src/service/      InvestigationServicePort, InvestigationService, SessionSummary,
+                  TimelineBuilder, TimelineEntry
+src/dashboard/    DashboardServer, routes/, view/
+src/plugin/       PluginConfig, TraceVaultPlugin, EventForwarder
+src/cli/          index, RunCommand, InitCommand, AgentConfigFile
+
+tests/seams/      capture.seam.test.ts, dashboard.seam.test.ts
+tests/fixtures/   frozen recorded payloads
+```
+
+Tests are not per class. Two seams only: an HTTP request rendered against a temporary database, and a recorded hook payload turned into stored events. See `docs/spec/phase-1.md`.
+
+## Adding a feature — the checklist
+
+1. Which stage owns it? If two, the boundary needs a new port method.
+2. New class → new file.
+3. Does the dashboard need something new? Extend `InvestigationServicePort` first, implement, test through the seam, then render.
+4. Does anything import upward? Restructure before writing the test — do not fix it later.

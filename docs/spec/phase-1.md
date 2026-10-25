@@ -2,7 +2,7 @@
 
 > Status: published to the issue tracker as `ready-for-agent`.
 > Derived from the planning session of 25 Oct 2026. Binding until superseded.
-> Phase ladder: `docs/PHASES.md`. Structure rules: `docs/FILE-STRUCTURE.md`, `AGENTS.md`.
+> Phase ladder: `docs/ROADMAP.md` (phases 2-5; phase 1 is the tickets). Structure rules: `docs/ARCHITECTURE.md`, `AGENTS.md`.
 
 ## Problem Statement
 
@@ -108,4 +108,4 @@ Phase 1 ends when a real OpenCode session that runs a shell command, edits a fil
 
 - The event schema is drafted but not yet approved; the two open questions that matter for this phase are path storage (absolute versus relative) and payload depth (verbatim versus digest). Both are decided above in favour of forensics-safe defaults: absolute in the store and relative in the UI, digest plus shape for payloads.
 - The proposal's three capture paths remain the design; Phase 1 implements the one with the highest coverage per unit of work. The other two are additive because they all emit the same envelope.
-- A six-line note in `AGENTS.md` and `docs/FILE-STRUCTURE.md` currently says every public method gets a test. That is superseded by the two-seam decision above and will be corrected; the seam decision is authoritative.
+- The per-class test note that used to sit in `AGENTS.md` and the retired file-structure doc said every public method gets a test. The two-seam decision above supersedes it; `AGENTS.md` now records the seam rule and is authoritative.

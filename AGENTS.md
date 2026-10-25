@@ -55,7 +55,7 @@ Tests exist to lock behaviour that already works, so a later change cannot silen
 
 ## 6. Phase plan
 
-See `docs/PHASES.md`. Do not work on a later phase while an earlier one has unmet exit criteria.
+See `docs/ROADMAP.md` for phases 2-5. Do not work on a later phase while an earlier one has unmet exit criteria.
 
 ## 7. Tickets
 
@@ -64,5 +64,5 @@ Phase 1 work is broken into tracer-bullet tickets in `tickets/`, one file each, 
 - **Take one ticket at a time.** Never start a ticket whose blockers are open. The frontier today is `01`.
 - A ticket is a **vertical slice**: it ends with something demoable, never with "a layer finished".
 - Read the ticket file before starting and tick its acceptance boxes as they are met — in the same commit as the work.
-- The spec behind them is `docs/specs/phase-1-backbone.md`; if a ticket and the spec disagree, the spec wins and the ticket gets fixed.
+- The spec behind them is `docs/spec/phase-1.md`; if a ticket and the spec disagree, the spec wins and the ticket gets fixed.
 - When a ticket is done, report in one line: what works now, what the demo shows, and the next frontier ticket. Then stop — no auto-advancing to the next ticket.

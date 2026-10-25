@@ -43,19 +43,22 @@ Target agent: **OpenCode first** (fully open source, interfaces readable rather 
 ## Repository layout
 
 ```
-src/
-  cli/            command entry points (init, run, report)
-  capture/        plugin-hook receiver, session-store readers, MCP proxy
-  schema/         the event schema — every stage consumes it
-  scanner/        vulnerability scanner (static) + workflow scanner (rules)
-  store/          SQLite, append-only, hash-chained
-  investigator/   timeline merge + query
-  report/         report generation
-  dashboard/      local HTTP API + WebSocket + UI
-rules/            YAML rule files (vulnerability + workflow)
-tests/            unit tests, per-rule fixtures, end-to-end script
-docs/             architecture, event schema, ADRs
+AGENTS.md         working agreement for AI agents (OOD, seam tests, tickets)
+README.md
+docs/
+  spec/phase-1.md   the Phase 1 spec — binding
+  ARCHITECTURE.md   stage contracts, structure rules, expected layout
+  EVENT-SCHEMA.md   the event contract
+  ROADMAP.md        phases 2-5
+  adr/              decision records
+tickets/            10 tracer-bullet tickets + index
+src/                code — folders appear when a ticket needs them
+  cli/              composition root (currently the only file)
+tests/              seam tests + frozen fixtures
+.githooks/          pre-commit gate (typecheck + tests)
 ```
+
+Full Phase 1 layout, file by file, is in `docs/ARCHITECTURE.md`.
 
 ## Getting started
 
@@ -69,10 +72,11 @@ Node 20+ required (developed on v24).
 
 ## Documentation
 
-- `AGENTS.md` — the working agreement every AI agent in this repo must follow (OOD + regression-lock tests)
-- `docs/PHASES.md` — the five-phase ladder with exit criteria per phase
-- `docs/FILE-STRUCTURE.md` — one class per file, port interfaces, where each thing lives
-- `docs/ARCHITECTURE.md` — component boundaries and data flow
+- `AGENTS.md` — the working agreement every AI agent in this repo must follow (OOD + two-seam regression tests + ticket discipline)
+- `docs/spec/phase-1.md` — the Phase 1 spec (also published as issue #1)
+- `tickets/` — ten tracer-bullet tickets, index in `tickets/README.md`
+- `docs/ROADMAP.md` — phases 2-5 with exit criteria
+- `docs/ARCHITECTURE.md` — component boundaries, structure rules, expected layout
 - `docs/EVENT-SCHEMA.md` — the shape every capture path emits
 - `docs/adr/` — decision records
 

@@ -16,7 +16,7 @@ TEST_OUTPUT=$(npm run --silent test -- --passWithNoTests 2>&1) || {
 echo "$TEST_OUTPUT"
 
 if echo "$TEST_OUTPUT" | grep -qi "no test files found"; then
-  echo "[pre-commit] WARNING: no test files in the repo. Phase 1 requires a test beside every class."
+  echo "[pre-commit] WARNING: no test files yet. Phase 1 needs two seam suites, not a test per class."
 fi
 
 echo "[pre-commit] ok"
