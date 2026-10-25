@@ -11,6 +11,8 @@
  * component modules so it can be tested without spawning a process.
  */
 
+import { pathToFileURL } from "node:url";
+
 export const VERSION = "0.1.0";
 
 const USAGE = `tracevault ${VERSION}
@@ -56,6 +58,6 @@ export function main(argv: readonly string[]): number {
   return 2;
 }
 
-if (import.meta.url === `file://${process.argv[1]?.replace(/\\/g, "/")}`) {
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
   process.exit(main(process.argv.slice(2)));
 }

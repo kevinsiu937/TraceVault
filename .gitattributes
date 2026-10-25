@@ -1,0 +1,16 @@
+# Normalise line endings — repo is authored on Windows, may be cloned elsewhere
+* text=auto eol=lf
+
+# Binary
+*.png binary
+*.jpg binary
+*.db binary
+*.docx binary
+
+# Keep shell scripts LF so they run in git-bash / CI
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Windows scripts
+*.cmd text eol=crlf
+*.bat text eol=crlf
