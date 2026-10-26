@@ -8,6 +8,7 @@ import type { HookScriptData } from "./HookScriptData.js";
 import type { McpCallData } from "./McpCallData.js";
 import type { SessionLifecycleData } from "./SessionLifecycleData.js";
 import type { SkillCallData } from "./SkillCallData.js";
+import type { UserPromptData } from "./UserPromptData.js";
 
 export interface EventMeta {
   readonly sessionId: string;
@@ -15,6 +16,8 @@ export interface EventMeta {
   readonly receivedAt: Date;
   readonly agentName?: string;
   readonly title?: string;
+  readonly parentSessionId?: string | null;
+  readonly durationMs?: number | null;
 }
 
 export type ClassifiedTool =
@@ -41,7 +44,11 @@ export class EventFactory {
   }
 
   sessionStart(meta: EventMeta): Event {
-    const data: SessionLifecycleData = meta.title === undefined ? {} : { title: meta.title };
+    const parent = meta.parentSessionId;
+    const data: SessionLifecycleData = {
+      ...(meta.title === undefined ? {} : { title: meta.title }),
+      ...(typeof parent === "string" && parent.length > 0 ? { parent_session_id: parent } : {}),
+    };
     return { ...this.envelope(meta), type: "session.start", data };
   }
 
@@ -60,6 +67,10 @@ export class EventFactory {
     return { ...this.envelope(meta), type: "capture.duplicate", data };
   }
 
+  promptUser(meta: EventMeta, data: UserPromptData): Event {
+    return { ...this.envelope(meta), type: "prompt.user", data };
+  }
+
   private envelope(meta: EventMeta): Omit<Event, "type" | "data"> {
     return {
       id: EventId.create(meta.receivedAt).toString(),
@@ -69,6 +80,7 @@ export class EventFactory {
       capture_path: this.capturePath,
       timestamp: meta.receivedAt.toISOString(),
       seq: null,
+      duration_ms: meta.durationMs ?? null,
       correlation_id: meta.correlationId,
       prev_hash: null,
       raw_extra: {},

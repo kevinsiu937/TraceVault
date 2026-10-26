@@ -1,4 +1,5 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -7,14 +8,27 @@ import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
 import { PayloadDigest } from "../../src/capture/PayloadDigest.js";
 import { PluginHookCapture } from "../../src/capture/PluginHookCapture.js";
 import { ToolClassifier } from "../../src/capture/ToolClassifier.js";
+import { PendingGapStore } from "../../src/plugin/PendingGapStore.js";
+import { TraceVaultPlugin } from "../../src/plugin/TraceVaultPlugin.js";
 import { EventFactory } from "../../src/schema/EventFactory.js";
 import { InvestigationService } from "../../src/service/InvestigationService.js";
 import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const BASH_FIXTURE = new URL("../fixtures/tool-execute-after-bash.json", import.meta.url);
+const BASH_DURATION_FIXTURE = new URL("../fixtures/tool-execute-after-bash-duration.json", import.meta.url);
 const BASH_ERROR_FIXTURE = new URL("../fixtures/tool-execute-after-bash-error.json", import.meta.url);
+const DENIED_FIXTURE = new URL("../fixtures/tool-failed-denied.json", import.meta.url);
+const FIXTURE_DIRECTORY = new URL("../fixtures/", import.meta.url);
 const RECEIVED_AT = new Date("2026-10-25T11:32:04.812Z");
+
+// shortcut: Vitest's bundled Vite predates node:sqlite; Node's resolver loads it.
+const { DatabaseSync } = createRequire(import.meta.url)("node:sqlite") as {
+  DatabaseSync: new (path: string) => {
+    prepare(sql: string): { run(...parameters: unknown[]): void };
+    close(): void;
+  };
+};
 
 function readFixture(url: URL): unknown {
   return JSON.parse(readFileSync(url, "utf8"));
@@ -25,12 +39,16 @@ function toolAfter(
   args: Record<string, unknown>,
   callID = `call_${tool}`,
   sessionID = "ses_surface",
-): unknown {
+): Record<string, unknown> {
   return {
     hook: "tool.execute.after",
     input: { tool, sessionID, callID, args },
     output: { title: "title", metadata: { truncated: false } },
   };
+}
+
+function clockFrom(ticks: number[]): () => number {
+  return () => ticks.shift() ?? 0;
 }
 
 describe("seam B: hook payload in, stored events out", () => {
@@ -211,23 +229,20 @@ describe("seam B: hook payload in, stored events out", () => {
     });
   });
 
-  it("records a denied tool call as denied, not as an error", () => {
-    service.recordHookPayload(
-      {
-        hook: "tool.failed",
-        input: {
-          tool: "read",
-          sessionID: "ses_surface",
-          callID: "call_denied",
-          args: { filePath: "secret.txt" },
-        },
-        error: "The user rejected permission to use this specific tool call",
-      },
-      RECEIVED_AT,
-    );
+  // Frozen from a live OpenCode run: an unmatched bash command is asked for,
+  // and a non-interactive run auto-rejects it. Probe record in docs/probes/.
+  it("records a live permission rejection as denied, not as an error", () => {
+    expect(service.recordHookPayload(readFixture(DENIED_FIXTURE), RECEIVED_AT)).toBe("stored");
 
-    const [event] = store.listBySession("ses_surface");
-    expect(event?.data).toMatchObject({ outcome: "denied" });
+    const [event] = store.listBySession("ses_fixture_denied");
+    expect(event?.type).toBe("hook.script");
+    expect(event?.data).toEqual({
+      hook: "tool.execute.after",
+      target_tool: "bash",
+      target: "curl -s https://example.test/",
+      exit_code: null,
+      outcome: "denied",
+    });
   });
 
   it("orders two events with identical timestamps deterministically", () => {
@@ -237,8 +252,194 @@ describe("seam B: hook payload in, stored events out", () => {
     expect(service.getTimeline("ses_surface").map((entry) => entry.target)).toEqual(["first.ts", "second.ts"]);
   });
 
+  it("stores the duration recorded on the hook payload", () => {
+    service.recordHookPayload(readFixture(BASH_DURATION_FIXTURE), RECEIVED_AT);
+
+    const [event] = store.listBySession("ses_e8cd974edffegftWNtrKV3BXUe");
+    expect(event?.duration_ms).toBe(1234);
+  });
+
+  it("stores no duration when the payload carries none", () => {
+    service.recordHookPayload(toolAfter("read", { filePath: "no-duration.ts" }, "call_no_duration"), RECEIVED_AT);
+
+    const [event] = store.listBySession("ses_surface");
+    expect(event?.duration_ms).toBeNull();
+  });
+
+  it("treats a negative or non-finite duration as unknown", () => {
+    service.recordHookPayload(
+      { ...toolAfter("read", { filePath: "negative.ts" }, "call_negative"), durationMs: -5 },
+      RECEIVED_AT,
+    );
+    service.recordHookPayload(
+      { ...toolAfter("read", { filePath: "nan.ts" }, "call_nan"), durationMs: Number.NaN },
+      RECEIVED_AT,
+    );
+
+    expect(store.listBySession("ses_surface").map((event) => event.duration_ms)).toEqual([null, null]);
+  });
+
+  it("measures the elapsed time between the before and after hooks", async () => {
+    const sent: unknown[] = [];
+    const plugin = new TraceVaultPlugin(
+      {
+        forward: async (payload: unknown): Promise<void> => {
+          sent.push(payload);
+        },
+      },
+      new PendingGapStore(join(directory, "pending-gaps.json")),
+      clockFrom([1000, 2234]),
+    );
+
+    await plugin.hooks()["tool.execute.before"](
+      { tool: "bash", sessionID: "ses_measured", callID: "call_measured" },
+      { args: { command: "echo timed" } },
+    );
+    await plugin.hooks()["tool.execute.after"](
+      { tool: "bash", sessionID: "ses_measured", callID: "call_measured", args: { command: "echo timed" } },
+      {},
+    );
+
+    const forwarded = sent.find((payload) => (payload as { hook?: string }).hook === "tool.execute.after");
+    expect(forwarded).toMatchObject({ durationMs: 1234 });
+
+    service.recordHookPayload(forwarded, RECEIVED_AT);
+    expect(store.findByCorrelation("call_measured")?.duration_ms).toBe(1234);
+  });
+
+  it("measures a failed tool call that had a before hook", async () => {
+    const sent: unknown[] = [];
+    const plugin = new TraceVaultPlugin(
+      {
+        forward: async (payload: unknown): Promise<void> => {
+          sent.push(payload);
+        },
+      },
+      new PendingGapStore(join(directory, "pending-gaps.json")),
+      clockFrom([500, 750]),
+    );
+
+    await plugin.hooks()["tool.execute.before"](
+      { tool: "read", sessionID: "ses_failed_timed", callID: "call_failed_timed" },
+      { args: { filePath: "x.ts" } },
+    );
+    await plugin.hooks().event({
+      event: {
+        type: "message.part.updated",
+        properties: {
+          part: {
+            type: "tool",
+            tool: "read",
+            callID: "call_failed_timed",
+            sessionID: "ses_failed_timed",
+            state: { status: "error", input: { filePath: "x.ts" }, error: "boom" },
+          },
+        },
+      },
+    });
+
+    const forwarded = sent.find((payload) => (payload as { hook?: string }).hook === "tool.failed");
+    expect(forwarded).toMatchObject({ durationMs: 250 });
+    expect(store.listBySession("ses_failed_timed")).toHaveLength(0);
+  });
+
+  it("omits the duration for a failure with no before hook", async () => {
+    const sent: unknown[] = [];
+    const plugin = new TraceVaultPlugin(
+      {
+        forward: async (payload: unknown): Promise<void> => {
+          sent.push(payload);
+        },
+      },
+      new PendingGapStore(join(directory, "pending-gaps.json")),
+      clockFrom([]),
+    );
+
+    await plugin.hooks().event({
+      event: {
+        type: "message.part.updated",
+        properties: {
+          part: {
+            type: "tool",
+            tool: "read",
+            callID: "call_failed_untimed",
+            sessionID: "ses_failed_untimed",
+            state: { status: "error", input: { filePath: "y.ts" }, error: "boom" },
+          },
+        },
+      },
+    });
+
+    const forwarded = sent.find(
+      (payload) => (payload as { hook?: string }).hook === "tool.failed",
+    ) as Record<string, unknown>;
+    expect("durationMs" in forwarded).toBe(false);
+
+    service.recordHookPayload(forwarded, RECEIVED_AT);
+    expect(store.listBySession("ses_failed_untimed")[0]?.duration_ms).toBeNull();
+  });
+
+  it("reads a row written before duration_ms existed as null", () => {
+    const legacy = {
+      id: "evt_legacy",
+      schema_version: 1,
+      session_id: "ses_legacy",
+      agent: { name: "opencode", version: "unknown" },
+      capture_path: "session_store",
+      timestamp: "2026-10-25T10:00:00.000Z",
+      seq: null,
+      correlation_id: "session_store:legacy",
+      prev_hash: "0".repeat(64),
+      raw_extra: {},
+      type: "hook.script",
+      data: {
+        hook: "tool.execute.after",
+        target_tool: "bash",
+        target: "echo legacy",
+        exit_code: 0,
+        outcome: "ok",
+      },
+    };
+    const database = new DatabaseSync(join(directory, "events.db"));
+    database
+      .prepare(
+        `INSERT INTO events (id, session_id, agent_name, type, timestamp, seq, capture_path, correlation_id, body, prev_hash, hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        legacy.id,
+        legacy.session_id,
+        legacy.agent.name,
+        legacy.type,
+        legacy.timestamp,
+        legacy.seq,
+        legacy.capture_path,
+        legacy.correlation_id,
+        JSON.stringify(legacy),
+        legacy.prev_hash,
+        "legacy-hash",
+      );
+    database.close();
+
+    const [event] = store.listBySession("ses_legacy");
+    expect(event?.duration_ms).toBeNull();
+  });
+
   it("rejects a payload it cannot read without storing anything", () => {
     expect(service.recordHookPayload({}, RECEIVED_AT)).toBe("rejected");
     expect(store.listSessions()).toEqual([]);
+  });
+
+  it("keeps frozen fixtures free of credentials and real absolute paths", () => {
+    const names = readdirSync(FIXTURE_DIRECTORY).filter((name) => name.endsWith(".json"));
+    expect(names.length).toBeGreaterThan(0);
+
+    for (const name of names) {
+      const text = readFileSync(new URL(name, FIXTURE_DIRECTORY), "utf8");
+      expect(text, name).not.toMatch(/[A-Za-z]:\\Users\\(?!example)/i);
+      expect(text, name).not.toMatch(/\bsk-[A-Za-z0-9]{8,}/);
+      expect(text, name).not.toMatch(/Bearer\s+[A-Za-z0-9._-]{8,}/);
+      expect(text, name).not.toMatch(/(api_key|password)["']?\s*[:=]\s*["'][^"']+/i);
+    }
   });
 });

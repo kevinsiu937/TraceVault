@@ -25,9 +25,14 @@ export class EventStream {
     const unsubscribe = this.service.subscribe(
       sessionId,
       (entry) => {
+        // shortcut: one full timeline lookup per live event (O(n) per event); batch or index if a session ever streams thousands of events a second.
+        const position = this.service
+          .getTimeline(sessionId, filter)
+          .findIndex((candidate) => candidate.eventId === entry.eventId);
         const payload = {
           eventId: entry.eventId,
           time: entry.time,
+          position,
           html: this.view.renderEntry(entry),
         };
         response.write(`data: ${JSON.stringify(payload)}\n\n`);

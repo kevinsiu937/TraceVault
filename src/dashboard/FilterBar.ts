@@ -57,16 +57,28 @@ export class FilterBar {
     const clear = filter.active
       ? `<a class="chip clear" href="${this.escape(this.params.href(basePath, ActivityFilter.none))}">Clear</a>`
       : "";
+    const expressionChip =
+      filter.expression.text.length > 0
+        ? `<div class="chips expression-chip"><a class="chip active expression" href="${this.escape(this.params.href(basePath, filter.withoutExpression()))}" aria-label="Clear expression">${this.escape(filter.expression.text)} <span aria-hidden="true">×</span></a></div>`
+        : "";
 
     return `<nav class="filters" aria-label="Filters">
 ${legend}
 <div class="chips" role="group" aria-label="Filter by outcome">${outcomes}</div>
 ${presets}
 <form class="search" method="get" action="${this.escape(basePath)}" role="search">
-${hidden}<input type="search" name="q" value="${this.escape(filter.text)}" placeholder="Filter targets…" aria-label="Filter targets">
+${hidden}<input type="search" name="expr" value="${this.escape(filter.expression.text)}" placeholder="kind:mcp path~session" list="expression-suggestions" aria-label="Filter expression">
+<datalist id="expression-suggestions">
+<option value="kind:mcp"></option>
+<option value="outcome:error"></option>
+<option value="duration:>500"></option>
+<option value="path~"></option>
+</datalist>
+<input type="search" name="q" value="${this.escape(filter.text)}" placeholder="Filter targets…" aria-label="Filter targets">
 <button type="submit">Filter</button>
 ${clear}
 </form>
+${expressionChip}
 </nav>`;
   }
 

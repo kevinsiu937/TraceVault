@@ -26,12 +26,24 @@
   "capture_path": "plugin_hook",     // plugin_hook | session_store | mcp_proxy
   "timestamp": "2026-10-25T11:32:04.812Z",
   "seq": 42,                          // may be null
+  "duration_ms": 1234,                // wall-clock time of the action; null when unknown
   "correlation_id": null,             // links records describing the same action
   "prev_hash": "sha256:...",          // store-assigned, null before write
   "data": { },                        // type-specific, see below
   "raw_extra": { }                    // unparsed agent fields, verbatim
 }
 ```
+
+## `duration_ms`
+
+Envelope-level, never inside `data`, so a record keeps the same `data` shape whichever path captured it.
+
+Two sources:
+
+1. **Live plugin hooks** — the plugin times the gap between `tool.execute.before` and `tool.execute.after` (or a failed tool's `message.part.updated`) for the same `sessionID:callID`, using `performance.now()`. The raw hook payload carries no timestamp, so this is measured in the plugin, not read from the payload.
+2. **Imported session-store parts** — derived from the part's own `state.time.start` and `state.time.end` when both are numbers and `end >= start`.
+
+It is `null` when the duration is unknown: no matching start record, an invalid measurement, a patch record, or a row written before this field existed. Consumers must treat `null` as "unknown", not as zero.
 
 ## Event types (the six from the proposal)
 

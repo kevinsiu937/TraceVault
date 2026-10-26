@@ -31,12 +31,15 @@ Type: system UI stack for prose; `ui-monospace` for commands, paths, times, ids.
 
 ## 2. Timeline anatomy
 
+- The session page is the cockpit: three panes — a 230px file rail (left), views (centre), and a 330px event detail (right). The rails are sticky; at ≤640px the panes stack.
 - A vertical rail runs through the marker column; one 12px marker per event, coloured by `data-kind`.
-- Each row: time (left), marker, kind label + target, outcome pill + chevron (right).
+- Each row: time (left), marker, kind label + target, outcome pill + chevron (right). Each row is a link to `?event=<id>`; the selected row carries `aria-current="true"` and an accent tint.
 - `document.access` paths show the last two segments in the row; the expanded detail keeps the full stored event.
 - Outcome is never colour-only: a pill carries the word; `error` adds a solid red marker ring, `denied` a dashed amber ring.
-- Expansion is native `<details>/<summary>` — no JS, keyboard accessible, persists while the page is open.
-- Expanded detail is the stored event JSON in a scrollable `<pre>`, so the reader can inspect hashes, ids and raw payload without a second screen.
+- Raw JSON stays available inline behind native `<details>/<summary>`; the right pane is the primary reader. Both are keyboard accessible.
+- The right pane shows the selected event's id, kind, target, outcome, duration (when present), wall-clock time, and the stored event JSON verbatim in a scrollable `<pre>`, behind a Details / JSON disclosure. With nothing selected it says `Select an event`.
+
+**Cockpit note:** the dark tokens are deliberately scoped to `body.cockpit` so they apply to the session page only. The list and activity pages keep the system light/dark theme.
 
 ## 3. Filters
 

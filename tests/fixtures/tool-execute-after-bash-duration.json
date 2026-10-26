@@ -1,0 +1,22 @@
+{
+  "hook": "tool.execute.after",
+  "input": {
+    "tool": "bash",
+    "sessionID": "ses_e8cd974edffegftWNtrKV3BXUe",
+    "callID": "chatcmpl-tool-97b767f4350cf67d",
+    "args": {
+      "command": "echo tracevault-fixture"
+    }
+  },
+  "output": {
+    "title": "echo tracevault-fixture",
+    "metadata": {
+      "output": "tracevault-fixture\r\n",
+      "exit": 0,
+      "truncated": false
+    },
+    "output": "tracevault-fixture\r\n",
+    "attachments": []
+  },
+  "durationMs": 1234
+}

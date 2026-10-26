@@ -6,6 +6,7 @@ import type { HookScriptData } from "./HookScriptData.js";
 import type { McpCallData } from "./McpCallData.js";
 import type { SessionLifecycleData } from "./SessionLifecycleData.js";
 import type { SkillCallData } from "./SkillCallData.js";
+import type { UserPromptData } from "./UserPromptData.js";
 
 export interface AgentIdentity {
   readonly name: string;
@@ -20,6 +21,7 @@ interface EventEnvelope {
   readonly capture_path: CapturePath;
   readonly timestamp: string;
   readonly seq: number | null;
+  readonly duration_ms: number | null;
   readonly correlation_id: string | null;
   readonly prev_hash: string | null;
   readonly raw_extra: Record<string, unknown>;
@@ -35,4 +37,5 @@ export type Event = EventEnvelope &
     | { readonly type: "session.end"; readonly data: SessionLifecycleData }
     | { readonly type: "capture.gap"; readonly data: CaptureGapData }
     | { readonly type: "capture.duplicate"; readonly data: CaptureDuplicateData }
+    | { readonly type: "prompt.user"; readonly data: UserPromptData }
   );

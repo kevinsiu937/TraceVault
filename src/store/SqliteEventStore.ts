@@ -1,6 +1,7 @@
 import { createRequire } from "node:module";
 import type { DatabaseSync as DatabaseSyncInstance } from "node:sqlite";
 
+import type { CapturePath } from "../schema/CapturePath.js";
 import type { Event } from "../schema/Event.js";
 import { CanonicalJson } from "./CanonicalJson.js";
 import type { EventQuery } from "./EventQuery.js";
@@ -14,7 +15,8 @@ const { DatabaseSync } = createRequire(import.meta.url)("node:sqlite") as {
   DatabaseSync: new (path: string) => DatabaseSyncInstance;
 };
 
-const ACTIVITY_FILTER = "type NOT IN ('session.start','session.end','capture.gap','capture.duplicate')";
+const ACTIVITY_FILTER =
+  "type NOT IN ('session.start','session.end','capture.gap','capture.duplicate','prompt.user')";
 
 export class SqliteEventStore implements EventStorePort {
   private readonly database: DatabaseSyncInstance;
@@ -99,6 +101,13 @@ export class SqliteEventStore implements EventStorePort {
     return row !== undefined;
   }
 
+  hasEventOfType(sessionId: string, type: Event["type"], capturePath: CapturePath): boolean {
+    const row = this.database
+      .prepare("SELECT 1 AS present FROM events WHERE session_id = ? AND type = ? AND capture_path = ? LIMIT 1")
+      .get(sessionId, type, capturePath);
+    return row !== undefined;
+  }
+
   listSessions(): StoredSession[] {
     const rows = this.database
       .prepare(
@@ -113,10 +122,25 @@ export class SqliteEventStore implements EventStorePort {
                   WHERE e3.session_id = e1.session_id AND e3.type = 'session.start'
                     AND json_extract(e3.body, '$.data.title') IS NOT NULL
                   ORDER BY timestamp DESC, rowid DESC LIMIT 1), '') AS title,
-                SUM(CASE WHEN ${ACTIVITY_FILTER} THEN 1 ELSE 0 END) AS event_count
+                (SELECT json_extract(e5.body, '$.data.parent_session_id') FROM events e5
+                  WHERE e5.session_id = e1.session_id AND e5.type = 'session.start'
+                    AND json_extract(e5.body, '$.data.parent_session_id') IS NOT NULL
+                  ORDER BY timestamp DESC, rowid DESC LIMIT 1) AS parent_session_id,
+                SUM(CASE WHEN ${ACTIVITY_FILTER} THEN 1 ELSE 0 END) AS event_count,
+                SUM(CASE WHEN type = 'capture.gap' THEN 1 ELSE 0 END) AS gap_count,
+                COUNT(DISTINCT CASE WHEN type = 'document.access'
+                  THEN json_extract(body, '$.data.path') END) AS files_touched,
+                SUM(CASE WHEN ${ACTIVITY_FILTER} AND json_extract(body, '$.data.outcome') = 'error'
+                  THEN 1 ELSE 0 END) AS error_count,
+                SUM(CASE WHEN ${ACTIVITY_FILTER} AND json_extract(body, '$.data.outcome') = 'denied'
+                  THEN 1 ELSE 0 END) AS denied_count,
+                (SELECT json_extract(e4.body, '$.data.outcome') FROM events e4
+                  WHERE e4.session_id = e1.session_id
+                    AND ${ACTIVITY_FILTER}
+                  ORDER BY timestamp DESC, rowid DESC LIMIT 1) AS last_outcome
          FROM events e1
          GROUP BY session_id
-         ORDER BY started_at DESC, session_id DESC`,
+         ORDER BY last_at DESC, session_id DESC`,
       )
       .all();
 
@@ -125,14 +149,36 @@ export class SqliteEventStore implements EventStorePort {
       if (typeof eventCount !== "number") {
         throw new TypeError("event_count is not a number");
       }
+      const gapCount = row["gap_count"];
+      if (typeof gapCount !== "number") {
+        throw new TypeError("gap_count is not a number");
+      }
+      const filesTouched = row["files_touched"];
+      if (typeof filesTouched !== "number") {
+        throw new TypeError("files_touched is not a number");
+      }
+      const errorCount = row["error_count"];
+      if (typeof errorCount !== "number") {
+        throw new TypeError("error_count is not a number");
+      }
+      const deniedCount = row["denied_count"];
+      if (typeof deniedCount !== "number") {
+        throw new TypeError("denied_count is not a number");
+      }
       return {
         sessionId: this.asString(row["session_id"], "session_id"),
+        parentSessionId: this.asNullableString(row["parent_session_id"], "parent_session_id"),
         title: this.asString(row["title"], "title"),
         agentName: this.asString(row["agent_name"], "agent_name"),
         startedAt: this.asString(row["started_at"], "started_at"),
         lastAt: this.asString(row["last_at"], "last_at"),
         lastType: this.asString(row["last_type"], "last_type"),
         eventCount,
+        gapCount,
+        filesTouched,
+        errorCount,
+        deniedCount,
+        lastOutcome: this.asNullableString(row["last_outcome"], "last_outcome"),
       };
     });
   }
@@ -170,7 +216,9 @@ export class SqliteEventStore implements EventStorePort {
     if (typeof value !== "string") {
       throw new TypeError("stored event body is not a string");
     }
-    return JSON.parse(value) as Event;
+    const event = JSON.parse(value) as Event;
+    // Rows written before duration_ms existed must read back as null, never undefined.
+    return event.duration_ms === undefined ? { ...event, duration_ms: null } : event;
   }
 
   private asString(value: unknown, field: string): string {
@@ -178,5 +226,12 @@ export class SqliteEventStore implements EventStorePort {
       throw new TypeError(`${field} is not a string`);
     }
     return value;
+  }
+
+  private asNullableString(value: unknown, field: string): string | null {
+    if (value === null) {
+      return null;
+    }
+    return this.asString(value, field);
   }
 }

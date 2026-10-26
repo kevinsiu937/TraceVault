@@ -1,0 +1,10 @@
+{
+  "hook": "tool.failed",
+  "input": {
+    "tool": "bash",
+    "sessionID": "ses_fixture_denied",
+    "callID": "call_fixture_denied",
+    "args": { "command": "curl -s https://example.test/" }
+  },
+  "error": "The user rejected permission to use this specific tool call."
+}

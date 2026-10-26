@@ -7,6 +7,7 @@ import type { Outcome } from "../schema/Outcome.js";
 export interface MappedPart {
   readonly correlationId: string;
   readonly timestamp: Date;
+  readonly durationMs: number | null;
   readonly classified: ClassifiedTool;
 }
 
@@ -33,6 +34,9 @@ export class ImportedPartMapper {
     const state = this.asRecord(part.data["state"]);
     const input = this.asRecord(state["input"]);
     const metadata = this.asRecord(state["metadata"]);
+    const time = this.asRecord(state["time"]);
+    const start = this.asNumber(time["start"]);
+    const end = this.asNumber(time["end"]);
     const exitCode = this.asNumber(metadata["exit"]);
     const error = this.asString(state["error"]);
     const outcome: Outcome =
@@ -46,8 +50,11 @@ export class ImportedPartMapper {
 
     return [
       {
-        correlationId: `session_store:${part.id}`,
+        // Same id the live hook uses for this call, so a session seen live and
+        // later backfilled collapses at read time instead of doubling.
+        correlationId: this.asString(part.data["callID"]) ?? `session_store:${part.id}`,
         timestamp: this.timestamp(part, state),
+        durationMs: start !== null && end !== null && end >= start ? end - start : null,
         classified: this.classifier.classify(tool, input, outcome, exitCode),
       },
     ];
@@ -67,6 +74,7 @@ export class ImportedPartMapper {
         {
           correlationId: `session_store:${part.id}#${index}`,
           timestamp: part.createdAt,
+          durationMs: null,
           classified: {
             type: "document.access" as const,
             data: { path: file, operation: "write" as const, outcome: "ok" as const },

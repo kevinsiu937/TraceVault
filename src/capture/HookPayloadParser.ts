@@ -5,6 +5,7 @@ export interface ToolAfterPayload {
   readonly callID: string;
   readonly args: Record<string, unknown>;
   readonly exitCode: number | null;
+  readonly durationMs: number | null;
 }
 
 export interface ToolFailedPayload {
@@ -14,12 +15,14 @@ export interface ToolFailedPayload {
   readonly callID: string;
   readonly args: Record<string, unknown>;
   readonly error: string;
+  readonly durationMs: number | null;
 }
 
 export interface SessionStartedPayload {
   readonly kind: "session.started";
   readonly sessionID: string;
   readonly title?: string;
+  readonly parentID?: string;
 }
 
 export interface CaptureGapPayload {
@@ -35,12 +38,22 @@ export interface SessionIdlePayload {
   readonly sessionID: string;
 }
 
+export interface UserPromptPayload {
+  readonly kind: "user.prompt";
+  readonly sessionID: string;
+  readonly messageID: string;
+  readonly createdAt: string;
+  readonly text: string;
+  readonly truncated: boolean;
+}
+
 export type ParsedHook =
   | ToolAfterPayload
   | ToolFailedPayload
   | SessionStartedPayload
   | SessionIdlePayload
-  | CaptureGapPayload;
+  | CaptureGapPayload
+  | UserPromptPayload;
 
 export class HookPayloadParser {
   parse(raw: unknown): ParsedHook {
@@ -62,16 +75,22 @@ export class HookPayloadParser {
         reason: this.asString(payload["reason"], "reason"),
       };
     }
+    if (hook === "chat.message") {
+      return this.parseUserPrompt(payload);
+    }
     if (hook === "session.created" || hook === "session.idle") {
       const sessionID = this.asString(payload["sessionID"], "sessionID");
       if (hook === "session.idle") {
         return { kind: "session.idle", sessionID };
       }
       const title = payload["title"];
+      // The live parent field is not part of a frozen fixture; a wrong type is dropped, never fatal.
+      const parentID = payload["parentID"];
       return {
         kind: "session.started",
         sessionID,
         ...(typeof title === "string" && title.length > 0 ? { title } : {}),
+        ...(typeof parentID === "string" && parentID.length > 0 ? { parentID } : {}),
       };
     }
 
@@ -91,6 +110,7 @@ export class HookPayloadParser {
       callID: this.asString(input["callID"], "input.callID"),
       args: this.asRecord(input["args"], "input.args"),
       exitCode: typeof exit === "number" && Number.isFinite(exit) ? exit : null,
+      durationMs: this.duration(payload["durationMs"]),
     };
   }
 
@@ -103,7 +123,36 @@ export class HookPayloadParser {
       callID: this.asString(input["callID"], "input.callID"),
       args: input["args"] === undefined ? {} : this.asRecord(input["args"], "input.args"),
       error: this.asString(payload["error"], "error"),
+      durationMs: this.duration(payload["durationMs"]),
     };
+  }
+
+  private parseUserPrompt(payload: Record<string, unknown>): UserPromptPayload {
+    const text = this.asString(payload["text"], "text");
+    if (text.trim().length === 0) {
+      throw new TypeError("text must not be blank");
+    }
+    const createdAt = this.asString(payload["createdAt"], "createdAt");
+    if (!Number.isFinite(Date.parse(createdAt))) {
+      throw new TypeError("createdAt must be an ISO 8601 timestamp");
+    }
+    const truncated = payload["truncated"];
+    if (truncated !== undefined && typeof truncated !== "boolean") {
+      throw new TypeError("truncated must be a boolean");
+    }
+
+    return {
+      kind: "user.prompt",
+      sessionID: this.asString(payload["sessionID"], "sessionID"),
+      messageID: this.asString(payload["messageID"], "messageID"),
+      createdAt,
+      text,
+      truncated: truncated ?? false,
+    };
+  }
+
+  private duration(value: unknown): number | null {
+    return typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null;
   }
 
   private asRecord(value: unknown, field: string): Record<string, unknown> {

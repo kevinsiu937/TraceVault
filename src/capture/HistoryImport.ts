@@ -31,7 +31,10 @@ export class HistoryImport {
       let imported = false;
 
       const startId = `session_store:${session.id}:start`;
-      if (this.appendIfNew(startId)) {
+      if (this.store.hasEventOfType(session.id, "session.start", "plugin_hook")) {
+        // Live capture already saw this session's boundary; the imported one would double it.
+        skipped += 1;
+      } else if (this.appendIfNew(startId)) {
         this.store.append(
           this.factory.sessionStart({
             sessionId: session.id,
@@ -39,6 +42,7 @@ export class HistoryImport {
             receivedAt: session.createdAt,
             agentName,
             ...(session.title.length > 0 ? { title: session.title } : {}),
+            parentSessionId: session.parentId,
           }),
         );
         events += 1;
@@ -60,6 +64,7 @@ export class HistoryImport {
                 correlationId: mapped.correlationId,
                 receivedAt: mapped.timestamp,
                 agentName,
+                durationMs: mapped.durationMs,
               },
               mapped.classified,
             ),
@@ -70,7 +75,9 @@ export class HistoryImport {
       }
 
       const endId = `session_store:${session.id}:end`;
-      if (this.appendIfNew(endId)) {
+      if (this.store.hasEventOfType(session.id, "session.end", "plugin_hook")) {
+        skipped += 1;
+      } else if (this.appendIfNew(endId)) {
         this.store.append(
           this.factory.sessionEnd({
             sessionId: session.id,

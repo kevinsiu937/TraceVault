@@ -29,6 +29,7 @@ export class TimelineBuilder {
       target: this.target(event),
       outcome: this.outcome(event),
       time: event.timestamp,
+      durationMs: event.duration_ms,
       operation: event.type === "document.access" ? event.data.operation : null,
       detail: JSON.stringify(event, null, 2),
     };
@@ -48,6 +49,8 @@ export class TimelineBuilder {
         return event.data.reason;
       case "capture.duplicate":
         return event.data.of_event_id;
+      case "prompt.user":
+        return event.data.text;
       case "session.start":
       case "session.end":
         return "session";
@@ -65,6 +68,8 @@ export class TimelineBuilder {
         return "gap";
       case "capture.duplicate":
         return "duplicate";
+      case "prompt.user":
+        return "prompt";
       case "session.start":
       case "session.end":
         return "boundary";

@@ -1,8 +1,9 @@
+import type { EventForwarderPort } from "./EventForwarderPort.js";
 import type { PluginConfig } from "./PluginConfig.js";
 
 const TIMEOUT_MS = 2000;
 
-export class EventForwarder {
+export class EventForwarder implements EventForwarderPort {
   private readonly config: PluginConfig;
 
   constructor(config: PluginConfig) {

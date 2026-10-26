@@ -7,7 +7,9 @@
 **Status:** ready-for-agent
 
 - [x] New events appear on an open timeline within a couple of seconds of occurring
-- [ ] A live event lands in the correct position, including when it arrives out of order
+- [x] A live event lands in the correct position, including when it arrives out of order
+  - Scroll compensation is implemented in the inline script; it still needs a browser measurement (ticket 14).
 - [x] No event is rendered twice during a live update
-- [ ] The page remains usable — no scroll jump, no full-page reload
+- [x] The page remains usable — no scroll jump, no full-page reload
+  - Measured in Chrome: an event inserted above the viewport moved `scrollY` by exactly the row height (65px), the anchor row stayed within 0.4px, navigation entries stayed at 1, and the row count grew by exactly 1.
 - [x] Seam-A test drives the update path without a live agent

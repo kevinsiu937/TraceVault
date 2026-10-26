@@ -60,14 +60,59 @@ export class InvestigationService implements InvestigationServicePort {
   }
 
   listSessions(): SessionSummary[] {
-    return this.store.listSessions().map((session) => ({
-      sessionId: session.sessionId,
-      title: session.title,
-      agentName: session.agentName,
-      startedAt: session.startedAt,
-      endedAt: session.lastType === "session.end" ? session.lastAt : null,
-      eventCount: session.eventCount,
-    }));
+    const stored = this.store.listSessions();
+    const activity = new Map<string, Event[]>();
+    // shortcut: this scans every event on each list page load; index activity by session+timestamp once sessions reach the thousands.
+    for (const { event } of this.store.listAllOrdered()) {
+      if (META_TYPES.has(event.type)) {
+        continue;
+      }
+      const events = activity.get(event.session_id);
+      if (events === undefined) {
+        activity.set(event.session_id, [event]);
+      } else {
+        events.push(event);
+      }
+    }
+
+    return stored.map((session) => {
+      const analysed = this.analyse(activity.get(session.sessionId) ?? []);
+      return {
+        sessionId: session.sessionId,
+        parentSessionId: session.parentSessionId,
+        title: session.title,
+        agentName: session.agentName,
+        startedAt: session.startedAt,
+        endedAt: session.lastType === "session.end" ? session.lastAt : null,
+        eventCount: session.eventCount,
+        gapCount: session.gapCount,
+        filesTouched: session.filesTouched,
+        errorCount: session.errorCount,
+        deniedCount: session.deniedCount,
+        lastOutcome: session.lastOutcome,
+        density: analysed.density,
+        durationMs: analysed.durationMs,
+      };
+    });
+  }
+
+  private analyse(events: readonly Event[]): { density: number[]; durationMs: number | null } {
+    const density = new Array<number>(12).fill(0);
+    const times = events
+      .map((event) => Date.parse(event.timestamp))
+      .filter((time) => Number.isFinite(time));
+    if (times.length === 0) {
+      return { density, durationMs: null };
+    }
+
+    const first = Math.min(...times);
+    const last = Math.max(...times);
+    const span = last - first;
+    for (const time of times) {
+      const index = span === 0 ? 0 : Math.min(11, Math.floor(((time - first) / span) * 12));
+      density[index] = (density[index] ?? 0) + 1;
+    }
+    return { density, durationMs: times.length >= 2 ? span : null };
   }
 
   hasSession(sessionId: string): boolean {

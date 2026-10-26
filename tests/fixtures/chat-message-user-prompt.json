@@ -1,0 +1,7 @@
+{
+  "hook": "chat.message",
+  "sessionID": "ses_fixture_prompt",
+  "messageID": "msg_fixture_prompt",
+  "createdAt": "2026-10-26T14:31:07.314Z",
+  "text": "Reply with exactly PROBE-ONE"
+}

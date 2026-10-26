@@ -1,6 +1,10 @@
 export class DashboardStyle {
   render(): string {
-    return `<style>
+    return `<style>${this.css()}</style>`;
+  }
+
+  css(): string {
+    return `
 :root{
   color-scheme:light dark;
   --bg:#f5f5f7;--panel:#ffffff;--panel-2:#f8f8fa;--text:#1d1d1f;--muted:#6e6e73;
@@ -53,6 +57,12 @@ tbody td{padding:16px 20px;border-bottom:1px solid var(--line);vertical-align:mi
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover{background:color-mix(in srgb,var(--text) 4%,transparent)}
 .right{text-align:right;white-space:nowrap}
+.spark{width:48px;height:16px;display:block}
+.spark rect{fill:var(--accent)}
+.streak{margin:0 0 16px;padding:14px 20px;border-left:3px solid var(--warn)}
+.streak p{margin:0 0 6px;font-weight:600;color:var(--warn)}
+.streak ul{margin:0;padding-left:20px}
+.streak li{margin:2px 0}
 
 /* pills */
 .pill{
@@ -176,6 +186,6 @@ tbody tr:hover{background:color-mix(in srgb,var(--text) 4%,transparent)}
   .event-side .pill{font-size:11px;padding:2px 8px}
   .group-head{align-items:flex-start;flex-direction:column;gap:2px}
 }
-</style>`;
+`;
   }
 }

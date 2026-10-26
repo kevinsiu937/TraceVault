@@ -12,7 +12,7 @@ Payload depth stays forensics-safe: argument shape and a digest, not unrestricte
 
 - [x] Running a session that shells out, edits a file, reads a file and fetches a URL produces one event per action, each with the correct type and target
 - [x] A call to an external MCP tool server is captured with the server name and tool name
-- [ ] An intentionally denied tool call is recorded as denied, not as an error and not as absent
+- [x] An intentionally denied tool call is recorded as denied, not as an error and not as absent
 - [x] A failing tool call is recorded as error with no success fields populated
 - [x] No test or fixture contains a real credential, absolute user path or full argument payload
 - [x] Seam-B tests cover each event type, including the denied case

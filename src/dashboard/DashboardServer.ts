@@ -3,10 +3,18 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 
 import type { InvestigationServicePort } from "../service/InvestigationServicePort.js";
 import type { ActivityView } from "./ActivityView.js";
+import { DetailPaneView } from "./DetailPaneView.js";
 import { EventStream } from "./EventStream.js";
 import { FilterParams } from "./FilterParams.js";
 import { HookBodyReader } from "./HookBodyReader.js";
+import { SessionHeaderView } from "./SessionHeaderView.js";
 import type { SessionListView } from "./SessionListView.js";
+import { SessionPageView } from "./SessionPageView.js";
+import { SessionParams } from "./SessionParams.js";
+import { FileRailView } from "./FileRailView.js";
+import { GraphView } from "./GraphView.js";import { WaterfallView } from "./WaterfallView.js";
+import { SubagentPortalView } from "./SubagentPortalView.js";
+import type { SessionRenderContext } from "./SessionRenderContext.js";
 import type { TimelineView } from "./TimelineView.js";
 
 const LOOPBACK = "127.0.0.1";
@@ -17,15 +25,22 @@ export class DashboardServer {
   private server: Server | null = null;
   private readonly eventStream: EventStream;
   private readonly bodyReader = new HookBodyReader();
+  private readonly sessionPageView: SessionPageView;
 
   constructor(
     private readonly service: InvestigationServicePort,
     private readonly view: SessionListView,
-    private readonly timelineView: TimelineView,
+    timelineView: TimelineView,
     private readonly activityView: ActivityView,
     private readonly filterParams: FilterParams = new FilterParams(),
+    sessionPageView?: SessionPageView,
   ) {
     this.eventStream = new EventStream(service, timelineView);
+    this.sessionPageView = sessionPageView ?? new SessionPageView(
+      new SessionHeaderView(),
+      [new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView()],
+      new DetailPaneView(),
+    );
   }
 
   listen(port: number): Promise<number> {
@@ -76,7 +91,7 @@ export class DashboardServer {
       const url = new URL(request.url ?? "/", `http://${LOOPBACK}`);
       const path = url.pathname;
       const filter = this.filterParams.parse(url);
-      const filterQuery = this.filterParams.query(filter);
+      const state = SessionParams.parse(url);
 
       if (path === "/") {
         if (request.method !== "GET") {
@@ -133,15 +148,31 @@ export class DashboardServer {
         }
         const allEntries = this.service.getTimeline(sessionId);
         const entries = filter.active ? this.service.getTimeline(sessionId, filter) : allEntries;
-        const streamUrl = `${path}/events${filterQuery.length > 0 ? `?${filterQuery}` : ""}`;
-        const title =
-          this.service.listSessions().find((session) => session.sessionId === sessionId)?.title ?? "";
-        this.send(
-          response,
-          200,
-          this.timelineView.render(sessionId, entries, allEntries, filter, streamUrl, title),
-          "text/html; charset=utf-8",
-        );
+        const sessions = this.service.listSessions();
+        const index = sessions.findIndex((session) => session.sessionId === sessionId);
+        const summary = sessions[index] ?? {
+          sessionId,
+          parentSessionId: null,
+          title: "",
+          agentName: "",
+          startedAt: allEntries[0]?.time ?? "",
+          endedAt: null,
+          eventCount: allEntries.length,
+          gapCount: 0,
+        };
+        const context: SessionRenderContext = {
+          sessionId,
+          title: summary.title,
+          summary,
+          entries,
+          allEntries,
+          filter,
+          state,
+          sessions,
+          previousSessionId: index >= 0 ? sessions[index + 1]?.sessionId ?? null : null,
+          nextSessionId: index > 0 ? sessions[index - 1]?.sessionId ?? null : null,
+        };
+        this.send(response, 200, this.sessionPageView.render(context), "text/html; charset=utf-8");
         return;
       }
 

@@ -23,6 +23,7 @@ export class PluginHookCapture implements CapturePort {
         correlationId: null,
         receivedAt,
         ...(hook.title === undefined ? {} : { title: hook.title }),
+        parentSessionId: hook.parentID ?? null,
       });
     }
     if (hook.kind === "session.idle") {
@@ -30,8 +31,16 @@ export class PluginHookCapture implements CapturePort {
     }
     if (hook.kind === "capture.gap") {
       return this.factory.captureGap(
-        { sessionId: hook.sessionID, correlationId: null, receivedAt },
+        // The gap sorts where the outage ended, not where the retry arrived.
+        { sessionId: hook.sessionID, correlationId: null, receivedAt: new Date(hook.to) },
         { from: hook.from, to: hook.to, reason: hook.reason },
+      );
+    }
+    if (hook.kind === "user.prompt") {
+      return this.factory.promptUser(
+        // The prompt sorts when the user sent it, not when the service read it.
+        { sessionId: hook.sessionID, correlationId: hook.messageID, receivedAt: new Date(hook.createdAt) },
+        { text: hook.text, message_id: hook.messageID, truncated: hook.truncated },
       );
     }
 
@@ -48,7 +57,12 @@ export class PluginHookCapture implements CapturePort {
     const classified = this.classifier.classify(hook.tool, hook.args, outcome, exitCode);
 
     return this.factory.fromClassified(
-      { sessionId: hook.sessionID, correlationId: hook.callID, receivedAt },
+      {
+        sessionId: hook.sessionID,
+        correlationId: hook.callID,
+        receivedAt,
+        durationMs: hook.durationMs,
+      },
       classified,
     );
   }

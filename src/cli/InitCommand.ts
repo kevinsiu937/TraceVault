@@ -30,12 +30,13 @@ export class InitCommand {
     const pluginDir = new URL("../plugin/", import.meta.url).href;
 
     return `import { EventForwarder } from ${JSON.stringify(`${pluginDir}EventForwarder.js`)};
+import { PendingGapStore } from ${JSON.stringify(`${pluginDir}PendingGapStore.js`)};
 import { PluginConfig } from ${JSON.stringify(`${pluginDir}PluginConfig.js`)};
 import { TraceVaultPlugin } from ${JSON.stringify(`${pluginDir}TraceVaultPlugin.js`)};
 
 export const TraceVault = async () => {
   const config = new PluginConfig(${JSON.stringify(HOOK_URL)});
-  return new TraceVaultPlugin(new EventForwarder(config)).hooks();
+  return new TraceVaultPlugin(new EventForwarder(config), new PendingGapStore(config.gapStatePath)).hooks();
 };
 `;
   }

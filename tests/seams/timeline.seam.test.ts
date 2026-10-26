@@ -18,11 +18,19 @@ import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const SESSION = "ses_timeline";
 
-function toolAfter(tool: string, args: Record<string, unknown>, callID: string, at: string, sessionID = SESSION): unknown {
+function toolAfter(
+  tool: string,
+  args: Record<string, unknown>,
+  callID: string,
+  at: string,
+  sessionID = SESSION,
+  durationMs?: number,
+): Record<string, unknown> {
   return {
     hook: "tool.execute.after",
     input: { tool, sessionID, callID, args },
     output: { title: "t", metadata: { truncated: false } },
+    ...(durationMs === undefined ? {} : { durationMs }),
   };
 }
 
@@ -195,6 +203,28 @@ describe("seam A: session timeline page", () => {
     expect(body).toContain('class="event-detail"');
     expect(body).toContain("echo detail");
     expect(body).toContain("plugin_hook");
+  });
+
+  it("renders the measured duration in the row", async () => {
+    service.recordHookPayload(
+      toolAfter("bash", { command: "echo timed" }, "call_timed", "2026-10-25T10:00:01.000Z", SESSION, 1234),
+      new Date("2026-10-25T10:00:01.000Z"),
+    );
+
+    const body = await (await fetch(`${baseUrl}/sessions/${SESSION}`)).text();
+
+    expect(body).toContain("1.2s");
+  });
+
+  it("renders a dash when the event has no recorded duration", async () => {
+    service.recordHookPayload(
+      toolAfter("read", { filePath: "legacy.ts" }, "call_legacy", "2026-10-25T10:00:01.000Z"),
+      new Date("2026-10-25T10:00:01.000Z"),
+    );
+
+    const body = await (await fetch(`${baseUrl}/sessions/${SESSION}`)).text();
+
+    expect(body).toContain(">—</span>");
   });
 
   it("renders a thousand events in one page without dropping any", async () => {

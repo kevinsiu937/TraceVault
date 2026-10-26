@@ -1,0 +1,7 @@
+{
+  "hook": "capture.gap",
+  "sessionID": "ses_fixture_outage",
+  "from": "2026-10-26T14:13:09.107Z",
+  "to": "2026-10-26T14:13:32.598Z",
+  "reason": "capture endpoint unavailable"
+}

@@ -27,7 +27,13 @@ import { ToolClassifier } from "../capture/ToolClassifier.js";
 import { PluginHookCapture } from "../capture/PluginHookCapture.js";
 import { ActivityView } from "../dashboard/ActivityView.js";
 import { DashboardServer } from "../dashboard/DashboardServer.js";
+import { DetailPaneView } from "../dashboard/DetailPaneView.js";
+import { SessionHeaderView } from "../dashboard/SessionHeaderView.js";
 import { SessionListView } from "../dashboard/SessionListView.js";
+import { SessionPageView } from "../dashboard/SessionPageView.js";
+import { FileRailView } from "../dashboard/FileRailView.js";
+import { GraphView } from "../dashboard/GraphView.js";import { WaterfallView } from "../dashboard/WaterfallView.js";
+import { SubagentPortalView } from "../dashboard/SubagentPortalView.js";
 import { TimelineView } from "../dashboard/TimelineView.js";
 import { EventFactory } from "../schema/EventFactory.js";
 import { InvestigationService } from "../service/InvestigationService.js";
@@ -215,11 +221,18 @@ async function runService(options: RunOptions): Promise<number> {
     factory,
   );
   const service = new InvestigationService(capture, store, factory, new TimelineBuilder());
+  const timelineView = new TimelineView();
   const server = new DashboardServer(
     service,
     new SessionListView(),
-    new TimelineView(),
+    timelineView,
     new ActivityView(),
+    undefined,
+    new SessionPageView(
+      new SessionHeaderView(),
+      [new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView()],
+      new DetailPaneView(),
+    ),
   );
 
   let importLine: string;
