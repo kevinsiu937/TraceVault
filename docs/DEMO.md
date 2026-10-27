@@ -74,7 +74,7 @@ npm run build
 npm test
 ```
 
-7 seam files, 50 tests: capture (15), timeline (8), filters (6), history (7), sessions/list (5), integrity (4), install (5).
+20 seam+unit files, 143 tests.
 
 ## Phase 1 exit checklist
 
@@ -82,16 +82,16 @@ npm test
 |---|---|---|
 | Real session with shell, edit and fetch appears in order | PASS | `data/demo2.db` session `ses_e8c664512ffeMGlUg4majZGzMD` — 6 ordered events |
 | Session list on loopback with start, end/open, count, agent | PASS | `GET /` row: end `2026-10-25T15:07:35.340Z`, count 4 |
-| Errors and denials distinguishable | PARTIAL | error PASS (live POST + seam); denial path is an error-text heuristic; a live denied call could not be reproduced in this environment |
+| Errors and denials distinguishable | PASS | live permission rejection reproduced (`curl` matched an ask rule), frozen fixture + seam-B test, negative control; see docs/probes/ |
 | Ordering deterministic at equal timestamps | PASS | `capture.seam.test.ts` "orders two events with identical timestamps" |
 | Duplicate observation recorded and collapsed once | PASS | store has 2 actions + 1 duplicate; timeline shows 1 |
 | Append-only hash chain, tamper detected | PASS | `integrity.seam.test.ts` UPDATE and DELETE both fail with session + position |
 | Gaps visible as data | PASS | `capture.gap` stored; timeline renders `outcome-gap` |
 | Live timeline without reload | PASS (transport) | SSE seam test receives a new event; dedupe/positioning script in page |
 | Install/uninstall byte-identical | PASS | `install.seam.test.ts`, 5 tests |
-| Two concurrent sessions stay separate | PARTIAL | seam-A interleaved-session test PASS; two real sessions captured separately, but a second concurrent `opencode` process did not start under this nested runner |
+| Two concurrent sessions stay separate | PASS | two interleaved HTTP writers: both listed, each page isolated, order kept. Not proven with two real agent processes under the nested runner |
 | 1000-event page renders without stall | PASS | `timeline.seam.test.ts` renders 1000 rows; response under 2s on the local run |
-| No scroll jump on live insert | NOT MEASURED | requires a real browser session |
+| No scroll jump on live insert | PASS | Chrome/CDP, 1010 rows: insert above viewport moved scrollY by exactly the row height (65px), anchor moved 0.4px, 1 navigation |
 
 ## Known limitations
 

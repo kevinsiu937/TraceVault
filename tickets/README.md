@@ -13,7 +13,7 @@ One file per ticket, numbered in dependency order. Work the **frontier**: any ti
 | 07 | Honest gaps | 03, 04 | done |
 | 08 | Live timeline | 04 | done |
 | 09 | One command to install, one to remove | 01 | done |
-| 10 | Phase 1 exit verification | 05, 06, 07, 08, 09 | ready |
+| 10 | Phase 1 exit verification | 05, 06, 07, 08, 09 | done |
 | 11 | Every session OpenCode ever ran (history import) | 02, 03 | done |
 | 12 | A timeline you can read at a glance | 04, 11 | done |
 | 13 | Filters: show me only what I care about | 12 | done |
@@ -31,7 +31,7 @@ One file per ticket, numbered in dependency order. Work the **frontier**: any ti
 | 25 | Graph view: the run as structure | 16 | done |
 | 26 | Subagents nest under their parent session | 16, 19 | done — live parentID unproven |
 
-**Frontier now:** 10, 15, 20, 22, 24.
+**Frontier now:** 15.
 
 **Drafts 14–25** are written but not applied to the real repo — copy the files in if Kevin approves. 14 closes the open boxes on 02/07/08; 16–25 are the investigation-cockpit UI set (prototype-validated in the sketches).
 

@@ -10,7 +10,8 @@ This ticket also closes the loose ends: the exit criteria in the phase plan are 
 
 - [x] A scripted demo exists that any person can follow from a clean state in under five minutes (docs/DEMO.md)
 - [x] Running that demo produces a session whose every action appears in the timeline, in order
-- [ ] Two concurrent sessions stay separate in the list and in the timeline
+- [x] Two concurrent sessions stay separate in the list and in the timeline
+  - Proven with two interleaved HTTP writers (created, a1, b1, a2, b2): both rows present, each session page contained only its own actions, and each kept its order. Not proven with two real agent processes — a second concurrent `opencode` does not start under the nested runner.
 - [x] Install/uninstall reversibility is demonstrated during the demo
 - [x] Both seam suites are green and the phase-plan exit criteria are checked off in writing (docs/DEMO.md)
 - [x] Anything unmet is reported explicitly, with why (docs/DEMO.md)
