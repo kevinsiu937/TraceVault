@@ -6,11 +6,11 @@
 
 **Status:** ready-for-agent
 
-- [ ] Play/pause, step, scrubber, speed control and timer work on a session timeline
-- [ ] During playback, completed turns dim (opacity fade) and the active turn stays bright
-- [ ] Key-moment markers (errors, denied, gaps) appear as ticks on the scrubber; hover shows their label
-- [ ] Keyboard: space play/pause, ←/→ step
-- [ ] `prefers-reduced-motion` disables the dimming animation (per DESIGN.md)
-- [ ] Seam-A test: playback state advances the active turn marker across a fixture session
+- [x] Play/pause, step, scrubber, speed control and timer work on a session timeline
+- [x] During playback, completed turns dim (opacity fade) and the active turn stays bright
+- [x] Key-moment markers (errors, denied, gaps) appear as ticks on the scrubber; hover shows their label
+- [x] Keyboard: space play/pause, ←/→ step
+- [x] `prefers-reduced-motion` disables the dimming animation (per DESIGN.md)
+- [x] Seam-A test: playback state advances the active turn marker across a fixture session
 
 **Technical notes (from prototype):** Prototype `001-transcript` implements the full bar (play button, scrubber with tick marks, speed select, timer, dimming). Research source: claude-replay — one self-contained HTML file with vanilla JS proved this fits the no-build constraint. The dimming is CSS opacity classes; the scrubber is a positioned div, not an `<input type=range>`, so ticks render deterministically.

@@ -32,7 +32,8 @@ import { SessionHeaderView } from "../dashboard/SessionHeaderView.js";
 import { SessionListView } from "../dashboard/SessionListView.js";
 import { SessionPageView } from "../dashboard/SessionPageView.js";
 import { FileRailView } from "../dashboard/FileRailView.js";
-import { GraphView } from "../dashboard/GraphView.js";import { WaterfallView } from "../dashboard/WaterfallView.js";
+import { GraphView } from "../dashboard/GraphView.js";
+import { ReplayBarView } from "../dashboard/ReplayBarView.js";import { WaterfallView } from "../dashboard/WaterfallView.js";
 import { SubagentPortalView } from "../dashboard/SubagentPortalView.js";
 import { TimelineView } from "../dashboard/TimelineView.js";
 import { EventFactory } from "../schema/EventFactory.js";
@@ -230,7 +231,7 @@ async function runService(options: RunOptions): Promise<number> {
     undefined,
     new SessionPageView(
       new SessionHeaderView(),
-      [new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView()],
+      [new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView(), new ReplayBarView()],
       new DetailPaneView(),
     ),
   );

@@ -1,4 +1,5 @@
 import type { TimelineEntry } from "../service/TimelineEntry.js";
+import type { ReplayTurnState } from "./ReplayTimeline.js";
 
 const ESCAPES: Record<string, string> = {
   "&": "&amp;",
@@ -11,11 +12,14 @@ const ESCAPES: Record<string, string> = {
 export interface TimelineRowOptions {
   readonly href?: string;
   readonly selected?: boolean;
+  readonly replay?: ReplayTurnState;
 }
 
 export class TimelineRow {
   render(entry: TimelineEntry, options: TimelineRowOptions = {}): string {
     const selected = options.selected === true;
+    const replay =
+      options.replay === "past" || options.replay === "active" ? ` is-${options.replay}` : "";
     const marker = selected ? ' aria-current="true"' : "";
     const row = `<time class="event-time mono" datetime="${this.escape(entry.time)}" title="${this.escape(entry.time)}">${this.escape(this.shortTime(entry.time))}</time>
 <span class="marker" data-kind="${this.escape(entry.type)}" aria-hidden="true"></span>
@@ -25,7 +29,7 @@ export class TimelineRow {
       ? `<summary class="event-row"${marker}>${row}</summary>`
       : `<a class="event-row${selected ? " selected" : ""}" href="${this.escape(options.href)}"${marker}>${row}</a>`;
 
-    return `<li class="event" data-event-id="${this.escape(entry.eventId)}" data-time="${this.escape(entry.time)}" data-kind="${this.escape(entry.type)}" data-outcome="${this.escape(entry.outcome)}" id="event-${this.escape(entry.eventId)}">
+    return `<li class="event${replay}" data-event-id="${this.escape(entry.eventId)}" data-time="${this.escape(entry.time)}" data-kind="${this.escape(entry.type)}" data-outcome="${this.escape(entry.outcome)}" id="event-${this.escape(entry.eventId)}">
 ${head}
 <details class="event-details event-raw">
 <summary class="raw-summary" aria-label="Show stored event JSON">raw</summary>

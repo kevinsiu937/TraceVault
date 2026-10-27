@@ -13,13 +13,14 @@ const ESCAPES: Record<string, string> = {
 type SubagentStatus = "open" | "ended" | "uncovered";
 
 /**
- * The cockpit's bottom slot: the subagents this session spawned. A root with no
- * children renders nothing, so the shell keeps its 230px/1fr/330px grid.
+ * The cockpit's top slot: the subagents this session spawned, above the
+ * timeline. A root with no children renders nothing, so the shell keeps its
+ * 230px/1fr/330px grid.
  */
 export class SubagentPortalView implements SessionPaneView {
   readonly id = "subagents";
   readonly label = "Subagents";
-  readonly slot = "bottom" as const;
+  readonly slot = "top" as const;
 
   render(context: SessionRenderContext): string {
     const children = context.sessions

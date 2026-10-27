@@ -37,7 +37,7 @@ Evidence: `docs/probes/phase-1-live-probes.md`. Decisions are recorded at the bo
 
 ## What is left
 
-1. **Ticket 24 — replay bar.** Decision locked: playback position is URL state `?t=<ms>`; seam A steps `t` and asserts active/dimmed turn; smooth animation verified in Chrome only. Build on 22's turn dividers. Acceptance boxes are in `tickets/24-replay-bar.md`.
+1. ~~**Ticket 24 — replay bar.**~~ **Done.** `ReplayBarView` + `ReplayTimeline`, `?t=<ms>` URL state, sticky bar, turn dimming, error/denied/gap ticks, keyboard controls, reduced-motion fallback. Registered in both composition roots. Live check: `?t=5000` on a seeded two-turn session marks turn 1 past, turn 2 active, bar and error tick present.
 2. **Ticket 22 — one deferred box.** "Consecutive identical calls group into `N × command`." Deferred because collapsing changes row counts that the 1000-row and duplicate-row tests assert. Revisit those tests first, then implement.
 3. **Ticket 10 — Phase 1 exit verification.** Not run. Checklist and demo steps in `docs/DEMO.md`; update its status table with what you actually observe. Two boxes need real conditions that did not exist here: two concurrent agent sessions, and a live browser scroll measurement (the CDP probe in `docs/probes` shows the method).
 4. **Ticket 15 — two boxes need a push.** The workflow is committed; the fixture-hash and red-PR demos require a remote.

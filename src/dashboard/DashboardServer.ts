@@ -12,7 +12,8 @@ import type { SessionListView } from "./SessionListView.js";
 import { SessionPageView } from "./SessionPageView.js";
 import { SessionParams } from "./SessionParams.js";
 import { FileRailView } from "./FileRailView.js";
-import { GraphView } from "./GraphView.js";import { WaterfallView } from "./WaterfallView.js";
+import { GraphView } from "./GraphView.js";
+import { ReplayBarView } from "./ReplayBarView.js";import { WaterfallView } from "./WaterfallView.js";
 import { SubagentPortalView } from "./SubagentPortalView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
 import type { TimelineView } from "./TimelineView.js";
@@ -38,7 +39,7 @@ export class DashboardServer {
     this.eventStream = new EventStream(service, timelineView);
     this.sessionPageView = sessionPageView ?? new SessionPageView(
       new SessionHeaderView(),
-      [new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView()],
+      [new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView(), new ReplayBarView()],
       new DetailPaneView(),
     );
   }

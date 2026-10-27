@@ -14,5 +14,5 @@ export interface SessionPane {
 }
 
 export interface SessionPaneView extends SessionPane {
-  readonly slot: "left" | "center" | "bottom";
+  readonly slot: "top" | "left" | "center" | "bottom";
 }

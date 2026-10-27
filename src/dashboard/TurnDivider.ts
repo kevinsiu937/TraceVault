@@ -1,4 +1,5 @@
 import type { Turn } from "../service/Turn.js";
+import type { ReplayTurnState } from "./ReplayTimeline.js";
 
 const ESCAPES: Record<string, string> = {
   "&": "&amp;",
@@ -12,10 +13,13 @@ const PROMPT_LIMIT = 90;
 
 /** The divider that introduces one turn inside the timeline list. */
 export class TurnDivider {
-  render(turn: Turn): string {
+  render(turn: Turn, replay: ReplayTurnState = "none"): string {
     const errors = turn.entries.filter((entry) => entry.outcome === "error").length;
     const denied = turn.entries.filter((entry) => entry.outcome === "denied").length;
     const classes = ["turn-divider"];
+    if (replay === "past" || replay === "active") {
+      classes.push(`is-${replay}`);
+    }
     if (errors > 0) {
       classes.push("has-errors");
     } else if (denied > 0) {

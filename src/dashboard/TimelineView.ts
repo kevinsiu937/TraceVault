@@ -3,6 +3,7 @@ import type { TimelineEntry } from "../service/TimelineEntry.js";
 import { TurnBuilder } from "../service/TurnBuilder.js";
 import { FilterBar } from "./FilterBar.js";
 import { FilterParams } from "./FilterParams.js";
+import { ReplayTimeline } from "./ReplayTimeline.js";
 import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
 import { TimelineRow } from "./TimelineRow.js";
@@ -37,21 +38,18 @@ export class TimelineView implements SessionPaneView {
       ? `${context.entries.length} of ${context.allEntries.length} events`
       : `${context.entries.length} events`;
     const empty = `<div class="card empty">No events match this filter. <a href="${this.escape(this.params.href(basePath, ActivityFilter.none))}">Clear filters</a></div>`;
-    const turns = this.turnBuilder.build(
-      context.allEntries,
-      context.entries,
-      context.filter.active,
-    );
+    const turns = ReplayTimeline.from(context, this.turnBuilder).turns;
     const rows = context.entries.length === 0
       ? ""
       : turns
-          .map((turn) =>
+          .map(({ turn, state }) =>
             [
-              this.divider.render(turn),
+              this.divider.render(turn, state),
               ...turn.entries.map((entry) =>
                 this.row.render(entry, {
                   href: context.state.href(basePath, { event: entry.eventId }),
                   selected: context.state.event === entry.eventId,
+                  replay: state,
                 }),
               ),
             ].join("\n"),
@@ -81,7 +79,12 @@ ${rows}
 .center .event-raw[open]{background:var(--panel-2)}
 .center .event:target{animation:tv-flash 1.1s ease-out 1}
 @keyframes tv-flash{from{background:color-mix(in srgb,var(--accent) 20%,transparent)}to{background:transparent}}
-@media (prefers-reduced-motion:reduce){.center .event:target{animation:none;background:color-mix(in srgb,var(--accent) 12%,transparent)}}
+.center .event.is-past,.center .turn-divider.is-past{opacity:.35;transition:opacity .25s ease}
+.center .event.is-active,.center .turn-divider.is-active{opacity:1}
+@media (prefers-reduced-motion:reduce){
+  .center .event.is-past,.center .turn-divider.is-past{transition:none}
+  .center .event:target{animation:none;background:color-mix(in srgb,var(--accent) 12%,transparent)}
+}
 .center .turn-divider{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:6px 0 0;padding:8px 20px;background:var(--panel-2);border-left:3px inset var(--line);color:var(--muted);font-size:11px;list-style:none}
 .center .turn-divider:first-child{margin-top:0}
 .center .turn-prompt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}

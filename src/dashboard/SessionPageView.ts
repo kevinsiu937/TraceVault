@@ -12,7 +12,7 @@ const ESCAPES: Record<string, string> = {
 };
 
 /**
- * The cockpit shell. It knows three slots and the right-hand detail pane, and
+ * The cockpit shell. It knows four slots and the right-hand detail pane, and
  * nothing about the concrete views that fill them.
  */
 export class SessionPageView {
@@ -24,6 +24,7 @@ export class SessionPageView {
   ) {}
 
   render(context: SessionRenderContext): string {
+    const top = this.panes.filter((pane) => pane.slot === "top");
     const left = this.panes.filter((pane) => pane.slot === "left");
     const center = this.panes.filter((pane) => pane.slot === "center");
     const bottom = this.panes.filter((pane) => pane.slot === "bottom");
@@ -65,12 +66,13 @@ ${css}
 <body class="cockpit">
 <div class="cockpit-shell">
 ${this.header.render(context)}
-${bottom.length > 0 ? `<div class="cockpit-bottom">${bottom.map((pane) => pane.render(context)).join("\n")}</div>` : ""}
+${top.length > 0 ? `<div class="cockpit-top">${top.map((pane) => pane.render(context)).join("\n")}</div>` : ""}
 <div class="cockpit-grid">
 <nav class="pane rail" aria-label="Files">${left.map((pane) => pane.render(context)).join("\n")}</nav>
 <main class="pane center" aria-label="Session timeline">${tabs}${active === undefined ? "" : active.render(context)}</main>
 <aside class="pane detail" aria-label="Event detail">${this.detail.render(context)}</aside>
 </div>
+${bottom.length > 0 ? `<div class="cockpit-bottom">${bottom.map((pane) => pane.render(context)).join("\n")}</div>` : ""}
 </div>
 ${script.length > 0 ? `<script>\n${script}\n</script>` : ""}
 </body>
@@ -96,7 +98,8 @@ ${script.length > 0 ? `<script>\n${script}\n</script>` : ""}
 .cockpit .rail,.cockpit .detail{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}
 .cockpit main.pane{max-width:none;margin:0;padding:16px}
 .cockpit .center .timeline{background:transparent;box-shadow:none;border-radius:0}
-.cockpit .cockpit-bottom{margin-bottom:16px}
+.cockpit .cockpit-top{margin-bottom:16px}
+.cockpit .cockpit-bottom{margin-top:16px}
 .views{display:flex;gap:4px;margin:0 0 14px;border-bottom:1px solid var(--line)}
 .view-tab{padding:8px 12px;color:var(--muted);font-size:13px;border-bottom:2px solid transparent;margin-bottom:-1px}
 .view-tab:hover{color:var(--text);text-decoration:none}
