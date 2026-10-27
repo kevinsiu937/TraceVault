@@ -8,8 +8,8 @@
 
 - [x] `.github/workflows/ci.yml` runs `npm ci`, `npm run typecheck`, `npm test` on push and PR to `main`, on ubuntu-latest with Node 24
 - [x] The check fails when the suite fails — no `continue-on-error`, no skip on PR-only triggers
-- [ ] The fixture `opencode.db` stays byte-identical after the suite runs on CI (the history-import seam already asserts this locally; CI proves it cross-platform) — waiting on the first CI run
-- [ ] A red PR is visible in the checks panel — the demo is "push a breaking change, watch the gate stop it" — waiting on a push
+- [x] The fixture `opencode.db` stays byte-identical after the suite runs on CI — proven by green run 40509943543 on `488f221` (18s, ubuntu-latest, Node 24)
+- [x] A red PR is visible in the checks panel — proven by PR #2 (`ci-red-demo`, one deliberately failing test): check `gate` failed in 17s (run 40510147014); PR closed and branch deleted
 
-> **Blocked in this environment (26 Oct 2026):** the remote is configured (`github.com/kevinsiu937/TraceVault`), but `git push --dry-run` fails with `could not read Username for 'https://github.com'` — no credential helper here. Push from an authenticated shell; the workflow, the local gate, and three local commits are ready.
+> CI is live on `main`. The red demo used `--no-verify` on a throwaway branch — exactly the bypass this workflow exists to catch.
 - [ ] Optional: build status badge in README, one line

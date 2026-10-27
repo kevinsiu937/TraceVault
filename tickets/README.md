@@ -18,7 +18,7 @@ One file per ticket, numbered in dependency order. Work the **frontier**: any ti
 | 12 | A timeline you can read at a glance | 04, 11 | done |
 | 13 | Filters: show me only what I care about | 12 | done |
 | 14 | Settle the three live unknowns (probe) | 02, 07, 08 | done |
-| 15 | Gate on shared pushes (CI) | — | open — CI needs a push |
+| 15 | Gate on shared pushes (CI) | — | done |
 | 16 | The investigation cockpit: three-pane session view | 04, 12 | done |
 | 17 | Waterfall view: bars on a real time axis | 16 | done |
 | 18 | Real per-tool duration (data, not idle) | 02 | open — waterfall pending (17) |
@@ -31,7 +31,7 @@ One file per ticket, numbered in dependency order. Work the **frontier**: any ti
 | 25 | Graph view: the run as structure | 16 | done |
 | 26 | Subagents nest under their parent session | 16, 19 | done — live parentID unproven |
 
-**Frontier now:** 15.
+**Frontier now:** none — all tickets closed.
 
 **Drafts 14–25** are written but not applied to the real repo — copy the files in if Kevin approves. 14 closes the open boxes on 02/07/08; 16–25 are the investigation-cockpit UI set (prototype-validated in the sketches).
 
