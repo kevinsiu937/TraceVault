@@ -10,4 +10,6 @@
 - [x] The check fails when the suite fails — no `continue-on-error`, no skip on PR-only triggers
 - [ ] The fixture `opencode.db` stays byte-identical after the suite runs on CI (the history-import seam already asserts this locally; CI proves it cross-platform) — waiting on the first CI run
 - [ ] A red PR is visible in the checks panel — the demo is "push a breaking change, watch the gate stop it" — waiting on a push
+
+> **Blocked in this environment (26 Oct 2026):** the remote is configured (`github.com/kevinsiu937/TraceVault`), but `git push --dry-run` fails with `could not read Username for 'https://github.com'` — no credential helper here. Push from an authenticated shell; the workflow, the local gate, and three local commits are ready.
 - [ ] Optional: build status badge in README, one line
