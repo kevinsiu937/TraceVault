@@ -29,7 +29,7 @@
 - [x] Clicking a child opens its cockpit; that page has a working `↑ Parent session` link
 - [x] A root without children shows no portal
 - [x] Seam-A test: parent page lists N children, main list excludes them, child page links back
-- [ ] Imported child sessions carry the real `parent_session_id`; a child captured live without the field is still grouped after the next import
+- [x] Imported child sessions carry the real `parent_session_id`; live children also carry it (probed: a spawned subagent's `session.start` stored its parent), so the earlier "live without the field" fallback is no longer reachable
 
 Imported children do carry `parent_session_id` (seam B, temp OpenCode-shaped store). The
 second half is not proven: `HistoryImport` skips its `session.start` when a live one already

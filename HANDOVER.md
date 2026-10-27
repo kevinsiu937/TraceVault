@@ -41,7 +41,7 @@ Evidence: `docs/probes/phase-1-live-probes.md`. Decisions are recorded at the bo
 2. **Ticket 22 — one deferred box.** "Consecutive identical calls group into `N × command`." Deferred because collapsing changes row counts that the 1000-row and duplicate-row tests assert. Revisit those tests first, then implement.
 3. ~~**Ticket 10 — Phase 1 exit verification.**~~ **Done.** `docs/DEMO.md` now records PASS for denials, gaps, ordering, duplicate collapse, integrity, install reversibility, gaps-as-data, and live scroll (Chrome/CDP). Concurrency is proven with two interleaved HTTP writers, not two agent processes — that limit is stated in the table.
 4. **Ticket 15 — two boxes need a push.** The workflow is committed; the fixture-hash and red-PR demos require a remote.
-5. **Live `parentID` unverified.** Subagent nesting works from import; a subagent captured live may only get its parent link after the next import. Probe a real subagent spawn, then freeze the payload if the field exists.
+5. ~~**Live `parentID` unverified.**~~ **Verified:** a spawned subagent's live `session.start` stored its parent id (30 live children with parents in the store). The import-only fallback is therefore unused.
 
 ## Known caveats (do not "fix" without a decision)
 
