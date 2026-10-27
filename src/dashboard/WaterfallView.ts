@@ -168,42 +168,17 @@ ${lanes}
 </li>`;
   }
 
-  /**
-   * TimelineEntry keeps the gap window only inside the stored event JSON, so the
-   * band has to read `data.from` / `data.to` / `data.reason` from `detail`.
-   */
+  // The gap window is first-class on TimelineEntry; no JSON parsing in a view.
   private gapWindow(entry: TimelineEntry): GapWindow | null {
-    try {
-      const parsed: unknown = JSON.parse(entry.detail);
-      if (typeof parsed !== "object" || parsed === null) {
-        return null;
-      }
-      const data = (parsed as Record<string, unknown>).data;
-      if (typeof data !== "object" || data === null) {
-        return null;
-      }
-      const record = data as Record<string, unknown>;
-      const from = record.from;
-      const to = record.to;
-      const reason = record.reason;
-      if (typeof from !== "string" || typeof to !== "string") {
-        return null;
-      }
-      const fromTime = this.time(from);
-      const toTime = this.time(to);
-      if (fromTime === null || toTime === null) {
-        return null;
-      }
-      return {
-        from: fromTime,
-        to: toTime,
-        rawFrom: from,
-        rawTo: to,
-        reason: typeof reason === "string" && reason.length > 0 ? reason : entry.target,
-      };
-    } catch {
+    if (entry.gapFrom === null || entry.gapTo === null) {
       return null;
     }
+    const fromTime = this.time(entry.gapFrom);
+    const toTime = this.time(entry.gapTo);
+    if (fromTime === null || toTime === null) {
+      return null;
+    }
+    return { from: fromTime, to: toTime, rawFrom: entry.gapFrom, rawTo: entry.gapTo, reason: entry.target };
   }
 
   private time(value: string): number | null {

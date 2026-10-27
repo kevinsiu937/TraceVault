@@ -160,6 +160,13 @@ export class DashboardServer {
           endedAt: null,
           eventCount: allEntries.length,
           gapCount: 0,
+          lastActivityAt: allEntries[0]?.time ?? "",
+          filesTouched: 0,
+          errorCount: 0,
+          deniedCount: 0,
+          lastOutcome: null,
+          density: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          durationMs: null,
         };
         const context: SessionRenderContext = {
           sessionId,

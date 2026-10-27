@@ -1,5 +1,5 @@
 import type { ActivityFilter } from "../service/ActivityFilter.js";
-import type { SessionSummary, SessionSummaryCore } from "../service/SessionSummary.js";
+import type { SessionSummary } from "../service/SessionSummary.js";
 import type { TimelineEntry } from "../service/TimelineEntry.js";
 import type { SessionParams } from "./SessionParams.js";
 
@@ -10,7 +10,7 @@ import type { SessionParams } from "./SessionParams.js";
 export interface SessionRenderContext {
   readonly sessionId: string;
   readonly title: string;
-  readonly summary: SessionSummaryCore;
+  readonly summary: SessionSummary;
   readonly entries: readonly TimelineEntry[];
   readonly allEntries: readonly TimelineEntry[];
   readonly filter: ActivityFilter;

@@ -5,6 +5,8 @@ export interface TimelineEntry {
   readonly outcome: string;
   readonly time: string;
   readonly durationMs: number | null;
+  readonly gapFrom: string | null;
+  readonly gapTo: string | null;
   readonly operation: string | null;
   readonly detail: string;
 }

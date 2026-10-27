@@ -31,6 +31,8 @@ export class TimelineBuilder {
       time: event.timestamp,
       durationMs: event.duration_ms,
       operation: event.type === "document.access" ? event.data.operation : null,
+      gapFrom: event.type === "capture.gap" ? event.data.from : null,
+      gapTo: event.type === "capture.gap" ? event.data.to : null,
       detail: JSON.stringify(event, null, 2),
     };
   }

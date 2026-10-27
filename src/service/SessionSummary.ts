@@ -1,16 +1,13 @@
-export interface SessionSummaryCore {
+export interface SessionSummary {
   readonly sessionId: string;
   readonly parentSessionId: string | null;
   readonly title: string;
   readonly agentName: string;
   readonly startedAt: string;
   readonly endedAt: string | null;
+  readonly lastActivityAt: string;
   readonly eventCount: number;
   readonly gapCount: number;
-}
-
-export interface SessionSummary extends SessionSummaryCore {
-  readonly lastActivityAt: string;
   readonly filesTouched: number;
   readonly errorCount: number;
   readonly deniedCount: number;
