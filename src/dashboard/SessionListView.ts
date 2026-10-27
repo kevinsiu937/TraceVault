@@ -48,7 +48,7 @@ ${roots.length === 0 ? "<div class=\"card empty\">No sessions captured yet.</div
 
     return `<div class="card">
 <table>
-<thead><tr><th>Session</th><th>Agent</th><th>Started</th><th>Density</th><th class="right">Events</th><th class="right">Files</th><th class="right">Errors</th><th class="right">Denied</th><th class="right">Duration</th><th>Status</th><th>Outcome</th></tr></thead>
+<thead><tr><th>Session</th><th>Agent</th><th>Last active</th><th>Density</th><th class="right">Events</th><th class="right">Files</th><th class="right">Errors</th><th class="right">Denied</th><th class="right">Duration</th><th>Status</th><th>Outcome</th></tr></thead>
 <tbody>
 ${rows}
 </tbody>
@@ -67,7 +67,7 @@ ${rows}
         ? '<span class="muted">—</span>'
         : `<span class="pill closed">${this.escapeHtml(session.endedAt)}</span>`;
     const badge = this.badge(session);
-    return `<tr data-session-id="${this.escapeHtml(session.sessionId)}"><td><a href="/sessions/${encodeURIComponent(session.sessionId)}">${this.escapeHtml(label)}</a>${secondary}</td><td class="muted">${this.escapeHtml(session.agentName)}</td><td class="muted mono">${this.escapeHtml(session.startedAt)}</td><td>${this.sparkline(session.density)}</td><td class="right mono">${session.eventCount}</td><td class="right mono">${session.filesTouched}</td><td class="right mono">${session.errorCount}</td><td class="right mono">${session.deniedCount}</td><td class="right mono">${this.duration(session.durationMs)}</td><td>${status}</td><td><span class="pill ${badge.className}">${badge.label}</span></td></tr>`;
+    return `<tr data-session-id="${this.escapeHtml(session.sessionId)}"><td><a href="/sessions/${encodeURIComponent(session.sessionId)}">${this.escapeHtml(label)}</a>${secondary}</td><td class="muted">${this.escapeHtml(session.agentName)}</td><td class="muted mono" title="started ${this.escapeHtml(session.startedAt)}">${this.escapeHtml(session.lastActivityAt)}</td><td>${this.sparkline(session.density)}</td><td class="right mono">${session.eventCount}</td><td class="right mono">${session.filesTouched}</td><td class="right mono">${session.errorCount}</td><td class="right mono">${session.deniedCount}</td><td class="right mono">${this.duration(session.durationMs)}</td><td>${status}</td><td><span class="pill ${badge.className}">${badge.label}</span></td></tr>`;
   }
 
   private renderStreaks(sessions: readonly SessionSummary[]): string {

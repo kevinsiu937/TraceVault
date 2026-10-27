@@ -83,6 +83,7 @@ export class InvestigationService implements InvestigationServicePort {
         title: session.title,
         agentName: session.agentName,
         startedAt: session.startedAt,
+        lastActivityAt: session.lastAt,
         endedAt: session.lastType === "session.end" ? session.lastAt : null,
         eventCount: session.eventCount,
         gapCount: session.gapCount,

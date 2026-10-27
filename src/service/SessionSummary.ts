@@ -10,6 +10,7 @@ export interface SessionSummaryCore {
 }
 
 export interface SessionSummary extends SessionSummaryCore {
+  readonly lastActivityAt: string;
   readonly filesTouched: number;
   readonly errorCount: number;
   readonly deniedCount: number;
