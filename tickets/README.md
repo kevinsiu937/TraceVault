@@ -33,7 +33,22 @@ One file per ticket, numbered in dependency order. Work the **frontier**: any ti
 | 25 | Graph view: the run as structure | 16 | done |
 | 26 | Subagents nest under their parent session | 16, 19 | done |
 
-**Frontier now:** none — all Phase 1 tickets closed.
+## Phase 2: workflow scanner
+
+Spec: `docs/spec/phase-2.md`.
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 27 | Self-modification, flagged end to end (tracer bullet) | Phase 2 spec approved | ready once the spec is approved |
+| 28 | Exfiltration chain: a sensitive read, then data leaves | 27 | blocked |
+| 29 | Probing: repeated denied calls | 28 | blocked |
+| 30 | Destructive action after a declared freeze | 28 | blocked |
+| 31 | Scope drift: access outside the project | 28 | blocked |
+| 32 | Escalation then use (probe first) | 28 | blocked |
+| 33 | Phase 2 exit verification | 27, 28, 29, 30, 31 | blocked |
+| 34 | Opt-in blocking: refuse before it runs | 33 | blocked |
+
+**Frontier now:** 27, once Kevin approves the Phase 2 spec.
 
 ## Dependency shape
 
@@ -69,6 +84,18 @@ One file per ticket, numbered in dependency order. Work the **frontier**: any ti
 ```
 
 16 is the UI tracer bullet: it establishes the three-pane cockpit every other UI ticket hangs off.
+
+### Phase 2
+
+```
+27 ─► 28 ─┬─► 29 ─┐
+          ├─► 30 ─┤
+          ├─► 31 ─┼─► 33 ─► 34
+          └─► 32  │
+   27, 28 ────────┘
+```
+
+27 is the scanner's tracer bullet: one single-step rule through loader, scanner, service, page and Seam C. 28 proves multi-step matching. 32 is off the exit path because it depends on a probe. 34 adds blocking last, and only as an opt-in.
 
 ## Rules for whoever picks these up
 
