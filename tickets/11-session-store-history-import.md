@@ -8,7 +8,7 @@ Import is idempotent: running it twice does not duplicate a single event. Sessio
 
 **Blocked by:** 02 — Every tool type, with outcomes. 03 — Session boundaries and open sessions.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] `tracevault import` ingests every session in OpenCode's store, with title, agent, start and end
 - [x] Every tool call inside those sessions becomes an event with the correct type and target

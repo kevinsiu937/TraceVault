@@ -6,7 +6,7 @@ This is a property of the store, not a headline feature: it exists so the reader
 
 **Blocked by:** 01 ??Walking skeleton.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Each stored event references the hash of its predecessor
 - [x] Modifying any stored event makes verification fail and names the first bad position

@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 — Session boundaries and open sessions.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Live probe: a session with ≥2 user prompts is run; the raw hook payload for the prompt boundary is recorded and frozen as a fixture
 - [x] The report says what happened — which identifier/field separates one user prompt from the next (per AGENTS.md §3: "say in the report that this is what happened")

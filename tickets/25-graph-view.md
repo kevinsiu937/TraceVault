@@ -4,7 +4,7 @@
 
 **Blocked by:** 16 — The investigation cockpit: three-pane session view.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Consecutive same-kind events aggregate into one node showing kind, count, and error count
 - [x] Edges connect groups in execution order; an edge turns red if its group contained an error

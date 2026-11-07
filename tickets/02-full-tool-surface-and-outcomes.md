@@ -8,7 +8,7 @@ Payload depth stays forensics-safe: argument shape and a digest, not unrestricte
 
 **Blocked by:** 01 — Walking skeleton.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Running a session that shells out, edits a file, reads a file and fetches a URL produces one event per action, each with the correct type and target
 - [x] A call to an external MCP tool server is captured with the server name and tool name

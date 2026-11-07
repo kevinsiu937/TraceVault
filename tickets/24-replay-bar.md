@@ -4,7 +4,7 @@
 
 **Blocked by:** 16 — The investigation cockpit: three-pane session view. 22 — Turn-grouped collapsible list.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Play/pause, step, scrubber, speed control and timer work on a session timeline
 - [x] During playback, completed turns dim (opacity fade) and the active turn stays bright

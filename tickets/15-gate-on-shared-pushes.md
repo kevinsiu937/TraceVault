@@ -4,7 +4,7 @@
 
 **Blocked by:** none — the suite already passes on a clean clone (typecheck clean, 50/50 tests across 7 seam suites).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] `.github/workflows/ci.yml` runs `npm ci`, `npm run typecheck`, `npm test` on push and PR to `main`, on ubuntu-latest with Node 24
 - [x] The check fails when the suite fails — no `continue-on-error`, no skip on PR-only triggers

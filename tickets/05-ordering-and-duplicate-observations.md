@@ -6,7 +6,7 @@ A fixture set is frozen here: payloads captured from a real session, stored as f
 
 **Blocked by:** 04 — The session timeline page.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Two events with identical timestamps order deterministically and the order is asserted in a test
 - [x] A duplicated observation appears once in the timeline and is recorded as a duplicate in the store

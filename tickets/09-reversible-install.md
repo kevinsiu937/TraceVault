@@ -6,7 +6,7 @@ Trying the tool must never feel like a commitment — that is a product requirem
 
 **Blocked by:** 01 — Walking skeleton.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] One command attaches the instrumentation to the local agent
 - [x] One command removes it and leaves the agent configuration byte-identical to before installation

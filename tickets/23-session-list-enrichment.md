@@ -4,7 +4,7 @@
 
 **Blocked by:** 13 — Filters: show me only what I care about. 16 — The investigation cockpit: three-pane session view.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Each session row shows: sparkline of event density, events, files, errors, denied, duration, outcome badge
 - [x] Outcome badges are not colour-only (word present): clean / has errors / denied-heavy / open

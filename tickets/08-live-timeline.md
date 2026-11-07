@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 — The session timeline page.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] New events appear on an open timeline within a couple of seconds of occurring
 - [x] A live event lands in the correct position, including when it arrives out of order

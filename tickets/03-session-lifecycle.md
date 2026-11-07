@@ -6,7 +6,7 @@ Resuming a paused session must not split one story into two — confirm how the 
 
 **Blocked by:** 01 — Walking skeleton.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A completed session shows a start and an end
 - [x] A session interrupted mid-run appears as open, not as complete

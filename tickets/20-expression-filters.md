@@ -4,7 +4,7 @@
 
 **Blocked by:** 13 — Filters: show me only what I care about. 16 — The investigation cockpit: three-pane session view.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] `kind:` and `outcome:` filters match event kind and outcome exactly
 - [x] `duration:>N` matches stored duration (uses 18's duration when present)

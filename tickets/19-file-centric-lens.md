@@ -4,7 +4,7 @@
 
 **Blocked by:** 16 — The investigation cockpit: three-pane session view.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Every distinct document.access target appears in the rail with a count
 - [x] Expanding a file lists refs (time, kind) capped at a sane number, with a "+N more" collapse

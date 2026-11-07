@@ -4,7 +4,7 @@
 
 **Blocked by:** 16 (cockpit shell), 19 (left rail slot). Ticket 21 is done — prompt events are independent of this.
 
-**Status:** done — machine-store row count unverified, live `parentID` shape unproven
+**Status:** done — live `parentID` probed; backfilling a parent onto a live child captured without one still needs a `session.parent` event (design item 6, not built)
 
 ## Measured facts (26 Oct 2026, do not re-guess)
 
@@ -41,8 +41,8 @@ today — it needs a separate `session.parent` event (design item 6) to backfill
 - 21 of 65 stored sessions on this machine are children, so this removes a real third of the list noise.
 - Do not delete or hide a child session itself; only its row in the main list.
 - The portal must not change the cockpit's 230px/1fr/330px grid.
-- Live `session.created` forwarding of `parentID` from `event.properties.info.parentID` is a
-  guessed payload shape, not a probed one. It is additive: absent or wrongly typed, the child
-  simply stores no parent link. A probe of a real subagent run is still needed to freeze it.
+- Live `session.created` forwarding of `parentID` from `event.properties.info.parentID` is
+  probed (see the last acceptance box). It stays additive: absent or wrongly typed, the child
+  simply stores no parent link.
 - `listSessions()` still returns every session, including children (deliberate: the cockpit
   header needs the current child's own summary). Root filtering lives in `SessionListView`.

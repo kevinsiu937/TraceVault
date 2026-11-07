@@ -6,7 +6,7 @@ This ticket also closes the loose ends: the exit criteria in the phase plan are 
 
 **Blocked by:** 05 — Ordering, sequence numbers and duplicate observations. 06 — Append-only integrity. 07 — Honest gaps. 08 — Live timeline. 09 — Reversible install.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] A scripted demo exists that any person can follow from a clean state in under five minutes (docs/DEMO.md)
 - [x] Running that demo produces a session whose every action appears in the timeline, in order

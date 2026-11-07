@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 — The session timeline page. 12 — A timeline you can read at a glance.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Session detail renders in three panes: 230px file rail · center views · 330px detail panel, sticky rails, dark theme per DESIGN.md dark tokens
 - [x] Header shows title, session id, agent, duration, event count, error/denied counts, start time (wall-clock), and Prev/Next session buttons

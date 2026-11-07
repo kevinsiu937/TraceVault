@@ -8,7 +8,7 @@ While wiring it, measure and record what the hook actually provides: does it fir
 
 **Blocked by:** None — can start immediately.
 
-**Status:** done — next frontier is ticket 02.
+**Status:** done
 
 - [x] A real OpenCode session that runs one shell command produces exactly one stored event
 - [x] The session appears in the dashboard's session list on `127.0.0.1`

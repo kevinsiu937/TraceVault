@@ -4,7 +4,7 @@
 
 **Blocked by:** 02, 07, 08 — this ticket exists to close their remaining open boxes. Start once 02's tool surface is in (it is: the surface is done, only the denied shape is unobserved).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] Denial probe: a permission-denied tool call is reproduced live; the raw hook payload is frozen as a fixture; 02's "denied, not error, not absent" box is ticked and pinned by a seam-B test
 - [x] Service-down probe: the service is stopped mid-session and restarted; the recorded interval shape is frozen as a fixture; 07's "uncovered, not empty" box is ticked and pinned

@@ -4,7 +4,7 @@
 
 **Blocked by:** 03 — Session boundaries and open sessions. 04 — The session timeline page.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] An interval in which capture was unavailable appears in the timeline as an explicit gap with a reason
 - [x] A session recorded while the service was down is reported as uncovered, not as empty
