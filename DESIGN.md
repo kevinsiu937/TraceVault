@@ -35,6 +35,7 @@ Type: system UI stack for prose; `ui-monospace` for commands, paths, times, ids.
 - A vertical rail runs through the marker column; one 12px marker per event, coloured by `data-kind`.
 - Each row: time (left), marker, kind label + target, outcome pill + chevron (right). Each row is a link to `?event=<id>`; the selected row carries `aria-current="true"` and an accent tint.
 - `document.access` paths show the last two segments in the row; the expanded detail keeps the full stored event.
+- Consecutive identical calls (same kind, target and operation) collapse into one `N × target` row. A uniform run shows its one outcome; a mixed run names every outcome with a count, worst first. The marker rings on the worst of error/denied; expanding it shows each call as a normal row.
 - Outcome is never colour-only: a pill carries the word; `error` adds a solid red marker ring, `denied` a dashed amber ring.
 - Raw JSON stays available inline behind native `<details>/<summary>`; the right pane is the primary reader. Both are keyboard accessible.
 - The right pane shows the selected event's id, kind, target, outcome, duration (when present), wall-clock time, and the stored event JSON verbatim in a scrollable `<pre>`, behind a Details / JSON disclosure. With nothing selected it says `Select an event`.

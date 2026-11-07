@@ -3,6 +3,8 @@ import type { TimelineEntry } from "../service/TimelineEntry.js";
 import { TurnBuilder } from "../service/TurnBuilder.js";
 import { FilterBar } from "./FilterBar.js";
 import { FilterParams } from "./FilterParams.js";
+import { RepeatedCallGrouper } from "./RepeatedCallGrouper.js";
+import { RepeatedCallRow } from "./RepeatedCallRow.js";
 import { ReplayTimeline } from "./ReplayTimeline.js";
 import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
@@ -29,6 +31,8 @@ export class TimelineView implements SessionPaneView {
     private readonly row: TimelineRow = new TimelineRow(),
     private readonly turnBuilder: TurnBuilder = new TurnBuilder(),
     private readonly divider: TurnDivider = new TurnDivider(),
+    private readonly grouper: RepeatedCallGrouper = new RepeatedCallGrouper(),
+    private readonly repeatRow: RepeatedCallRow = new RepeatedCallRow(row),
   ) {}
 
   render(context: SessionRenderContext): string {
@@ -45,12 +49,18 @@ export class TimelineView implements SessionPaneView {
           .map(({ turn, state }) =>
             [
               this.divider.render(turn, state),
-              ...turn.entries.map((entry) =>
-                this.row.render(entry, {
-                  href: context.state.href(basePath, { event: entry.eventId }),
-                  selected: context.state.event === entry.eventId,
-                  replay: state,
-                }),
+              ...this.grouper.group(turn.entries).map((item) =>
+                item.kind === "repeat"
+                  ? this.repeatRow.render(item.entries, {
+                      href: (entry) => context.state.href(basePath, { event: entry.eventId }),
+                      selectedEventId: context.state.event,
+                      replay: state,
+                    })
+                  : this.row.render(item.entry, {
+                      href: context.state.href(basePath, { event: item.entry.eventId }),
+                      selected: context.state.event === item.entry.eventId,
+                      replay: state,
+                    }),
               ),
             ].join("\n"),
           )
@@ -81,8 +91,22 @@ ${rows}
 @keyframes tv-flash{from{background:color-mix(in srgb,var(--accent) 20%,transparent)}to{background:transparent}}
 .center .event.is-past,.center .turn-divider.is-past{opacity:.35;transition:opacity .25s ease}
 .center .event.is-active,.center .turn-divider.is-active{opacity:1}
+.center .event-group.is-past{opacity:.35;transition:opacity .25s ease}
+.center .event-group.is-past .event.is-past{opacity:1}
+.center .event-group{position:relative;margin:0;padding:0;list-style:none;border-bottom:1px solid var(--line)}
+.center .event-group:last-child{border-bottom:none}
+.center .repeat-row::-webkit-details-marker{display:none}
+.center .repeat[open]>.repeat-row{background:var(--panel-2)}
+.center .repeat[open]>.repeat-row .chevron{transform:rotate(45deg)}
+.center .repeat-count{color:var(--accent);font-weight:600;margin-right:2px}
+.center .event-group[data-outcome="error"] .repeat-row .marker{outline:2px solid var(--err);outline-offset:2px}
+.center .event-group[data-outcome="denied"] .repeat-row .marker{outline:2px dashed var(--warn);outline-offset:2px}
+.center .event-group[data-outcome="error"] .repeat-row .target{color:var(--err)}
+.center .event-group .event-side .pill+.pill{margin-left:-4px}
+.center .repeat-members{list-style:none;margin:0;padding:0;border-top:1px solid var(--line);background:color-mix(in srgb,var(--panel-2) 60%,transparent)}
 @media (prefers-reduced-motion:reduce){
   .center .event.is-past,.center .turn-divider.is-past{transition:none}
+  .center .event-group.is-past{transition:none}
   .center .event:target{animation:none;background:color-mix(in srgb,var(--accent) 12%,transparent)}
 }
 .center .turn-divider{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:6px 0 0;padding:8px 20px;background:var(--panel-2);border-left:3px inset var(--line);color:var(--muted);font-size:11px;list-style:none}
@@ -115,11 +139,19 @@ source.onmessage = (message) => {
   template.innerHTML = entry.html;
   const row = template.content.firstElementChild;
   if (row === null) return;
-  const firstVisible = [...timeline.children].findIndex((existing) => existing.getBoundingClientRect().bottom > 0);
-  const events = [...timeline.querySelectorAll(":scope > li.event")];
-  const index = Math.max(0, Math.min(entry.position, events.length));
-  timeline.insertBefore(row, events[index] ?? null);
-  if (firstVisible >= 0 && index < firstVisible) {
+  const events = [...timeline.querySelectorAll("li.event")];
+  const anchor = events[Math.max(0, Math.min(entry.position, events.length))] ?? null;
+  let reference = anchor;
+  const run = anchor === null ? null : anchor.closest("li.event-group");
+  if (run !== null && run.querySelector("li.event") === anchor) {
+    reference = run;
+  } else if (run !== null) {
+    // The row lands between two calls of a run, so they are no longer consecutive: unfold the run.
+    run.replaceWith(...run.querySelectorAll("li.event"));
+  }
+  const above = reference !== null && reference.getBoundingClientRect().bottom <= 0;
+  timeline.insertBefore(row, reference);
+  if (above) {
     window.scrollBy(0, row.getBoundingClientRect().height);
   }
   const empty = document.querySelector(".empty");
