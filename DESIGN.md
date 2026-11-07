@@ -44,6 +44,7 @@ Type: system UI stack for prose; `ui-monospace` for commands, paths, times, ids.
 ## 3. Filters
 
 - URL is the only state: `?kind=document.access&outcome=error&operation=write&q=vault`.
+- `from`/`to` (ISO-8601 UTC, ending in `Z`) select a time range. A capture gap is in range when its outage overlaps it. Dragging across the waterfall sets them and the waterfall axis zooms to exactly that window; the list shows a range chip, the waterfall a `Reset zoom` link, and both clear it.
 - Kind, outcome and saved-view chips are links. The active chip uses `aria-current="true"` and an accent tint. A `Clear` link removes all filters.
 - Session page: saved views filter the current session. Activity page: the same saved views filter across sessions.
 - The search form is a GET form; hidden inputs carry the active facets so a text search does not drop them.

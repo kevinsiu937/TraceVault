@@ -1,5 +1,6 @@
 import { ActivityFilter } from "../service/ActivityFilter.js";
 import { FilterExpression } from "../service/FilterExpression.js";
+import { TimeWindow } from "../service/TimeWindow.js";
 
 const MAX_TEXT = 200;
 const MAX_EXPRESSION = 400;
@@ -14,6 +15,7 @@ export class FilterParams {
       this.values(url, "operation"),
       (url.searchParams.get("q") ?? "").trim().slice(0, MAX_TEXT),
       this.expressions.parse(this.expression(url)),
+      TimeWindow.parse(url.searchParams.get("from"), url.searchParams.get("to")),
     );
   }
 
@@ -38,6 +40,10 @@ export class FilterParams {
     }
     if (filter.expression.text.length > 0) {
       params.set("expr", filter.expression.text);
+    }
+    if (filter.window !== null) {
+      params.set("from", filter.window.from);
+      params.set("to", filter.window.to);
     }
     return params.toString();
   }

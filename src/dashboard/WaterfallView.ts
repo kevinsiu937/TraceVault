@@ -2,6 +2,7 @@ import type { TimelineEntry } from "../service/TimelineEntry.js";
 import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
 import type { SessionParams } from "./SessionParams.js";
+import { WaterfallZoom } from "./WaterfallZoom.js";
 
 const ESCAPES: Record<string, string> = {
   "&": "&amp;",
@@ -30,25 +31,37 @@ export class WaterfallView implements SessionPaneView {
   readonly label = "Waterfall";
   readonly slot = "center" as const;
 
+  constructor(private readonly zoom: WaterfallZoom = new WaterfallZoom()) {}
+
   render(context: SessionRenderContext): string {
     const entries = context.entries;
-    const empty = '<div class="wf-empty" role="status">No events to plot in this session.</div>';
+    const range = context.filter.window;
+    const basePath = `/sessions/${encodeURIComponent(context.sessionId)}`;
+    const toolbar = this.zoom.toolbar(context, basePath);
+    const empty = `${toolbar}<div class="wf-empty" role="status">${
+      range === null ? "No events to plot in this session." : "No events in this time range."
+    }</div>`;
     const first = entries[0];
     if (first === undefined) {
       return empty;
     }
-    const t0 = this.time(first.time);
+    // A selected range is the zoom: the axis spans exactly that window.
+    const t0 = range === null ? this.time(first.time) : range.fromMs;
     if (t0 === null) {
       return empty;
     }
-    const last = entries[entries.length - 1];
-    const lastStart = last === undefined ? t0 : this.time(last.time);
-    let span = lastStart === null ? 0 : lastStart + (last?.durationMs ?? 0) - t0;
+    let span: number;
+    if (range === null) {
+      const last = entries[entries.length - 1];
+      const lastStart = last === undefined ? t0 : this.time(last.time);
+      span = lastStart === null ? 0 : lastStart + (last?.durationMs ?? 0) - t0;
+    } else {
+      span = range.toMs - range.fromMs;
+    }
     if (span <= 0) {
       span = 1000;
     }
 
-    const basePath = `/sessions/${encodeURIComponent(context.sessionId)}`;
     const ticks = TICKS.map((tick) => {
       const left = this.percent((tick * 100) / (TICKS.length - 1));
       const at = t0 + (span * tick) / (TICKS.length - 1);
@@ -62,9 +75,9 @@ export class WaterfallView implements SessionPaneView {
       .map((entry, index) => this.lane(entry, entries[index + 1], t0, span, basePath, context.state))
       .join("\n");
 
-    return `<div class="wf" id="waterfall">
+    return `${toolbar}<div class="wf" id="waterfall">
 <div class="wf-axis">${ticks}</div>
-<div class="wf-plot">${gridlines}
+<div class="wf-plot" ${this.zoom.plotAttributes(t0, span)}>${gridlines}${this.zoom.brush()}
 <ol class="wf-lanes" aria-label="Session events">
 ${lanes}
 </ol>
@@ -101,11 +114,12 @@ ${lanes}
 .wf-empty{color:var(--muted);font-size:13.5px;margin:0;line-height:1.55}
 @media (max-width:640px){
 .wf-tick:nth-child(even){display:none}
-}`;
+}
+${this.zoom.styles()}`;
   }
 
   script(_context: SessionRenderContext): string {
-    return "";
+    return this.zoom.script();
   }
 
   private lane(

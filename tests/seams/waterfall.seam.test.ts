@@ -218,6 +218,103 @@ describe("seam A: the waterfall view", () => {
     expect(body).toContain("wf-bar selected");
   });
 
+  it("zooms the axis to a selected time range and plots only the events inside it", async () => {
+    seedThree();
+
+    const body = await (
+      await fetch(
+        `${baseUrl}/sessions/${SESSION}?view=waterfall&from=2026-10-25T10:00:04.000Z&to=2026-10-25T10:00:24.000Z`,
+      )
+    ).text();
+    const bars = barTags(body);
+
+    // Window 10:00:04 → 10:00:24 is 20000ms; a.ts at 10:00:00 falls outside it.
+    expect(bars).toHaveLength(2);
+    expect(body).not.toContain("a.ts");
+    expect(body).toContain(">10:00:04<");
+    expect(body).toContain(">10:00:24<");
+    // b.ts: left (5000-4000)/20000 = 5%, width 15000/20000 = 75% (to next event)
+    expect(bars[0]).toContain('data-left="5.00"');
+    expect(bars[0]).toContain('data-width="75.00"');
+    // echo c: left 16000/20000 = 80%, width max(2, 500/20000 = 2.5%)
+    expect(bars[1]).toContain('data-left="80.00"');
+    expect(bars[1]).toContain('data-width="2.50"');
+  });
+
+  it("filters the list to the events inside a selected time range", async () => {
+    seedThree();
+
+    const body = await (
+      await fetch(
+        `${baseUrl}/sessions/${SESSION}?from=2026-10-25T10:00:04.000Z&to=2026-10-25T10:00:24.000Z`,
+      )
+    ).text();
+
+    expect(body).toContain('class="event-row');
+    expect(body).not.toContain("a.ts");
+    expect(body).toContain("b.ts");
+    expect(body).toContain("echo c");
+    expect(body).toContain("2 of 3 events");
+  });
+
+  it("keeps the time range when another filter chip is toggled", async () => {
+    seedThree();
+
+    const body = await (
+      await fetch(
+        `${baseUrl}/sessions/${SESSION}?from=2026-10-25T10:00:04.000Z&to=2026-10-25T10:00:24.000Z`,
+      )
+    ).text();
+    const errorChip = body.match(/<a class="chip[^"]*" href="([^"]*outcome=error[^"]*)"/)?.[1] ?? "";
+
+    expect(errorChip).toContain("from=2026-10-25T10%3A00%3A04.000Z");
+    expect(errorChip).toContain("to=2026-10-25T10%3A00%3A24.000Z");
+  });
+
+  it("offers a reset that returns the waterfall to the whole session", async () => {
+    seedThree();
+
+    const zoomed = await (
+      await fetch(
+        `${baseUrl}/sessions/${SESSION}?view=waterfall&from=2026-10-25T10:00:04.000Z&to=2026-10-25T10:00:24.000Z`,
+      )
+    ).text();
+    const reset = zoomed.match(/<a class="wf-reset" href="([^"]*)"/)?.[1]?.replace(/&amp;/g, "&") ?? "";
+
+    expect(reset).toContain("view=waterfall");
+    expect(reset).not.toContain("from=");
+    expect(reset).not.toContain("to=");
+
+    const full = await (await fetch(`${baseUrl}${reset}`)).text();
+    expect(barTags(full)).toHaveLength(3);
+    expect(full).not.toContain('class="wf-reset"');
+  });
+
+  it("ignores a time range it cannot read", async () => {
+    seedThree();
+
+    const body = await (
+      await fetch(`${baseUrl}/sessions/${SESSION}?view=waterfall&from=yesterday&to=2026-10-25T10:00:24.000Z`)
+    ).text();
+
+    expect(barTags(body)).toHaveLength(3);
+    expect(body).not.toContain('class="wf-reset"');
+  });
+
+  it("says so when a selected time range holds no events", async () => {
+    seedThree();
+
+    const body = await (
+      await fetch(
+        `${baseUrl}/sessions/${SESSION}?view=waterfall&from=2026-10-25T10:00:01.000Z&to=2026-10-25T10:00:02.000Z`,
+      )
+    ).text();
+
+    expect(barTags(body)).toHaveLength(0);
+    expect(body).toContain("No events in this time range.");
+    expect(body).toContain('class="wf-reset"');
+  });
+
   it("keeps a calm empty state when nothing is plotted", async () => {
     seedThree();
 
@@ -227,5 +324,107 @@ describe("seam A: the waterfall view", () => {
 
     expect(barTags(body)).toHaveLength(0);
     expect(body).toContain("No events to plot in this session.");
+  });
+
+  it("keeps a capture gap in view when the range falls inside the outage", async () => {
+    service.recordHookPayload(
+      toolAfter("read", { filePath: "before.ts" }, "call_before"),
+      new Date("2026-10-25T10:00:00.000Z"),
+    );
+    service.recordHookPayload(
+      {
+        hook: "capture.gap",
+        sessionID: SESSION,
+        from: "2026-10-25T10:00:01.000Z",
+        to: "2026-10-25T10:05:00.000Z",
+        reason: "capture endpoint unavailable",
+      },
+      new Date("2026-10-25T10:05:00.000Z"),
+    );
+    service.recordHookPayload(
+      toolAfter("read", { filePath: "after.ts" }, "call_after"),
+      new Date("2026-10-25T10:07:00.000Z"),
+    );
+    const range = "from=2026-10-25T10:01:00.000Z&to=2026-10-25T10:04:00.000Z";
+
+    const waterfall = await (await fetch(`${baseUrl}/sessions/${SESSION}?view=waterfall&${range}`)).text();
+    const list = await (await fetch(`${baseUrl}/sessions/${SESSION}?${range}`)).text();
+
+    expect(waterfall).toMatch(/<a class="wf-gap/);
+    expect(waterfall).not.toContain("No events in this time range.");
+    expect(list).toContain("1 of 3 events");
+    expect(list).toContain("capture endpoint unavailable");
+    expect(list).not.toContain("before.ts");
+    expect(list).not.toContain("after.ts");
+  });
+
+  it("shows the selected range as a chip that clears it", async () => {
+    seedThree();
+
+    const body = await (
+      await fetch(
+        `${baseUrl}/sessions/${SESSION}?from=2026-10-25T10:00:04.000Z&to=2026-10-25T10:00:24.000Z`,
+      )
+    ).text();
+    const chip = body.match(/<a class="chip active range" href="([^"]*)"[^>]*>([^<]*)/);
+
+    expect(chip?.[2]).toContain("10:00:04–10:00:24");
+    expect(chip?.[1]).toBe(`/sessions/${SESSION}`);
+  });
+
+  it("keeps the time range when a text search is submitted", async () => {
+    seedThree();
+
+    const body = await (
+      await fetch(
+        `${baseUrl}/sessions/${SESSION}?from=2026-10-25T10:00:04.000Z&to=2026-10-25T10:00:24.000Z`,
+      )
+    ).text();
+    const form = body.match(/<form class="search"[\s\S]*?<\/form>/)?.[0] ?? "";
+
+    expect(form).toContain('<input type="hidden" name="from" value="2026-10-25T10:00:04.000Z">');
+    expect(form).toContain('<input type="hidden" name="to" value="2026-10-25T10:00:24.000Z">');
+  });
+
+  it("reads a range given backwards as the same range", async () => {
+    seedThree();
+
+    const body = await (
+      await fetch(
+        `${baseUrl}/sessions/${SESSION}?from=2026-10-25T10:00:24.000Z&to=2026-10-25T10:00:04.000Z`,
+      )
+    ).text();
+
+    expect(body).toContain("2 of 3 events");
+    expect(body).not.toContain("a.ts");
+  });
+
+  it("ignores range bounds that are not UTC ISO-8601 timestamps", async () => {
+    seedThree();
+    const unreadable = [
+      "from=2026-10-25T10:00:04&to=2026-10-25T10:00:24",
+      "from=1&to=10",
+      "from=%2B010000-01-01T00:00:00.000Z&to=%2B010001-01-01T00:00:00.000Z",
+    ];
+
+    for (const range of unreadable) {
+      const body = await (await fetch(`${baseUrl}/sessions/${SESSION}?view=waterfall&${range}`)).text();
+      expect(barTags(body), range).toHaveLength(3);
+      expect(body, range).not.toContain('class="wf-reset"');
+    }
+  });
+
+  it("tells the drag script which window the plot spans", async () => {
+    seedThree();
+
+    const whole = await (await fetch(`${baseUrl}/sessions/${SESSION}?view=waterfall`)).text();
+    const zoomed = await (
+      await fetch(
+        `${baseUrl}/sessions/${SESSION}?view=waterfall&from=2026-10-25T10:00:04.000Z&to=2026-10-25T10:00:24.000Z`,
+      )
+    ).text();
+
+    expect(whole).toContain(`data-t0="${Date.parse("2026-10-25T10:00:00.000Z")}" data-span="20500"`);
+    expect(zoomed).toContain(`data-t0="${Date.parse("2026-10-25T10:00:04.000Z")}" data-span="20000"`);
   });
 });

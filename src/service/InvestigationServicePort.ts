@@ -11,9 +11,6 @@ export interface InvestigationServicePort {
   hasSession(sessionId: string): boolean;
   getTimeline(sessionId: string, filter?: ActivityFilter): TimelineEntry[];
   listActivity(filter?: ActivityFilter): SessionActivity[];
-  subscribe(
-    sessionId: string,
-    listener: (entry: TimelineEntry) => void,
-    filter?: ActivityFilter,
-  ): () => void;
+  /** Every new event in the session; the caller applies its own filter through getTimeline. */
+  subscribe(sessionId: string, listener: (entry: TimelineEntry) => void): () => void;
 }

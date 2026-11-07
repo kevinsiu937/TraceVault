@@ -12,6 +12,12 @@ export interface ExpressionQuery {
   readonly durations: readonly DurationBound[];
 }
 
+/** Inclusive start-time range; both bounds are canonical ISO-8601 UTC strings. */
+export interface TimeRangeQuery {
+  readonly from: string;
+  readonly to: string;
+}
+
 export interface EventQuery {
   readonly sessionId: string | null;
   readonly kinds: readonly string[];
@@ -20,4 +26,6 @@ export interface EventQuery {
   readonly text: string;
   /** Absent for callers that only use the facet filters. */
   readonly expression?: ExpressionQuery;
+  /** Absent when no time range is selected. */
+  readonly range?: TimeRangeQuery;
 }

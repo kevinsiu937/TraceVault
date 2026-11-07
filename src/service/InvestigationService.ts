@@ -160,21 +160,12 @@ export class InvestigationService implements InvestigationServicePort {
     });
   }
 
-  subscribe(
-    sessionId: string,
-    listener: (entry: TimelineEntry) => void,
-    filter: ActivityFilter = ActivityFilter.none,
-  ): () => void {
+  subscribe(sessionId: string, listener: (entry: TimelineEntry) => void): () => void {
     const listeners = this.listeners.get(sessionId) ?? new Set<(entry: TimelineEntry) => void>();
-    const guarded = (entry: TimelineEntry): void => {
-      if (filter.matches(entry)) {
-        listener(entry);
-      }
-    };
-    listeners.add(guarded);
+    listeners.add(listener);
     this.listeners.set(sessionId, listeners);
     return () => {
-      listeners.delete(guarded);
+      listeners.delete(listener);
       if (listeners.size === 0) {
         this.listeners.delete(sessionId);
       }

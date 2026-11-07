@@ -53,6 +53,9 @@ export class FilterBar {
       ...filter.kinds.map((kind) => this.hidden("kind", kind)),
       ...filter.outcomes.map((outcome) => this.hidden("outcome", outcome)),
       ...filter.operations.map((operation) => this.hidden("operation", operation)),
+      ...(filter.window === null
+        ? []
+        : [this.hidden("from", filter.window.from), this.hidden("to", filter.window.to)]),
     ].join("");
     const clear = filter.active
       ? `<a class="chip clear" href="${this.escape(this.params.href(basePath, ActivityFilter.none))}">Clear</a>`
@@ -61,6 +64,10 @@ export class FilterBar {
       filter.expression.text.length > 0
         ? `<div class="chips expression-chip"><a class="chip active expression" href="${this.escape(this.params.href(basePath, filter.withoutExpression()))}" aria-label="Clear expression">${this.escape(filter.expression.text)} <span aria-hidden="true">×</span></a></div>`
         : "";
+    const rangeChip =
+      filter.window === null
+        ? ""
+        : `<div class="chips range-chip"><a class="chip active range" href="${this.escape(this.params.href(basePath, filter.withoutWindow()))}" aria-label="Clear time range">${this.escape(`${this.wallClock(filter.window.from)}–${this.wallClock(filter.window.to)}`)} <span aria-hidden="true">×</span></a></div>`;
 
     return `<nav class="filters" aria-label="Filters">
 ${legend}
@@ -79,6 +86,7 @@ ${hidden}<input type="search" name="expr" value="${this.escape(filter.expression
 ${clear}
 </form>
 ${expressionChip}
+${rangeChip}
 </nav>`;
   }
 
@@ -105,6 +113,10 @@ ${this.chip("Failed", this.params.href(base, failures), this.same(filter, failur
   private chip(label: string, href: string, active: boolean, count?: number): string {
     const shownCount = count === undefined ? "" : ` <span class="legend-count">${count}</span>`;
     return `<a class="chip${active ? " active" : ""}" href="${this.escape(href)}"${active ? ' aria-current="true"' : ""}>${this.escape(label)}${shownCount}</a>`;
+  }
+
+  private wallClock(time: string): string {
+    return time.slice(11, 19);
   }
 
   private hidden(name: string, value: string): string {

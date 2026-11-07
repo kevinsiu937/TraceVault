@@ -51,6 +51,15 @@ export class EventQuerySql {
       parameters.push(query.text);
     }
     this.expression(query, clauses, parameters);
+    if (query.range !== undefined) {
+      // Timestamps are stored as canonical ISO-8601 UTC, so text order is time order.
+      // A gap is stamped where the outage ended, so it matches by overlap with its window.
+      clauses.push(`CASE WHEN type = 'capture.gap'
+  THEN json_extract(body, '$.data.from') <= ? AND json_extract(body, '$.data.to') >= ?
+  ELSE timestamp >= ? AND timestamp <= ?
+END`);
+      parameters.push(query.range.to, query.range.from, query.range.from, query.range.to);
+    }
 
     return {
       clause: clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : "",

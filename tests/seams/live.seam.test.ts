@@ -182,4 +182,29 @@ describe("seam A: live timeline updates", () => {
     const filtered = service.getTimeline(SESSION, new ActivityFilter(["document.access"], [], [], ""));
     expect(filtered.map((entry) => entry.target)).toEqual(["live.ts", "seeded.ts"]);
   });
+
+  it("drops live events outside the selected time range", async () => {
+    service.recordHookPayload(toolAfter("read", { filePath: "seeded.ts" }, "call_seeded"), new Date("2026-10-25T10:00:00.000Z"));
+
+    const controller = new AbortController();
+    const stream = await fetch(
+      `${baseUrl}/sessions/${SESSION}/events?from=2026-10-25T10:00:00.000Z&to=2026-10-25T10:00:10.000Z`,
+      { signal: controller.signal },
+    );
+    const reader = stream.body?.getReader();
+    expect(reader).toBeDefined();
+
+    service.recordHookPayload(toolAfter("read", { filePath: "outside.ts" }, "call_outside"), new Date("2026-10-25T10:00:20.000Z"));
+    service.recordHookPayload(toolAfter("read", { filePath: "inside.ts" }, "call_inside"), new Date("2026-10-25T10:00:05.000Z"));
+    const insideId = service.getTimeline(SESSION).find((entry) => entry.target === "inside.ts")?.eventId;
+
+    const payloads = await collect(
+      reader as ReadableStreamDefaultReader<Uint8Array>,
+      (received) => received.some((payload) => payload.eventId === insideId),
+    );
+    controller.abort();
+
+    expect(payloads.map((payload) => payload.eventId)).toEqual([insideId]);
+    expect(payloads[0]?.position).toBe(1);
+  });
 });
