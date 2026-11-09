@@ -224,3 +224,54 @@ steps:
     expect(after).not.toBe(before);
   });
 });
+
+describe("seam C: a step that repeats inside a window", () => {
+  let directory: string;
+  const [start, denied] = fixture("probing", "trigger").events;
+
+  function at(event: Event | undefined, id: string, seconds: number): Event {
+    if (event === undefined) {
+      throw new Error("the probing fixture no longer starts with a session start and a denial");
+    }
+    return { ...event, id, timestamp: new Date(Date.UTC(2026, 10, 7, 11) + seconds * 1000).toISOString() };
+  }
+
+  function scan(steps: string, events: readonly Event[]): string[][] {
+    writeFileSync(
+      join(directory, "probe.yaml"),
+      `id: probe\nversion: 1\nseverity: low\nexplanation: A probe rule.\nwindow: { seconds: 60 }\nsteps:\n${steps}`,
+      "utf8",
+    );
+    return new WorkflowScannerAssembly()
+      .fromDirectory(directory)
+      .scan(events)
+      .map((finding) => [...finding.eventIds]);
+  }
+
+  beforeEach(() => {
+    directory = mkdtempSync(join(tmpdir(), "tracevault-window-"));
+  });
+
+  afterEach(() => {
+    rmSync(directory, { recursive: true, force: true });
+  });
+
+  it("stops counting an event once it has left the window, and keeps counting the rest", () => {
+    const found = scan("  - repeat: 2\n    match:\n      outcome: { equals: denied }\n", [
+      at(denied, "d1", 0),
+      at(denied, "d2", 100),
+      at(denied, "d3", 130),
+    ]);
+
+    expect(found).toEqual([["d2", "d3"]]);
+  });
+
+  it("does not finish a chain whose first step has left the window", () => {
+    const found = scan(
+      "  - match:\n      type: { equals: session.start }\n  - repeat: 2\n    match:\n      outcome: { equals: denied }\n",
+      [at(start, "s1", 0), at(denied, "d1", 50), at(denied, "d2", 70), at(start, "s2", 200), at(denied, "d3", 210), at(denied, "d4", 220)],
+    );
+
+    expect(found).toEqual([["s2", "d3", "d4"]]);
+  });
+});

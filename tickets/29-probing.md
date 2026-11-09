@@ -18,3 +18,5 @@
 - An event that advances an open match does not also start a new one. Five denials therefore give one finding for the first three, then wait for three more, never overlapping findings.
 - Deduplication is the service's job, before the scanner. The page seam records the same denied call twice plus one other, sees no finding, then sees one after a third distinct denial.
 - Deletion checks (repeat ignored, overlap allowed, scanner given duplicates) each fail the suite.
+
+**Review fix (10 Nov 2026):** The window now slides. Before, refusals at 0s, 200s, 310s and 320s gave no finding, because the expired match had absorbed the 200s refusal. Now a match still repeating its first step drops only the refusals that have left the window, so those last three are flagged. The trigger fixture carries that sequence. Two window tests on seam C pin the edges: an event outside the window stops counting, and a chain whose first step has expired cannot finish without it. Removing the slide, its expiry, or its first-step limit each fails the suite.

@@ -3,10 +3,16 @@ import type { Finding } from "../../schema/Finding.js";
 import type { Bindings } from "./Condition.js";
 import type { Rule } from "./Rule.js";
 
+interface MatchedEvent {
+  readonly id: string;
+  readonly at: number;
+  /** The alternative that matched it, for a step written with `any`. */
+  readonly label: string | null;
+}
+
 interface PartialMatch {
-  readonly startedAt: number;
-  readonly eventIds: readonly string[];
-  readonly matched: readonly string[];
+  /** In timeline order; the window runs from the first. */
+  readonly events: readonly MatchedEvent[];
   readonly next: number;
   /** How many times the current step has matched so far, for a step that repeats. */
   readonly count: number;
@@ -33,11 +39,12 @@ export class RuleMatcher {
     const stillOpen: PartialMatch[] = [];
     let consumed = false;
 
-    for (const partial of this.open) {
-      if (this.rule.window !== null && !this.rule.window.contains(partial.startedAt, at)) {
+    for (const open of this.open) {
+      const partial = this.inWindow(open, at);
+      if (partial === null) {
         continue;
       }
-      const advanced = this.advance(partial, eventId, facts);
+      const advanced = this.advance(partial, eventId, at, facts);
       if (advanced !== null) {
         consumed = true;
       }
@@ -55,7 +62,7 @@ export class RuleMatcher {
 
     const started = consumed
       ? null
-      : this.advance({ startedAt: at, eventIds: [], matched: [], next: 0, count: 0, bound: new Map() }, eventId, facts);
+      : this.advance({ events: [], next: 0, count: 0, bound: new Map() }, eventId, at, facts);
     if (started !== null) {
       if (started.next === this.rule.steps.length) {
         findings.push(this.finding(started));
@@ -68,7 +75,25 @@ export class RuleMatcher {
     return findings;
   }
 
-  private advance(partial: PartialMatch, eventId: string, facts: EventFacts): PartialMatch | null {
+  /**
+   * The partial match as it stands at `at`, or null once it has expired. A match
+   * still repeating its first step slides instead: events that have left the
+   * window drop out, and the ones still inside it keep counting.
+   */
+  private inWindow(partial: PartialMatch, at: number): PartialMatch | null {
+    const window = this.rule.window;
+    const first = window === null ? 0 : partial.events.findIndex((event) => window.contains(event.at, at));
+    if (first === 0) {
+      return partial;
+    }
+    if (first < 0 || partial.next !== 0) {
+      return null;
+    }
+    const events = partial.events.slice(first);
+    return { ...partial, events, count: events.length };
+  }
+
+  private advance(partial: PartialMatch, eventId: string, at: number, facts: EventFacts): PartialMatch | null {
     const step = this.rule.steps[partial.next];
     const hit = step === undefined ? null : step.match(facts, partial.bound);
     if (hit === null) {
@@ -76,11 +101,8 @@ export class RuleMatcher {
     }
     const count = partial.count + 1;
     const done = step !== undefined && count >= step.repeat;
-    const last = partial.matched[partial.matched.length - 1];
     return {
-      startedAt: partial.startedAt,
-      eventIds: [...partial.eventIds, eventId],
-      matched: hit.label === null || hit.label === last ? partial.matched : [...partial.matched, hit.label],
+      events: [...partial.events, { id: eventId, at, label: hit.label }],
       next: done ? partial.next + 1 : partial.next,
       count: done ? 0 : count,
       bound: hit.bound,
@@ -88,14 +110,20 @@ export class RuleMatcher {
   }
 
   private finding(match: PartialMatch): Finding {
+    const matched: string[] = [];
+    for (const { label } of match.events) {
+      if (label !== null && label !== matched[matched.length - 1]) {
+        matched.push(label);
+      }
+    }
     return {
       ruleId: this.rule.id,
       ruleVersion: this.rule.version,
       ruleSetDigest: this.ruleSetDigest,
       severity: this.rule.severity,
       explanation: this.rule.explanation,
-      eventIds: match.eventIds,
-      matched: match.matched,
+      eventIds: match.events.map((event) => event.id),
+      matched,
     };
   }
 }

@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "Shaped like the recorded auto-rejected bash call in tests/fixtures/tool-failed-denied.json. Ticket 33's live run records real ones.",
+  "note": "Shaped like the recorded auto-rejected bash call in tests/fixtures/tool-failed-denied.json. Ticket 33's live run records real ones. The second burst (0s, 200s, 310s, 320s) checks that the window slides: the last three fall inside five minutes even though the first has expired.",
   "events": [
     {
       "id": "evt_probe_start",
@@ -165,6 +165,102 @@
         "outcome": "denied"
       },
       "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_s1",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:10:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_s1",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "cat /etc/shadow",
+        "exit_code": null,
+        "outcome": "denied"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_s2",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:13:20.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_s2",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "sudo ls",
+        "exit_code": null,
+        "outcome": "denied"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_s3",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:15:10.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_s3",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "chmod 777 .",
+        "exit_code": null,
+        "outcome": "denied"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_s4",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:15:20.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_s4",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "ssh localhost",
+        "exit_code": null,
+        "outcome": "denied"
+      },
+      "raw_extra": {}
     }
   ],
   "expect": [
@@ -174,6 +270,14 @@
         "evt_probe_d1",
         "evt_probe_d2",
         "evt_probe_d3"
+      ]
+    },
+    {
+      "rule": "probing",
+      "events": [
+        "evt_probe_s2",
+        "evt_probe_s3",
+        "evt_probe_s4"
       ]
     }
   ]
