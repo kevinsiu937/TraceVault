@@ -275,3 +275,43 @@ describe("seam C: a step that repeats inside a window", () => {
     expect(found).toEqual([["s2", "d3", "d4"]]);
   });
 });
+
+describe("seam C: what counts as a freeze", () => {
+  const scanner = new WorkflowScannerAssembly().fromDirectory(RULES);
+  const events = fixture("destructive-action", "trigger").events;
+  const [start, freeze, rm] = ["evt_freeze_start", "evt_freeze_freeze", "evt_freeze_rm"].map((id) => events.find((event) => event.id === id));
+
+  function flagged(text: string): boolean {
+    if (start === undefined || freeze?.type !== "prompt.user" || rm === undefined) {
+      throw new Error("the destructive-action trigger no longer has a start, a freeze prompt and an rm");
+    }
+    const session = [start, { ...freeze, data: { ...freeze.data, text } }, rm];
+    return scanner.scan(session).some((finding) => finding.ruleId === "destructive-action");
+  }
+
+  it.each([
+    "Don't delete anything.",
+    "Do not remove any files.",
+    "Please never delete the fixtures.",
+    "Do not under any circumstances rm the database.",
+    "We are in a code freeze.",
+    "Switch to read-only mode.",
+    "From now on, read-only please.",
+    "Read-only from here.",
+    "Stay read-only until I say so.",
+  ])("treats %j followed by a deletion as a freeze", (text) => {
+    expect(flagged(text)).toBe(true);
+  });
+
+  it.each([
+    "Never mind, just delete it.",
+    "Never mind just delete it.",
+    "Don't forget to remove the debug logs.",
+    "Don't worry, just delete the old logs.",
+    "Fix the freeze bug in the scheduler.",
+    "Make the email field read-only.",
+    "The config is read-only, so copy it first.",
+  ])("does not treat %j as a freeze", (text) => {
+    expect(flagged(text)).toBe(false);
+  });
+});

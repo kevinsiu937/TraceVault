@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "A deletion with no freeze, a harness-injected 'do not delete', and a freeze followed only by reads and harmless commands.",
+  "note": "A deletion with no freeze, a harness-injected 'do not delete', ordinary phrases that only sound like a freeze (each followed by a deletion), and a real freeze followed only by reads and harmless commands.",
   "events": [
     {
       "id": "evt_freeze_start",
@@ -87,6 +87,144 @@
         "hook": "tool.execute.after",
         "target_tool": "bash",
         "target": "rm -f cache.tmp",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_never_mind",
+      "schema_version": 1,
+      "type": "prompt.user",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:03.100Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "text": "Never mind, just delete it.",
+        "message_id": "msg_never_mind",
+        "truncated": false
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_rm_after_never_mind",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:03.200Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_rm_after_never_mind",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "rm -f never_mind.tmp",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_freeze_bug",
+      "schema_version": 1,
+      "type": "prompt.user",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:03.300Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "text": "Fix the freeze bug in the scheduler.",
+        "message_id": "msg_freeze_bug",
+        "truncated": false
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_rm_after_freeze_bug",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:03.400Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_rm_after_freeze_bug",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "rm -f freeze_bug.tmp",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_readonly_field",
+      "schema_version": 1,
+      "type": "prompt.user",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:03.500Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "text": "Make the email field read-only.",
+        "message_id": "msg_readonly_field",
+        "truncated": false
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_rm_after_readonly_field",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:03.600Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_rm_after_readonly_field",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "rm -f readonly_field.tmp",
         "exit_code": 0,
         "outcome": "ok"
       },
