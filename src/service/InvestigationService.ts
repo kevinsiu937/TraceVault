@@ -1,10 +1,12 @@
 import type { CapturePort } from "../capture/CapturePort.js";
 import type { Event } from "../schema/Event.js";
 import type { EventFactory } from "../schema/EventFactory.js";
+import type { Finding } from "../schema/Finding.js";
 import type { EventStorePort } from "../store/EventStorePort.js";
 import { ActivityFilter } from "./ActivityFilter.js";
 import type { InvestigationServicePort, RecordResult } from "./InvestigationServicePort.js";
 import type { SessionActivity } from "./SessionActivity.js";
+import { SessionFindings } from "./SessionFindings.js";
 import type { SessionSummary } from "./SessionSummary.js";
 import type { TimelineBuilder } from "./TimelineBuilder.js";
 import type { TimelineEntry } from "./TimelineEntry.js";
@@ -24,6 +26,7 @@ export class InvestigationService implements InvestigationServicePort {
     private readonly store: EventStorePort,
     private readonly factory: EventFactory,
     private readonly timeline: TimelineBuilder,
+    private readonly findings: SessionFindings = new SessionFindings(),
   ) {}
 
   recordHookPayload(raw: unknown, receivedAt: Date): RecordResult {
@@ -121,10 +124,13 @@ export class InvestigationService implements InvestigationServicePort {
   }
 
   getTimeline(sessionId: string, filter: ActivityFilter = ActivityFilter.none): TimelineEntry[] {
-    const events = filter.active
-      ? this.store.listMatching(filter.toQuery(sessionId))
-      : this.store.listBySession(sessionId);
-    return this.timeline.build(events);
+    const session = this.store.listBySession(sessionId);
+    const events = filter.active ? this.store.listMatching(filter.toQuery(sessionId)) : session;
+    return this.findings.flag(this.timeline.build(events), session);
+  }
+
+  getFindings(sessionId: string): Finding[] {
+    return this.findings.of(this.store.listBySession(sessionId));
   }
 
   listActivity(filter: ActivityFilter = ActivityFilter.none): SessionActivity[] {

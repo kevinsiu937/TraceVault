@@ -1,0 +1,114 @@
+{
+  "source": "recorded",
+  "note": "Phase 2 exit run (clean), recorded live by docs/probes/scripts/phase-2-exit-run.sh.",
+  "events": [
+    {
+      "id": "evt_01M70AWZEYEN82CTV90JAJMTRK",
+      "schema_version": 1,
+      "session_id": "ses_e3f518260ffeqNyvL0FHdICErI",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-09T14:20:23.390Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": "sha256:54b5620996722b506f4d1aa84d4059e4809d5621430b11ae5d6a20067e5d5b82",
+      "raw_extra": {},
+      "type": "session.start",
+      "data": {
+        "title": "New session - 2026-11-09T14:20:23.328Z",
+        "project_dir": "/home/dev/exit-run"
+      }
+    },
+    {
+      "id": "evt_01M70AWZF327MB0E7VK68HQ4EJ",
+      "schema_version": 1,
+      "session_id": "ses_e3f518260ffeqNyvL0FHdICErI",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-09T14:20:23.395Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "msg_1c0ae7de3001jNVRzIRuna1YDl",
+      "prev_hash": "sha256:8a6a4cd4d5c0112ee5e3e7d9a94ea7c51d594868d0ce4c4adf3b3cdc34d875f8",
+      "raw_extra": {},
+      "type": "prompt.user",
+      "data": {
+        "text": "\"Read README.md, then run exactly: ls\"",
+        "message_id": "msg_1c0ae7de3001jNVRzIRuna1YDl",
+        "truncated": false
+      }
+    },
+    {
+      "id": "evt_01M70AX2BNYY5XGGDATHZMC2CB",
+      "schema_version": 1,
+      "session_id": "ses_e3f518260ffeqNyvL0FHdICErI",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-09T14:20:26.357Z",
+      "seq": null,
+      "duration_ms": 18,
+      "correlation_id": "call_00_r5uBM7tTB3uBkW7iue357399",
+      "prev_hash": "sha256:840d6d65703634fc3597ca87eba59a257c20ae88b4965968e1d3625ce155c166",
+      "raw_extra": {},
+      "type": "document.access",
+      "data": {
+        "path": "/home/dev/exit-run/README.md",
+        "operation": "read",
+        "outcome": "ok"
+      }
+    },
+    {
+      "id": "evt_01M70AX3P08RDRNFZS89H1T07S",
+      "schema_version": 1,
+      "session_id": "ses_e3f518260ffeqNyvL0FHdICErI",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-09T14:20:27.712Z",
+      "seq": null,
+      "duration_ms": 84,
+      "correlation_id": "call_00_ET_Iyr9HOyXADdTxCCb8x5X5990",
+      "prev_hash": "sha256:72fbae2442d6d68626582e954909490b6cb23404904ed5819e94460ca4058e6c",
+      "raw_extra": {},
+      "type": "hook.script",
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "ls",
+        "exit_code": 0,
+        "outcome": "ok"
+      }
+    },
+    {
+      "id": "evt_01M70AX5BY65Y4ASKQT2073CYG",
+      "schema_version": 1,
+      "session_id": "ses_e3f518260ffeqNyvL0FHdICErI",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-09T14:20:29.438Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": "sha256:05f752065dbd51cad1440f1ba408ca58e68220ce6183949c1aabdccb1d21c856",
+      "raw_extra": {},
+      "type": "session.end",
+      "data": {}
+    }
+  ],
+  "expect": []
+}

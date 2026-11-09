@@ -18,7 +18,7 @@ export class TurnBuilder {
     visibleEntries: readonly TimelineEntry[],
     filterActive: boolean,
   ): Turn[] {
-    const visible = visibleEntries.filter((entry) => !this.isHarnessPrompt(entry));
+    const visible = visibleEntries.filter((entry) => !entry.isHarnessPrompt);
 
     if (filterActive) {
       return [{ label: "Filtered events", prompt: null, entries: visible }];
@@ -59,18 +59,6 @@ export class TurnBuilder {
   }
 
   private isKeptPrompt(entry: TimelineEntry): boolean {
-    return entry.type === "prompt.user" && !this.isHarnessInjected(entry.target);
-  }
-
-  private isHarnessPrompt(entry: TimelineEntry): boolean {
-    return entry.type === "prompt.user" && this.isHarnessInjected(entry.target);
-  }
-
-  /**
-   * The agent injects its own prompts (the measured <available-skills> block).
-   * They open with a tag and close within the first 200 characters.
-   */
-  private isHarnessInjected(text: string): boolean {
-    return text.startsWith("<") && text.slice(0, 200).includes("</");
+    return entry.type === "prompt.user" && !entry.isHarnessPrompt;
   }
 }

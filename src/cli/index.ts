@@ -16,7 +16,7 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { DenialSignal } from "../capture/DenialSignal.js";
 import { HistoryImport } from "../capture/HistoryImport.js";
 import { HookPayloadParser } from "../capture/HookPayloadParser.js";
@@ -33,16 +33,21 @@ import { SessionListView } from "../dashboard/SessionListView.js";
 import { SessionPageView } from "../dashboard/SessionPageView.js";
 import { FileRailView } from "../dashboard/FileRailView.js";
 import { GraphView } from "../dashboard/GraphView.js";
-import { ReplayBarView } from "../dashboard/ReplayBarView.js";import { WaterfallView } from "../dashboard/WaterfallView.js";
+import { FindingsPanelView } from "../dashboard/FindingsPanelView.js";
+import { ReplayBarView } from "../dashboard/ReplayBarView.js";
+import { WaterfallView } from "../dashboard/WaterfallView.js";
 import { SubagentPortalView } from "../dashboard/SubagentPortalView.js";
 import { TimelineView } from "../dashboard/TimelineView.js";
 import { EventFactory } from "../schema/EventFactory.js";
 import { InvestigationService } from "../service/InvestigationService.js";
+import { SessionFindings } from "../service/SessionFindings.js";
 import { TimelineBuilder } from "../service/TimelineBuilder.js";
+import type { WorkflowScannerPort } from "../scanner/dynamic/WorkflowScannerPort.js";
 import type { EventStorePort } from "../store/EventStorePort.js";
 import { SqliteEventStore } from "../store/SqliteEventStore.js";
 import { InitCommand } from "./InitCommand.js";
 import { UninstallCommand } from "./UninstallCommand.js";
+import { WorkflowScannerAssembly } from "./WorkflowScannerAssembly.js";
 
 export const VERSION = "0.1.0";
 
@@ -60,6 +65,7 @@ Usage:
 
 const DEFAULT_PORT = 4319;
 const DEFAULT_DB = "data/tracevault.db";
+const RULES_DIR = fileURLToPath(new URL("../../rules", import.meta.url));
 const OPENCODE_STORE = join(".local", "share", "opencode", "opencode.db");
 
 type Command = "init" | "uninstall" | "import" | "run" | "report";
@@ -213,6 +219,13 @@ function errorCode(error: unknown): string | undefined {
 }
 
 async function runService(options: RunOptions): Promise<number> {
+  let scanner: WorkflowScannerPort;
+  try {
+    scanner = new WorkflowScannerAssembly().fromDirectory(RULES_DIR);
+  } catch (error) {
+    process.stderr.write(`tracevault: cannot load rules: ${errorMessage(error)}\n`);
+    return 1;
+  }
   mkdirSync(dirname(options.dbPath), { recursive: true });
   const store = new SqliteEventStore(options.dbPath);
   const factory = new EventFactory();
@@ -221,7 +234,13 @@ async function runService(options: RunOptions): Promise<number> {
     new ToolClassifier(new PayloadDigest()),
     factory,
   );
-  const service = new InvestigationService(capture, store, factory, new TimelineBuilder());
+  const service = new InvestigationService(
+    capture,
+    store,
+    factory,
+    new TimelineBuilder(),
+    new SessionFindings(scanner),
+  );
   const timelineView = new TimelineView();
   const server = new DashboardServer(
     service,
@@ -231,7 +250,7 @@ async function runService(options: RunOptions): Promise<number> {
     undefined,
     new SessionPageView(
       new SessionHeaderView(),
-      [new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView(), new ReplayBarView()],
+      [new FindingsPanelView(), new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView(), new ReplayBarView()],
       new DetailPaneView(),
     ),
   );

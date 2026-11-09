@@ -37,6 +37,9 @@ Type: system UI stack for prose; `ui-monospace` for commands, paths, times, ids.
 - `document.access` paths show the last two segments in the row; the expanded detail keeps the full stored event.
 - Consecutive identical calls (same kind, target and operation) collapse into one `N × target` row. A uniform run shows its one outcome; a mixed run names every outcome with a count, worst first. The marker rings on the worst of error/denied; expanding it shows each call as a normal row.
 - Outcome is never colour-only: a pill carries the word; `error` adds a solid red marker ring, `denied` a dashed amber ring.
+- A row named by a finding carries a `⚑ rule-id` flag chip in its side cells: the rule id is written out, so the flag is never colour-only. A collapsed run shows every flag of its calls.
+- When a session has findings, a findings panel sits above the cockpit grid. Each finding shows severity, rule id, explanation, the matched pattern ("via shell egress") and a link to every event behind it. A session with no findings shows no panel.
+- On a live page, a streamed event that closes a rule match also re-sends the earlier rows it flags; the page swaps them in place.
 - Raw JSON stays available inline behind native `<details>/<summary>`; the right pane is the primary reader. Both are keyboard accessible.
 - The right pane shows the selected event's id, kind, target, outcome, duration (when present), wall-clock time, and the stored event JSON verbatim in a scrollable `<pre>`, behind a Details / JSON disclosure. With nothing selected it says `Select an event`.
 

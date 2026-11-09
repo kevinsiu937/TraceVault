@@ -1,0 +1,128 @@
+{
+  "source": "authored",
+  "note": "No recorded session edits agent config yet; ticket 33's live run records one.",
+  "events": [
+    {
+      "id": "evt_fixture_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_fixture_read_config",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_read_config",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/opencode.json",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_fixture_write_config",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_write_config",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/opencode.json",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_fixture_write_source",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_write_source",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/src/app.ts",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_fixture_write_agent",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_write_agent",
+      "prev_hash": null,
+      "data": {
+        "path": "C:\\work\\demo\\.opencode\\agent\\helper.md",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": [
+    {
+      "rule": "self-modification",
+      "events": [
+        "evt_fixture_write_config"
+      ]
+    },
+    {
+      "rule": "self-modification",
+      "events": [
+        "evt_fixture_write_agent"
+      ]
+    }
+  ]
+}

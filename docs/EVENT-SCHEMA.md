@@ -124,7 +124,8 @@ A permission or role is elevated.
 | `session.start` / `session.end` | Timeline bounds; `end` missing ⇒ session still open or crash |
 | `capture.gap` | A path could not observe a window. Fields: `capture_path`, `from`, `to`, `reason`. **This is what "gaps shown rather than hidden" means in data.** |
 | `capture.duplicate` | Two paths saw the same action — recorded so the investigator can prove de-duplication rather than trust it |
-| `scan.finding` | A scanner raised a flag. Fields: `rule_id`, `rule_source` (`static`/`workflow`), `severity`, `event_ids[]`, `explanation` |
+| `guard.failure` | Phase 2, opt-in blocking only: the guard failed internally and let a call through unenforced. Fields: `correlation_id` of the call, `reason` |
+| `scan.finding` | A scanner raised a flag. **Read-model shape, not a stored event** (Phase 2 decision: findings are computed at read time). Fields: `rule_id`, `rule_version`, `rule_set_digest`, `rule_source` (`static`/`workflow`), `severity`, `event_ids[]`, `explanation` |
 
 ## Open questions for Kevin
 

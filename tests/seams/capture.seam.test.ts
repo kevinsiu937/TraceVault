@@ -343,6 +343,30 @@ describe("seam B: hook payload in, stored events out", () => {
     expect(store.listBySession("ses_failed_timed")).toHaveLength(0);
   });
 
+  it("stores the project folder a live session reports when it is created", async () => {
+    const sent: unknown[] = [];
+    const plugin = new TraceVaultPlugin(
+      {
+        forward: async (payload: unknown): Promise<void> => {
+          sent.push(payload);
+        },
+      },
+      new PendingGapStore(join(directory, "pending-gaps.json")),
+      clockFrom([]),
+    );
+    const recorded = JSON.parse(readFileSync(join(import.meta.dirname, "../fixtures/event-session-created.json"), "utf8")) as {
+      event: Parameters<ReturnType<TraceVaultPlugin["hooks"]>["event"]>[0]["event"];
+    };
+
+    await plugin.hooks().event({ event: recorded.event });
+    for (const payload of sent) {
+      service.recordHookPayload(payload, RECEIVED_AT);
+    }
+
+    const start = store.listBySession("ses_e49a494c4ffeFTSQrA4DGaKRCq").find((event) => event.type === "session.start");
+    expect(start?.data).toEqual({ project_dir: "/home/dev/probe/projA" });
+  });
+
   it("omits the duration for a failure with no before hook", async () => {
     const sent: unknown[] = [];
     const plugin = new TraceVaultPlugin(

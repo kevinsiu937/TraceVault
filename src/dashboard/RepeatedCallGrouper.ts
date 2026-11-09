@@ -1,17 +1,11 @@
 import type { TimelineEntry } from "../service/TimelineEntry.js";
 
-/** Boundaries and capture bookkeeping are never "calls", so they never repeat. */
-const NOT_CALLS: ReadonlySet<string> = new Set([
-  "session.start",
-  "session.end",
-  "capture.gap",
-  "capture.duplicate",
-  "prompt.user",
-]);
+/** Two or more consecutive identical calls. */
+export type RepeatedRun = readonly [TimelineEntry, TimelineEntry, ...TimelineEntry[]];
 
 export type ListItem =
   | { readonly kind: "single"; readonly entry: TimelineEntry }
-  | { readonly kind: "repeat"; readonly entries: readonly TimelineEntry[] };
+  | { readonly kind: "repeat"; readonly entries: RepeatedRun };
 
 /**
  * Pure derivation for the list: consecutive identical calls — same kind, same
@@ -38,18 +32,19 @@ export class RepeatedCallGrouper {
   }
 
   private flush(run: readonly TimelineEntry[], items: ListItem[]): void {
-    if (run.length >= 2) {
-      items.push({ kind: "repeat", entries: run });
+    const [first, second, ...rest] = run;
+    if (first !== undefined && second !== undefined) {
+      items.push({ kind: "repeat", entries: [first, second, ...rest] });
       return;
     }
-    for (const entry of run) {
-      items.push({ kind: "single", entry });
+    if (first !== undefined) {
+      items.push({ kind: "single", entry: first });
     }
   }
 
   private identical(left: TimelineEntry, right: TimelineEntry): boolean {
     return (
-      !NOT_CALLS.has(left.type) &&
+      left.isCall &&
       left.type === right.type &&
       left.target === right.target &&
       left.operation === right.operation

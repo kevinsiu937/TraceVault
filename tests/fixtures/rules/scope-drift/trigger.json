@@ -1,0 +1,131 @@
+{
+  "source": "authored",
+  "note": "Reads inside the project, then outside it, including a sibling folder whose name starts with the project's.",
+  "events": [
+    {
+      "id": "evt_scope_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_scope",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T13:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_scope_inside",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_scope",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T13:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_inside",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/src/app.ts",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_scope_relative",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_scope",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T13:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_relative",
+      "prev_hash": null,
+      "data": {
+        "path": "src/util.ts",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_scope_system",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_scope",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T13:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_system",
+      "prev_hash": null,
+      "data": {
+        "path": "/etc/hosts",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_scope_sibling",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_scope",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T13:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_sibling",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo-other/notes.md",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": [
+    {
+      "rule": "scope-drift",
+      "events": [
+        "evt_scope_start",
+        "evt_scope_system"
+      ]
+    },
+    {
+      "rule": "scope-drift",
+      "events": [
+        "evt_scope_start",
+        "evt_scope_sibling"
+      ]
+    }
+  ]
+}

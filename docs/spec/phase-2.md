@@ -1,6 +1,6 @@
 # Spec: Phase 2, Workflow Scanner
 
-> Status: draft for Kevin's approval. Derived from the planning session of 7 Nov 2026. Binding once approved.
+> Status: approved 7 Nov 2026. Derived from the planning session of 7 Nov 2026. Binding until superseded.
 > Phase ladder: `docs/ROADMAP.md`. Tickets: `tickets/27-*` to `tickets/34-*`. Structure rules: `AGENTS.md`, `docs/ARCHITECTURE.md`.
 
 ## Problem Statement

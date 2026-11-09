@@ -310,7 +310,7 @@ describe("seam B: import the agent's own session store", () => {
     const childStart = store
       .listBySession("ses_import_child")
       .find((event) => event.type === "session.start");
-    expect(childStart?.data).toEqual({
+    expect(childStart?.data).toMatchObject({
       title: "Imported child (@Sisyphus-Junior subagent)",
       parent_session_id: "ses_import_root",
     });
@@ -318,7 +318,26 @@ describe("seam B: import the agent's own session store", () => {
     const rootStart = store
       .listBySession("ses_import_root")
       .find((event) => event.type === "session.start");
-    expect(rootStart?.data).toEqual({ title: "Imported root" });
+    expect(rootStart?.data).not.toHaveProperty("parent_session_id");
+  });
+
+  it("imports each session's project folder onto its session.start event", () => {
+    const agentDb = join(directory, "opencode.db");
+    createAgentStore(agentDb);
+    const agentSource = new OpenCodeStoreSource(agentDb);
+    try {
+      new HistoryImport(
+        agentSource,
+        store,
+        new EventFactory("session_store"),
+        new ImportedPartMapper(new ToolClassifier(new PayloadDigest()), new DenialSignal()),
+      ).run();
+    } finally {
+      agentSource.close();
+    }
+
+    const start = store.listBySession("ses_import_root").find((event) => event.type === "session.start");
+    expect(start?.data).toEqual({ title: "Imported root", project_dir: "C:/project" });
   });
 
   it("leaves every source file byte-identical", () => {

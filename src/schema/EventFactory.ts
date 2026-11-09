@@ -17,6 +17,7 @@ export interface EventMeta {
   readonly agentName?: string;
   readonly title?: string;
   readonly parentSessionId?: string | null;
+  readonly projectDir?: string | null;
   readonly durationMs?: number | null;
 }
 
@@ -45,9 +46,11 @@ export class EventFactory {
 
   sessionStart(meta: EventMeta): Event {
     const parent = meta.parentSessionId;
+    const projectDir = meta.projectDir;
     const data: SessionLifecycleData = {
       ...(meta.title === undefined ? {} : { title: meta.title }),
       ...(typeof parent === "string" && parent.length > 0 ? { parent_session_id: parent } : {}),
+      ...(typeof projectDir === "string" && projectDir.length > 0 ? { project_dir: projectDir } : {}),
     };
     return { ...this.envelope(meta), type: "session.start", data };
   }

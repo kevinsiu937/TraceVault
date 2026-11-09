@@ -1,6 +1,7 @@
 export interface AgentSessionRecord {
   readonly id: string;
   readonly parentId: string | null;
+  readonly directory: string | null;
   readonly title: string;
   readonly agent: string | null;
   readonly createdAt: Date;

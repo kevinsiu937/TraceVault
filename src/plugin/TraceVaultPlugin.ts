@@ -42,6 +42,7 @@ interface PluginEvent {
     info?: {
       title?: unknown;
       parentID?: unknown;
+      directory?: unknown;
     };
   };
 }
@@ -163,12 +164,15 @@ export class TraceVaultPlugin {
         if (event.type === "session.created" && typeof sessionID === "string") {
           const title = event.properties?.info?.title;
           const parentID = event.properties?.info?.parentID;
+          // Probed 7 Nov 2026: info.directory is the session's own folder; the plugin context's worktree is "/" outside git.
+          const directory = event.properties?.info?.directory;
           await this.send(
             {
               hook: "session.created",
               sessionID,
               ...(typeof title === "string" && title.length > 0 ? { title } : {}),
               ...(typeof parentID === "string" && parentID.length > 0 ? { parentID } : {}),
+              ...(typeof directory === "string" && directory.length > 0 ? { directory } : {}),
             },
             sessionID,
           );

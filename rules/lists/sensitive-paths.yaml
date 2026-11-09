@@ -1,0 +1,18 @@
+# Files whose contents are secrets or credentials. Shared by every rule that
+# asks "was something sensitive read?", so the list is edited in one place.
+name: sensitive-paths
+items:
+  - "**/.env"
+  - "**/.env.*"
+  - "**/*.pem"
+  - "**/*.key"
+  - "**/id_rsa*"
+  - "**/id_ed25519*"
+  - "**/id_ecdsa*"
+  - "**/.ssh/**"
+  - "**/.aws/credentials"
+  - "**/.config/gcloud/**"
+  - "**/.npmrc"
+  - "**/.netrc"
+  - "**/secrets/**"
+  - "**/credentials.json"

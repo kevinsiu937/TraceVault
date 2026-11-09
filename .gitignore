@@ -30,6 +30,7 @@ config.local.yaml
 .opencode/
 .omo/
 .codegraph/
+graphify-out/
 *.transcript
 transcript.jsonl
 

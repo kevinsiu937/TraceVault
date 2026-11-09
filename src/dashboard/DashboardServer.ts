@@ -174,6 +174,7 @@ export class DashboardServer {
           summary,
           entries,
           allEntries,
+          findings: this.service.getFindings(sessionId),
           filter,
           state,
           sessions,

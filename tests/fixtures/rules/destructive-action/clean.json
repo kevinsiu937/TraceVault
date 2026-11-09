@@ -1,0 +1,189 @@
+{
+  "source": "authored",
+  "note": "A deletion with no freeze, a harness-injected 'do not delete', and a freeze followed only by reads and harmless commands.",
+  "events": [
+    {
+      "id": "evt_freeze_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_rm_before",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_rm_before",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "rm -f tmp.log",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_harness",
+      "schema_version": 1,
+      "type": "prompt.user",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "text": "<available-skills>\n- cleanup: do not delete files without asking\n</available-skills>",
+        "message_id": "msg_harness",
+        "truncated": false
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_rm_after_harness",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_rm_after_harness",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "rm -f cache.tmp",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_freeze",
+      "schema_version": 1,
+      "type": "prompt.user",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "text": "From now on, read-only please: just explain the code.",
+        "message_id": "msg_freeze",
+        "truncated": false
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_read",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_read",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/src/app.ts",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_grep",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:06.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_grep",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "grep -rn 'remove' src/",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_format",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:07.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_format",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "npm run format -- --rm-unused",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": []
+}

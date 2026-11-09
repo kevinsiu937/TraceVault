@@ -54,7 +54,7 @@ Each adapter is thin: translate, do not interpret. Interpretation belongs to the
 - SQLite, one table of events plus indexes on session, timestamp and event type.
 - **Append-only.** Each row stores `prev_hash`; `hash = sha256(prev_hash || canonical_json(event))`. Deletion or modification of any row breaks the chain.
 - Hash chain is a *property of the store*, not the product thesis: the thesis is the unified investigation view. Do not market it as novel.
-- Read API: by session, by time range, by type, by flag.
+- Read API: by session, by time range, by type. Flags are not stored; the service computes them from these reads.
 
 ### Vulnerability Scanner (`src/scanner/static/`)
 
@@ -83,6 +83,13 @@ Rule-based over the event stream. Six rule families, each a YAML file in `rules/
 | `scope-drift` | access outside the project directory |
 
 Matcher holds partial matches per session and raises a flag when the final condition matches. No ML: every flag names the rule and the events that satisfied it.
+
+- **Findings are computed at read time and never stored.** The store stays raw evidence; a rule edit re-evaluates every session. Each finding carries the rule id, rule version, a digest of the rule set, and the event ids behind it.
+- **Placement.** `src/scanner/dynamic/` imports only `schema`. The service consumes it through `WorkflowScannerPort` and passes flags to the dashboard through `InvestigationServicePort`. The plugin consumes the same port for opt-in blocking.
+- **Rules are data.** One YAML file per rule, parsed once by a loader that rejects unknown keys. A new rule is a new file; a new match condition is a new class registered in the composition root.
+- **Opt-in blocking.** A rule marked `blockable` (one step, no outcome test) can refuse a call in the plugin's pre-call hook. The refusal is stored as a `denied` event carrying the rule id. Any internal error lets the call through.
+
+Spec: `docs/spec/phase-2.md`.
 
 ### Investigator (`src/investigator/`)
 
@@ -129,7 +136,7 @@ tests/seams/      capture.seam.test.ts, dashboard.seam.test.ts
 tests/fixtures/   frozen recorded payloads
 ```
 
-Tests are not per class. Two seams only: an HTTP request rendered against a temporary database, and a recorded hook payload turned into stored events. See `docs/spec/phase-1.md`.
+Tests are not per class. Three seams only: an HTTP request rendered against a temporary database, a recorded hook payload turned into stored events, and (from Phase 2) a frozen event sequence turned into findings. See `docs/spec/phase-1.md` and `docs/spec/phase-2.md`.
 
 ## Adding a feature — the checklist
 

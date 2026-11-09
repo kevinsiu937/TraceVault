@@ -1,0 +1,12 @@
+# The agent keeps trying calls it was refused. One denial is normal; several in
+# a few minutes can mean it is searching for a way around its permissions.
+# Only the stored `denied` outcome counts: a plain error is not a refusal.
+id: probing
+version: 1
+severity: medium
+explanation: The agent kept attempting calls it was refused, which can mean it is probing for a way around its permissions.
+window: { seconds: 300 }
+steps:
+  - repeat: 3
+    match:
+      outcome: { equals: denied }

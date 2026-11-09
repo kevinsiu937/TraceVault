@@ -13,15 +13,17 @@ A change that works but violates either one is rejected, not merged with a note 
 
 ## 1. What we are building now
 
-**Phase 1 is the backbone, nothing more:**
+**Phase 1 (backbone and investigation cockpit) is closed.** Its exit verification is ticket 10.
+
+**Phase 2 is the workflow scanner, nothing more:**
 
 ```
-OpenCode plugin hook → event store → localhost page (session list → session timeline)
+stored events → YAML rules → findings → flags on the timeline (→ opt-in blocking, last)
 ```
 
-Six things and only six: capture, normalise, store, list sessions, show a timeline, serve it on `127.0.0.1`.
+Rules over each session's event sequence, flags naming the rule and the events behind it, and, as the final ticket, an opt-in guard that refuses calls matching a blockable single-step rule. The spec is `docs/spec/phase-2.md`.
 
-**Explicitly out of Phase 1:** MCP proxy, session-store backfill, scanners, risk flags, reports, simulator, auth, user accounts, theming. Building any of them now is a scope violation.
+**Explicitly out of Phase 2:** the static configuration scanner, tool-poisoning detection, reports, the simulator, the MCP proxy, stored findings, alerting, a rule editor, ML scoring, auth, user accounts, theming. Building any of them now is a scope violation.
 
 ## 2. OOD — the design rules
 
@@ -38,9 +40,9 @@ Six things and only six: capture, normalise, store, list sessions, show a timeli
 
 ### Boundaries between stages
 
-1. **Every stage boundary is an interface file:** `CapturePort`, `EventStorePort`, `InvestigationServicePort`. Nothing imports a concrete class across a boundary.
+1. **Every stage boundary is an interface file:** `CapturePort`, `EventStorePort`, `InvestigationServicePort`, `WorkflowScannerPort`. Nothing imports a concrete class across a boundary.
 2. **The composition root is the only place that chooses implementations** — `src/cli/`. One file shows how the system is assembled.
-3. **Dependency direction is one-way:** `cli → dashboard → service → store`, and `cli → plugin → capture → schema`. An upward import is a bug, not a preference.
+3. **Dependency direction is one-way:** `cli → dashboard → service → store`, and `cli → plugin → capture → schema`. The workflow scanner (`src/scanner/dynamic/`) imports only `schema`; the service and the plugin reach it through `WorkflowScannerPort`, and the dashboard never reaches it. An upward import is a bug, not a preference.
 4. **"Modify the display, touch only the display."** The dashboard never imports `store/` or `capture/`. If a UI change seems to need a storage change, the façade is wrong — fix the façade, not the UI's imports.
 5. **No barrel files.** They hide the dependency graph and make "which file do I change?" unanswerable — the exact problem this design exists to prevent.
 6. **Folders appear when a file needs them.** No placeholder directories for later phases.
@@ -56,12 +58,13 @@ Six things and only six: capture, normalise, store, list sessions, show a timeli
 
 If a behaviour genuinely cannot be tested first — an unknown third-party hook shape, a physical measurement — probe it first, record what it returned, then write the test against the recorded fixture, and say in the report that this is what happened.
 
-### The two seams
+### The three seams
 
-Tests attach at exactly two points, and nothing below them:
+Tests attach at exactly three points, and nothing below them:
 
 - **Seam A — HTTP request to rendered page**, wired to the real store against a temporary database. Exercises route, façade, store and timeline assembly in one assertion: if the page shows the right rows in the right order, the whole chain is behaving.
 - **Seam B — raw hook payload in, stored events out.** The only place capture correctness and ordering can be pinned, because the live hook cannot be made deterministic.
+- **Seam C — event sequence in, findings out.** A frozen sequence of stored events goes through the real rules and the real scanner, and the assertion is on rule ids and event ids. One suite iterates `rules/*.yaml` and fails for any rule missing its trigger or clean fixture. Added in Phase 2: rule correctness asserted through rendered HTML would break on every UI change.
 
 These supersede per-class tests. Do **not** also write a test per class — that is duplication with extra maintenance. A unit test for a pure value object is allowed only when the object has rules worth pinning beyond what the seams show.
 
@@ -97,12 +100,12 @@ See `docs/ROADMAP.md` for phases 2-5. Do not work on a later phase while an earl
 
 ## 7. Tickets
 
-Phase 1 work is broken into tracer-bullet tickets in `tickets/`, one file each, numbered in dependency order; `tickets/README.md` holds the index and the dependency graph.
+Each phase's work is broken into tracer-bullet tickets in `tickets/`, one file each, numbered in dependency order; `tickets/README.md` holds the index and the dependency graph.
 
-- **Take one ticket at a time.** Never start a ticket whose blockers are open. The frontier today is `01`.
+- **Take one ticket at a time.** Never start a ticket whose blockers are open. The frontier is named in `tickets/README.md`.
 - A ticket is a **vertical slice**: it ends with something demoable, never with "a layer finished".
 - Read the ticket file before starting and tick its acceptance boxes as they are met — in the same commit as the work.
-- The spec behind them is `docs/spec/phase-1.md`; if a ticket and the spec disagree, the spec wins and the ticket gets fixed.
+- The spec behind them is `docs/spec/phase-<n>.md` for the ticket's phase; if a ticket and the spec disagree, the spec wins and the ticket gets fixed.
 - When a ticket is done, report in one line: what works now, what the demo shows, and the next frontier ticket. Then stop — no auto-advancing to the next ticket.
 
 ## 8. Definition of done (all four, every ticket)

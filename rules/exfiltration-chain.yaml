@@ -1,0 +1,26 @@
+# A sensitive file is read, then something that can carry data off the machine
+# runs. Shell egress is matched by command text, which is easy to evade, so the
+# finding says "possible" and names the pattern that matched, nothing more.
+id: exfiltration-chain
+version: 1
+severity: high
+explanation: A sensitive file was read and then data could have left the machine. Treat it as possible exfiltration and check what was sent.
+window: { seconds: 1800 }
+steps:
+  - match:
+      type: { equals: document.access }
+      operation: { equals: read }
+      path: { glob: { list: sensitive-paths } }
+  - any:
+      - label: webfetch
+        match:
+          type: { equals: hook.script }
+          tool: { equals: webfetch }
+      - label: shell egress
+        match:
+          type: { equals: hook.script }
+          tool: { equals: bash }
+          target: { regex: '\b(curl|wget|nc|ncat|netcat|scp|sftp|rsync|ftp|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b' }
+      - label: MCP call
+        match:
+          type: { equals: mcp.call }

@@ -1,3 +1,4 @@
+import type { Finding } from "../schema/Finding.js";
 import type { ActivityFilter } from "../service/ActivityFilter.js";
 import type { SessionSummary } from "../service/SessionSummary.js";
 import type { TimelineEntry } from "../service/TimelineEntry.js";
@@ -13,6 +14,7 @@ export interface SessionRenderContext {
   readonly summary: SessionSummary;
   readonly entries: readonly TimelineEntry[];
   readonly allEntries: readonly TimelineEntry[];
+  readonly findings: readonly Finding[];
   readonly filter: ActivityFilter;
   readonly state: SessionParams;
   readonly sessions: readonly SessionSummary[];

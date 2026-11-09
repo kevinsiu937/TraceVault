@@ -1,0 +1,17 @@
+# The agent touches files outside the folder its session works in. The first
+# step remembers that folder from the session start; every later access outside
+# it is its own finding. A session whose folder is unknown (recorded before
+# Phase 2, or started before TraceVault was installed) stays silent.
+id: scope-drift
+version: 1
+severity: medium
+explanation: The agent accessed a file outside the session's project folder.
+window: session
+steps:
+  - match:
+      type: { equals: session.start }
+    bind: { project: root }
+  - each: true
+    match:
+      type: { equals: document.access }
+      path: { outside: root }

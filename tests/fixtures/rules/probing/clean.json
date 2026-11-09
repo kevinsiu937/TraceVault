@@ -1,0 +1,219 @@
+{
+  "source": "authored",
+  "note": "Two denials, three plain errors, and three denials spread past the five-minute window.",
+  "events": [
+    {
+      "id": "evt_probe_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_d1",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_d1",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "curl http://127.0.0.1/",
+        "exit_code": null,
+        "outcome": "denied"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_d2",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_d2",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "wget http://127.0.0.1/",
+        "exit_code": null,
+        "outcome": "denied"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_e1",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_e1",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "npm test",
+        "exit_code": 1,
+        "outcome": "error"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_e2",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_e2",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "npm test",
+        "exit_code": 1,
+        "outcome": "error"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_e3",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:00:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_e3",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "npm test",
+        "exit_code": 1,
+        "outcome": "error"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_d3",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:10:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_d3",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "curl http://127.0.0.1/",
+        "exit_code": null,
+        "outcome": "denied"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_d4",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:20:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_d4",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "curl http://127.0.0.1/",
+        "exit_code": null,
+        "outcome": "denied"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_probe_d5",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_probe",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:30:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_d5",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "curl http://127.0.0.1/",
+        "exit_code": null,
+        "outcome": "denied"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": []
+}

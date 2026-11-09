@@ -30,7 +30,7 @@ export class OpenCodeStoreSource implements SessionStoreSource {
 
     const rows = database
       .prepare(
-        `SELECT id, parent_id, title, agent, time_created, time_updated
+        `SELECT id, parent_id, directory, title, agent, time_created, time_updated
          FROM session ORDER BY time_created ASC, id ASC`,
       )
       .all();
@@ -38,6 +38,7 @@ export class OpenCodeStoreSource implements SessionStoreSource {
     return rows.map((row) => ({
       id: this.asString(row["id"], "id"),
       parentId: this.asNullableString(row["parent_id"]),
+      directory: this.asNullableString(row["directory"]),
       title: this.asString(row["title"], "title"),
       agent: this.asNullableString(row["agent"]),
       createdAt: this.asDate(row["time_created"], "time_created"),

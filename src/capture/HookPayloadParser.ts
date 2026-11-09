@@ -23,6 +23,7 @@ export interface SessionStartedPayload {
   readonly sessionID: string;
   readonly title?: string;
   readonly parentID?: string;
+  readonly directory?: string;
 }
 
 export interface CaptureGapPayload {
@@ -86,11 +87,13 @@ export class HookPayloadParser {
       const title = payload["title"];
       // The live parent field is not part of a frozen fixture; a wrong type is dropped, never fatal.
       const parentID = payload["parentID"];
+      const directory = payload["directory"];
       return {
         kind: "session.started",
         sessionID,
         ...(typeof title === "string" && title.length > 0 ? { title } : {}),
         ...(typeof parentID === "string" && parentID.length > 0 ? { parentID } : {}),
+        ...(typeof directory === "string" && directory.length > 0 ? { directory } : {}),
       };
     }
 

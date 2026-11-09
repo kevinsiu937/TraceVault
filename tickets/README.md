@@ -39,16 +39,16 @@ Spec: `docs/spec/phase-2.md`.
 
 | # | Ticket | Blocked by | Status |
 |---|---|---|---|
-| 27 | Self-modification, flagged end to end (tracer bullet) | Phase 2 spec approved | ready once the spec is approved |
-| 28 | Exfiltration chain: a sensitive read, then data leaves | 27 | blocked |
-| 29 | Probing: repeated denied calls | 28 | blocked |
-| 30 | Destructive action after a declared freeze | 28 | blocked |
-| 31 | Scope drift: access outside the project | 28 | blocked |
-| 32 | Escalation then use (probe first) | 28 | blocked |
-| 33 | Phase 2 exit verification | 27, 28, 29, 30, 31 | blocked |
+| 27 | Self-modification, flagged end to end (tracer bullet) | Phase 2 spec approved | done |
+| 28 | Exfiltration chain: a sensitive read, then data leaves | 27 | done |
+| 29 | Probing: repeated denied calls | 28 | done |
+| 30 | Destructive action after a declared freeze | 28 | done |
+| 31 | Scope drift: access outside the project | 28 | done (subagent probe open) |
+| 32 | Escalation then use (probe first) | 28 | blocked: live probe needs model access |
+| 33 | Phase 2 exit verification | 27, 28, 29, 30, 31 | live three-rule/clean exit recorded; destructive-after-freeze scenario open |
 | 34 | Opt-in blocking: refuse before it runs | 33 | blocked |
 
-**Frontier now:** 27, once Kevin approves the Phase 2 spec.
+**Frontier now:** 33 has recorded DeepSeek trigger and clean fixtures and a green gate; its deletion-after-freeze requirement remains open because the agent refused deletion. 34 remains blocked by 33. 32's permission-grant probe is still open; model access is now available through DeepSeek.
 
 ## Dependency shape
 
@@ -102,7 +102,7 @@ Spec: `docs/spec/phase-2.md`.
 - **OOD and TDD are the definition of done.** See `AGENTS.md` §0 and §8. A ticket whose code runs but whose design crosses a boundary, or which adds no test, is not done.
 - Take **one ticket at a time**. Do not start a ticket whose blockers are open.
 - Each ticket is a vertical slice: it ends with something demoable, not with a layer finished.
-- Tests are the two seams described in the Phase 1 spec, not one per class. A ticket that adds observable behaviour adds or extends a seam test.
+- Tests attach at the three seams in `AGENTS.md` §3, not one per class. A ticket that adds observable behaviour adds or extends a seam test.
 - Tick the acceptance boxes as they are met, in the ticket file, in the same commit as the work.
 - Do not commit unless Kevin says so.
 - When a ticket is done, say so in one line: what works now, what the demo shows, what the next frontier ticket is.

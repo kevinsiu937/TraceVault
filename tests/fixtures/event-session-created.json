@@ -1,0 +1,14 @@
+{
+  "_note": "Recorded 7 Nov 2026 from OpenCode 1.18.32 by a probe plugin's event hook (docs/probes/phase-2-live-probes.md). Local path scrubbed.",
+  "event": {
+    "type": "session.created",
+    "properties": {
+      "sessionID": "ses_e49a494c4ffeFTSQrA4DGaKRCq",
+      "info": {
+        "id": "ses_e49a494c4ffeFTSQrA4DGaKRCq",
+        "directory": "/home/dev/probe/projA",
+        "projectID": "global"
+      }
+    }
+  }
+}

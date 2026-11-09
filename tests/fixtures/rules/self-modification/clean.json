@@ -1,0 +1,137 @@
+{
+  "source": "authored",
+  "note": "Reads of agent config and writes to look-alike paths.",
+  "events": [
+    {
+      "id": "evt_fixture_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_fixture_read_config",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_read_config",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/opencode.json",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_fixture_read_agents",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_read_agents",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/AGENTS.md",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_fixture_write_backup",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_write_backup",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/opencode.json.bak",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_fixture_write_doc",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_write_doc",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/docs/opencode-notes.md",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_fixture_write_source",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_write_source",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/src/app.ts",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": []
+}

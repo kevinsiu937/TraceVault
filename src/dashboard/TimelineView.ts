@@ -75,7 +75,8 @@ ${rows}
   }
 
   styles(): string {
-    return `.center .timeline{border-radius:0}
+    return `${this.row.styles()}
+.center .timeline{border-radius:0}
 .center .event{border-bottom:1px solid var(--line)}
 .center .event:last-child{border-bottom:none}
 .center .event-row{color:inherit;text-decoration:none;margin:0}
@@ -132,12 +133,22 @@ ${rows}
     return `const streamUrl = ${JSON.stringify(streamUrl)};
 const timeline = document.getElementById("timeline");
 const source = new EventSource(streamUrl);
+const fromHtml = (html) => {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  return template.content.firstElementChild;
+};
 source.onmessage = (message) => {
   const entry = JSON.parse(message.data);
-  if (timeline === null || timeline.querySelector('[data-event-id="' + entry.eventId + '"]') !== null) return;
-  const template = document.createElement("template");
-  template.innerHTML = entry.html;
-  const row = template.content.firstElementChild;
+  if (timeline === null) return;
+  // Rows whose flags changed because this event closed a rule match, rendered by the server.
+  for (const update of entry.updates) {
+    const existing = timeline.querySelector('li.event[data-event-id="' + update.eventId + '"]');
+    const replacement = fromHtml(update.html);
+    if (existing !== null && replacement !== null) existing.replaceWith(replacement);
+  }
+  if (timeline.querySelector('[data-event-id="' + entry.eventId + '"]') !== null) return;
+  const row = fromHtml(entry.html);
   if (row === null) return;
   const events = [...timeline.querySelectorAll("li.event")];
   const anchor = events[Math.max(0, Math.min(entry.position, events.length))] ?? null;

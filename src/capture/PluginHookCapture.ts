@@ -24,6 +24,7 @@ export class PluginHookCapture implements CapturePort {
         receivedAt,
         ...(hook.title === undefined ? {} : { title: hook.title }),
         parentSessionId: hook.parentID ?? null,
+        projectDir: hook.directory ?? null,
       });
     }
     if (hook.kind === "session.idle") {

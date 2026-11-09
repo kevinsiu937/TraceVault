@@ -1,6 +1,6 @@
 # Roadmap — Phases 2 to 5
 
-Phase 1 is not described here. It lives in `tickets/` as ten tracer-bullet tickets, indexed by `tickets/README.md`.
+Phase 1 is not described here. It lives in `tickets/01-*` to `tickets/26-*`, indexed by `tickets/README.md`.
 
 Each later phase starts only when the previous phase's exit criteria are met.
 
@@ -14,6 +14,8 @@ Each later phase starts only when the previous phase's exit criteria are met.
 - A matcher holds partial matches per session and raises a finding when the last condition matches.
 - Every flag appears on the timeline attached to the exact events that satisfied it.
 - Each rule ships with two fixtures: one that must trigger, one that must not.
+- Last: an opt-in guard that refuses a call matching a blockable single-step rule before it runs. The default install never blocks.
+- Spec: `docs/spec/phase-2.md`. Tickets: `tickets/27-*` to `tickets/34-*`.
 
 **Exit:** a scripted session triggers at least three rules; each flag resolves to a rule id plus event ids; a clean run produces no flags.
 

@@ -43,6 +43,7 @@ export class HistoryImport {
             agentName,
             ...(session.title.length > 0 ? { title: session.title } : {}),
             parentSessionId: session.parentId,
+            projectDir: session.directory,
           }),
         );
         events += 1;
