@@ -5,12 +5,19 @@
 # permission events, to <output-dir>/events.jsonl. Nothing is sent to TraceVault.
 #
 # Usage: sh docs/probes/scripts/permission-probe.sh <output-dir>
+# The output directory must be new or empty; existing contents are never removed.
 set -eu
 OUT=${1:?usage: permission-probe.sh <output-dir>}
 mkdir -p "$OUT"
 OUT=$(cd "$OUT" && pwd)
+for ENTRY in "$OUT"/* "$OUT"/.[!.]* "$OUT"/..?*; do
+  if [ -e "$ENTRY" ] || [ -L "$ENTRY" ]; then
+    echo "Refusing to run: output must be a new or empty directory." >&2
+    exit 1
+  fi
+done
 W="$OUT/workspace"
-rm -rf "$W"
+mkdir "$W"
 mkdir -p "$W/.opencode/plugin"
 cat > "$W/opencode.json" <<'JSON'
 { "$schema": "https://opencode.ai/config.json", "permission": { "bash": "ask" } }

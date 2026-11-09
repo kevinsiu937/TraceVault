@@ -10,6 +10,7 @@
 # anywhere except 127.0.0.1 and the model provider.
 #
 # Usage: sh docs/probes/scripts/phase-2-exit-run.sh <output-dir>
+# The output directory must be new or empty; existing contents are never removed.
 set -eu
 REPO=$(cd "$(dirname "$0")/../../.." && pwd)
 OUT=${1:?usage: phase-2-exit-run.sh <output-dir>}
@@ -18,8 +19,14 @@ MODEL=${TRACEVAULT_PROBE_MODEL:-opencode/big-pickle}
 OPENCODE=${OPENCODE:-opencode}
 mkdir -p "$OUT"
 OUT=$(cd "$OUT" && pwd)
+for ENTRY in "$OUT"/* "$OUT"/.[!.]* "$OUT"/..?*; do
+  if [ -e "$ENTRY" ] || [ -L "$ENTRY" ]; then
+    echo "Refusing to run: output must be a new or empty directory." >&2
+    exit 1
+  fi
+done
 W="$OUT/workspace"
-rm -rf "$W" "$OUT/events.db"
+mkdir "$W"
 mkdir -p "$W/.opencode/plugin"
 
 printf 'TRACEVAULT_FAKE_TOKEN=not-a-real-secret\n' > "$W/.env"

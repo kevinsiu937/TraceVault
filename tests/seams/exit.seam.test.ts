@@ -1,6 +1,7 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
@@ -34,6 +35,69 @@ interface ExitRun {
 function run(name: "trigger" | "clean"): ExitRun {
   return JSON.parse(readFileSync(join(EXIT, `${name}.json`), "utf8")) as ExitRun;
 }
+
+describe.each(["permission-probe.sh", "phase-2-exit-run.sh"])("probe output safety: %s", (script) => {
+  let directory: string;
+  let output: string;
+  let bin: string;
+
+  beforeEach(() => {
+    directory = mkdtempSync(join(tmpdir(), "tracevault probe-"));
+    output = join(directory, "output");
+    bin = join(directory, "bin");
+    mkdirSync(bin);
+    for (const command of ["node", "curl", "opencode"]) {
+      writeFileSync(join(bin, command), "#!/bin/sh\necho 'probe execution reached' >&2\nexit 77\n", { mode: 0o755 });
+    }
+  });
+
+  afterEach(() => rmSync(directory, { recursive: true, force: true }));
+
+  function launch() {
+    return spawnSync("sh", [join(import.meta.dirname, "../../docs/probes/scripts", script), output], {
+      encoding: "utf8",
+      env: { ...process.env, PATH: `${bin}:${process.env["PATH"] ?? ""}`, OPENCODE: join(bin, "opencode") },
+      timeout: 5000,
+    });
+  }
+
+  it.each(["workspace/keep.txt", ".keep", "events.db"])("refuses an output directory containing %s without changing it", (file) => {
+    const marker = join(output, file);
+    mkdirSync(dirname(marker), { recursive: true });
+    writeFileSync(marker, "keep this existing data\n");
+    const before = readdirSync(output).sort();
+
+    const result = launch();
+
+    expect(existsSync(marker) ? readFileSync(marker, "utf8") : "missing file").toBe("keep this existing data\n");
+    expect(readdirSync(output).sort()).toEqual(before);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("empty directory");
+    expect(result.stderr).not.toContain("probe execution reached");
+  });
+
+  it("refuses an output directory containing a dangling symlink without changing it", () => {
+    mkdirSync(output);
+    symlinkSync("missing-target", join(output, ".keep"));
+
+    const result = launch();
+
+    expect(readlinkSync(join(output, ".keep"))).toBe("missing-target");
+    expect(readdirSync(output)).toEqual([".keep"]);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("empty directory");
+  });
+
+  it.each(["new", "empty"])("starts in a %s output directory", (kind) => {
+    if (kind === "empty") mkdirSync(output);
+
+    const result = launch();
+
+    expect(result.error).toBeUndefined();
+    expect(result.stderr).toContain("probe execution reached");
+    expect(existsSync(join(output, "workspace/opencode.json"))).toBe(true);
+  });
+});
 
 describe("Phase 2 exit: the scripted session, frozen", () => {
   const scanner = new WorkflowScannerAssembly().fromDirectory(RULES);
