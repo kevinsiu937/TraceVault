@@ -10,8 +10,8 @@ This ticket proves the scanner holds partial matches across events and closes ea
 
 - [x] Reading `.env` then running `curl` flags both rows with one `exfiltration-chain` finding
 - [x] Seam C, prefix by prefix: no finding until the closing event, then exactly one
-- [x] A `.env` read followed by two `curl` calls yields one finding, not two
-- [x] Clean fixtures stay silent: the read alone, egress before the read, egress outside the window
+- [x] A `.env` read followed by two `curl` calls yields two findings, one per egress (changed on review, 10 Nov 2026; it was one)
+- [x] Clean fixtures stay silent: the read alone, egress before the read, denied egress, egress outside the window
 - [x] The finding names the egress pattern that matched
 - [x] On a live session, the earlier read row gains the flag when the closing event arrives, with no reload. The stream pushes server-rendered rows, so one Seam A live-stream case can assert it
 - [x] The sensitive path list is a named list under `rules/lists/`, referenced by name from the rule; the loader rejects an unknown list name
@@ -28,3 +28,5 @@ This ticket proves the scanner holds partial matches across events and closes ea
 - Live: each stream message carries `updates`, the server-rendered rows whose flags changed. The page swaps them in. Headless Chrome confirmed a streamed `curl` flags the earlier `.env` row. The findings panel itself refreshes on reload.
 - The page seam pins that a filter hiding the `.env` read keeps the flag on the `curl` row. Deletion checks for this ticket all fail the suite.
 - Fixtures are authored. Ticket 33 records a live chain.
+
+**Review fix (10 Nov 2026):** A harmless MCP call right after a sensitive read closed the chain, so a later `curl` inside the window went unflagged. The egress step now says `each`, so every egress inside the window is its own finding. Kevin chose this over keeping one finding per read, and the spec's matching paragraph now says so. A denied egress never ran and no longer counts, so the recorded DeepSeek run's denied `wget` and `nc` stay unflagged. The 7 Nov note that two sensitive reads before one egress give two findings no longer holds. Since the duplicate fix in ticket 30, one event closes only the oldest open match, so that finding names the earlier read. The trigger fixture now has two `curl` calls after `.env`. In a later window, it has an SSH key read followed by an MCP call and a `curl`. The clean fixture adds a denied `curl`, a denied webfetch and a denied MCP call. Removing `each`, or the denied check on any of the three kinds of egress, fails the suite.

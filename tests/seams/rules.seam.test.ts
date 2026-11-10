@@ -78,7 +78,7 @@ describe("seam C: rule fixtures in, findings out", () => {
       .scan(fixture("exfiltration-chain", "trigger").events)
       .filter((finding) => finding.ruleId === "exfiltration-chain");
 
-    expect(found.map((finding) => finding.matched)).toEqual([["shell egress"], ["MCP call"]]);
+    expect(found.map((finding) => finding.matched)).toEqual([["shell egress"], ["shell egress"], ["MCP call"], ["shell egress"]]);
   });
 
   it("says nothing about scope when the session's project folder is unknown", () => {

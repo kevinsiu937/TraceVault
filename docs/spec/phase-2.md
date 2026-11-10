@@ -42,7 +42,7 @@ The last ticket adds an opt-in guard. It refuses a call before it runs when a si
 
 **Facts, not raw fields.** Rules match on a closed set of event facts (type, target, outcome, operation, path, tool, text) produced by one projection in `schema/`, which the timeline builder also uses. The loader rejects an unknown fact, so a schema change cannot silently break a hand-edited rule.
 
-**Matching.** The scanner walks a session's deduplicated events in timeline order. It holds partial matches and raises a finding when the last step matches inside the window. Each partial match closes once, so a `.env` read followed by two `curl` calls yields one finding.
+**Matching.** The scanner walks a session's deduplicated events in timeline order. It holds partial matches and raises a finding when the last step matches inside the window. A partial match closes once. A last step marked `each` keeps the match open instead, so every later event that matches that step inside the window is its own finding: a `.env` read followed by two `curl` calls yields two findings. One event closes at most one match per rule, the oldest still open.
 
 **Findings are computed at read time, never stored.** The store stays raw evidence. A finding carries the rule id, the rule version, a digest of the whole rule set, a severity, the explanation, and the ids of the events that satisfied it. A rule edit therefore re-evaluates every session, and the digest shows which rule set produced a finding. The `scan.finding` type in the event schema becomes a read-model shape, not a stored event.
 

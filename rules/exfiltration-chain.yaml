@@ -1,6 +1,11 @@
 # A sensitive file is read, then something that can carry data off the machine
 # runs. Shell egress is matched by command text, which is easy to evade, so the
 # finding says "possible" and names the pattern that matched, nothing more.
+#
+# Every egress inside the window is its own finding, so a harmless MCP call
+# does not hide a later curl. A denied egress never ran and is not one. When
+# several sensitive reads are open, a finding names the earliest still inside
+# the window.
 id: exfiltration-chain
 version: 1
 severity: high
@@ -11,16 +16,20 @@ steps:
       type: { equals: document.access }
       operation: { equals: read }
       path: { glob: { list: sensitive-paths } }
-  - any:
+  - each: true
+    any:
       - label: webfetch
         match:
           type: { equals: hook.script }
           tool: { equals: webfetch }
+          outcome: { in: [ok, error, timeout] }
       - label: shell egress
         match:
           type: { equals: hook.script }
           tool: { equals: bash }
           target: { regex: '\b(curl|wget|nc|ncat|netcat|scp|sftp|rsync|ftp|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b' }
+          outcome: { in: [ok, error, timeout] }
       - label: MCP call
         match:
           type: { equals: mcp.call }
+          outcome: { in: [ok, error, timeout] }
