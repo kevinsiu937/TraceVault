@@ -4,7 +4,7 @@
 
 **Blocked by:** 33.
 
-**Status:** blocked (see Blocked by)
+**Status:** open. The refusal probe (`docs/probes/scripts/refusal-probe.sh`) is ready and not yet run.
 
 - [ ] Probe first: record what OpenCode does when the pre-call hook refuses. Does the model see the reason? Does a failed-tool event fire? Does the after hook fire?
 - [ ] The loader accepts `blockable: true` only on a rule with one step that does not test the outcome

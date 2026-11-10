@@ -30,13 +30,28 @@ The model reply stalled after the events above were logged, so the run was stopp
 
 Which shape this runtime sends to a plugin is the open question, and per `AGENTS.md` it must be observed, not guessed. `docs/probes/scripts/permission-probe.sh` runs OpenCode interactively with a logging plugin. Approve the one prompt it shows, and the script prints every permission record it received.
 
+## 34: what a refused call looks like (not yet run)
+
+Blocking must not be built on a guessed hook behaviour. `docs/probes/scripts/refusal-probe.sh` starts one `opencode run` session in a throwaway workspace. A logging plugin throws in `tool.execute.before` for any edit or write that names `opencode.json`. The agent is asked to edit `opencode.json`, run `ls`, and quote any error it received. The plugin logs every hook and event to `<output-dir>/events.jsonl`, with full tool and text parts.
+
+The run answers the ticket's questions from the log:
+
+- Whether the model sees the refusal's message, from the tool part's `state.error` and the model's reply.
+- Whether a failed-tool event fires, from a `message.part.updated` tool part with `status: "error"`.
+- Whether `tool.execute.after` fires for the refused call.
+- Whether the turn continues after a refusal, from whether `ls` still runs.
+- Whether the model retries the refused edit.
+- Whether `WorkflowScannerAssembly`, and so the `yaml` package, loads inside OpenCode's plugin runtime, from the `"probe":"scanner"` line.
+
+The script also reports whether `opencode.json` stayed unchanged. Scrub local paths before freezing any of the log into `tests/fixtures/`.
+
 ## Live runs this machine could not make
 
 On 7 November 2026 every free model returned `AI_APICallError: Free usage limit reached`, and no provider credentials are configured. Separately, Claude Code's safety check refused an unattended run with `--auto`. Tickets 32, 33 and 34 each need a tool-using agent run, so a person with model access runs the scripts in `docs/probes/scripts/`:
 
 - `permission-probe.sh` for ticket 32 (interactive; approve one prompt).
 - `phase-2-exit-run.sh` for ticket 33 (unattended, with narrow permissions). It freezes both sessions into `tests/fixtures/rules/phase-2-exit/`.
-- Ticket 34's refusal probe: run `phase-2-exit-run.sh` after `tracevault init --block` (see ticket 34).
+- `refusal-probe.sh` for ticket 34 (unattended, with narrow permissions). See the section on ticket 34 above.
 
 ## Earlier note: probes that need a tool-using agent run
 
