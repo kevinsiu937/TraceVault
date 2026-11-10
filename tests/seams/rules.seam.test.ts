@@ -157,6 +157,12 @@ steps:
     expect(load()).toThrow(/probe\.yaml: steps\[0\]\.match\.colour: unknown fact/);
   });
 
+  it.each(["allowed_by", "other_than"])("rejects %s without the name of an earlier binding", (operator) => {
+    write("probe.yaml", VALID.replace("type: { equals: document.access }", `call: { ${operator}: [approved] }`));
+
+    expect(load()).toThrow(new RegExp(`probe\\.yaml: steps\\[0\\]\\.match\\.call\\.${operator}: expects the name`));
+  });
+
   it("rejects a match operator it does not know", () => {
     write("probe.yaml", VALID.replace("{ equals: document.access }", "{ like: document.access }"));
 

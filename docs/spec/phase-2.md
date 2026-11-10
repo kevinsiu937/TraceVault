@@ -40,7 +40,7 @@ The last ticket adds an opt-in guard. It refuses a call before it runs when a si
 
 **Open for extension.** A new rule is a new YAML file and touches no code. A new kind of match condition (glob, regex, equals, any-of) is a new class registered in the composition root. Nothing grows a `switch`.
 
-**Facts, not raw fields.** Rules match on a closed set of event facts (type, target, outcome, operation, path, tool, text) produced by one projection in `schema/`, which the timeline builder also uses. The loader rejects an unknown fact, so a schema change cannot silently break a hand-edited rule.
+**Facts, not raw fields.** Rules match on a closed set of event facts (type, target, outcome, operation, path, tool, text, project, call) produced by one projection in `schema/`, which the timeline builder also uses. The loader rejects an unknown fact, so a schema change cannot silently break a hand-edited rule.
 
 **Matching.** The scanner walks a session's deduplicated events in timeline order. It holds partial matches and raises a finding when the last step matches inside the window. A partial match closes once. A last step marked `each` keeps the match open instead, so every later event that matches that step inside the window is its own finding: a `.env` read followed by two `curl` calls yields two findings. One event closes at most one match per rule, the oldest still open.
 
@@ -87,5 +87,5 @@ The last ticket adds an opt-in guard. It refuses a call before it runs when a si
 
 - User prompts are stored truncated at 200 characters, so a freeze phrase past that limit is invisible to the destructive-action rule.
 - Outbound requests made from shell commands are matched by pattern and are easy to evade. A finding names the pattern that matched and claims nothing more.
-- Whether plugins receive permission events is unknown until ticket 32's probe.
+- Escalation-then-use checks shell approvals only, and matches the whole command line against the approved pattern. A compound command whose first part is covered counts, even when OpenCode asked about a later part.
 - What OpenCode does when the pre-call hook refuses a call is unknown until ticket 34's probe.

@@ -1,0 +1,319 @@
+{
+  "source": "authored",
+  "note": "Grant data follows the shape recorded in tests/fixtures/permission-grants.json; the calls are authored. A once approval followed by the same command and a wider one, the approved call itself, commands that only start with or contain the approved word, a covered command that was refused, and a command outside the approved pattern.",
+  "events": [
+    {
+      "id": "evt_calm_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_grant_ls",
+      "schema_version": 1,
+      "type": "admin.grant",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "per_calm_grant_ls",
+      "prev_hash": null,
+      "data": {
+        "permission": "bash",
+        "patterns": [
+          "ls"
+        ],
+        "reply": "once",
+        "call_id": "call_calm_ls"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_ls",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_calm_ls",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "ls",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_ls_again",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_calm_ls_again",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "ls",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_ls_long",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_calm_ls_long",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "ls -la",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_grant_date",
+      "schema_version": 1,
+      "type": "admin.grant",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "per_calm_grant_date",
+      "prev_hash": null,
+      "data": {
+        "permission": "bash",
+        "patterns": [
+          "date *"
+        ],
+        "reply": "always",
+        "call_id": "call_calm_date"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_date",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:06.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_calm_date",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "date",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_datediff",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:07.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_calm_datediff",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "datediff 2026-01-01 2026-02-01",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_echo_date",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:08.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_calm_echo_date",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "echo date",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_date_refused",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:09.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_calm_date_refused",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.failed",
+        "target_tool": "bash",
+        "target": "date -u",
+        "exit_code": null,
+        "outcome": "denied"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_grant_git",
+      "schema_version": 1,
+      "type": "admin.grant",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:10.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "per_calm_grant_git",
+      "prev_hash": null,
+      "data": {
+        "permission": "bash",
+        "patterns": [
+          "git status *"
+        ],
+        "reply": "always",
+        "call_id": "call_calm_git"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_git",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:11.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_calm_git",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "git status",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_git_push",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:12.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_calm_git_push",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "git push --force",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": []
+}

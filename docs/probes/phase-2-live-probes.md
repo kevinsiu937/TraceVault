@@ -38,7 +38,7 @@ Which shape this runtime sends to a plugin is the open question, and per `AGENTS
 - For `date`, the request's `patterns` is `["date"]`, while its `always` patterns are `["date *"]`. These are different scopes and must not be conflated.
 - The reply itself supplies no scope. A capture implementation must retain the matching asked event, use `patterns` for `once` and `always` for `always`, and ignore rejected replies.
 
-The probe proves that grant events reach plugins. It does not prove TraceVault stores them or that an escalation rule works. Both remain unimplemented. The proposed `admin.grant` schema needs Kevin's approval before implementation because the existing draft's expiry and review fields are absent from the recorded payload.
+The probe proves that grant events reach plugins. It does not prove TraceVault stores them or that an escalation rule works. Both remain unimplemented. The proposed `admin.grant` schema needs Kevin's approval before implementation because the existing draft's expiry and review fields are absent from the recorded payload. Ticket 32 later stored grants as `admin.grant` and added the `escalation-then-use` rule; see the ticket for the format Kevin approved.
 
 ## 34: what a refused call looks like
 

@@ -1,0 +1,447 @@
+{
+  "source": "authored",
+  "note": "Grant data follows the shape recorded in tests/fixtures/permission-grants.json; the calls are authored. A once approval covers nothing more. After each always approval, the call the user approved is skipped, and the first other command the approval covers is the finding: date -u under 'date *', git diff under the second of two patterns, a second plain pwd under 'pwd *', and a script run with forward slashes under a pattern written with backslashes, as OpenCode compares them. A later covered command after a finding adds nothing.",
+  "events": [
+    {
+      "id": "evt_esc_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_grant_ls",
+      "schema_version": 1,
+      "type": "admin.grant",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "per_esc_grant_ls",
+      "prev_hash": null,
+      "data": {
+        "permission": "bash",
+        "patterns": [
+          "ls"
+        ],
+        "reply": "once",
+        "call_id": "call_esc_ls"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_ls",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_ls",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "ls",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_ls_long",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_ls_long",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "ls -la",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_grant_date",
+      "schema_version": 1,
+      "type": "admin.grant",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "per_esc_grant_date",
+      "prev_hash": null,
+      "data": {
+        "permission": "bash",
+        "patterns": [
+          "date *"
+        ],
+        "reply": "always",
+        "call_id": "call_esc_date"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_date",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_date",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "date",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_date_utc",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:06.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_date_utc",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "date -u",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_date_epoch",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:07.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_date_epoch",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "date +%s",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_grant_git",
+      "schema_version": 1,
+      "type": "admin.grant",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:08.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "per_esc_grant_git",
+      "prev_hash": null,
+      "data": {
+        "permission": "bash",
+        "patterns": [
+          "git status *",
+          "git diff *"
+        ],
+        "reply": "always",
+        "call_id": "call_esc_git"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_git",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:09.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_git",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "git status",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_git_diff",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:10.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_git_diff",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "git diff --stat",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_grant_pwd",
+      "schema_version": 1,
+      "type": "admin.grant",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:11.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "per_esc_grant_pwd",
+      "prev_hash": null,
+      "data": {
+        "permission": "bash",
+        "patterns": [
+          "pwd *"
+        ],
+        "reply": "always",
+        "call_id": "call_esc_pwd"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_pwd",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:12.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_pwd",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "pwd",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_pwd_again",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:13.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_pwd_again",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "pwd",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_grant_script",
+      "schema_version": 1,
+      "type": "admin.grant",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:14.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "per_esc_grant_script",
+      "prev_hash": null,
+      "data": {
+        "permission": "bash",
+        "patterns": [
+          ".\\scripts\\build.ps1 *"
+        ],
+        "reply": "always",
+        "call_id": "call_esc_script"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_script",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:15.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_script",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": ".\\scripts\\build.ps1",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_script_release",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:16.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_script_release",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "./scripts/build.ps1 -Release",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": [
+    {
+      "rule": "escalation-then-use",
+      "events": [
+        "evt_esc_grant_date",
+        "evt_esc_date_utc"
+      ]
+    },
+    {
+      "rule": "escalation-then-use",
+      "events": [
+        "evt_esc_grant_git",
+        "evt_esc_git_diff"
+      ]
+    },
+    {
+      "rule": "escalation-then-use",
+      "events": [
+        "evt_esc_grant_pwd",
+        "evt_esc_pwd_again"
+      ]
+    },
+    {
+      "rule": "escalation-then-use",
+      "events": [
+        "evt_esc_grant_script",
+        "evt_esc_script_release"
+      ]
+    }
+  ]
+}

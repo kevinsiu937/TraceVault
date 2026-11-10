@@ -2,7 +2,7 @@ import type { Event } from "./Event.js";
 import type { EventType } from "./EventType.js";
 
 /** The facts a rule may test. A rule naming anything else fails to load. */
-export type FactName = "type" | "target" | "outcome" | "operation" | "path" | "tool" | "text" | "project";
+export type FactName = "type" | "target" | "outcome" | "operation" | "path" | "tool" | "text" | "project" | "call";
 
 export const FACT_NAMES: readonly FactName[] = [
   "type",
@@ -13,6 +13,7 @@ export const FACT_NAMES: readonly FactName[] = [
   "tool",
   "text",
   "project",
+  "call",
 ];
 
 /** A call is something the agent did; the rest are boundaries and capture bookkeeping. */
@@ -53,6 +54,7 @@ export class EventFacts {
         tool: EventFacts.tool(event),
         text: event.type === "prompt.user" && !harness ? event.data.text : null,
         project: event.type === "session.start" ? (event.data.project_dir ?? null) : null,
+        call: EventFacts.call(event),
       },
       CALLS[event.type],
       harness,
@@ -83,6 +85,14 @@ export class EventFacts {
     return text.startsWith("<") && text.slice(0, 200).includes("</");
   }
 
+  /** The tool call's id: a call's own, or the one a permission prompt was raised for. */
+  private static call(event: Event): string | null {
+    if (event.type === "admin.grant") {
+      return event.data.call_id ?? null;
+    }
+    return CALLS[event.type] ? event.correlation_id : null;
+  }
+
   /** The agent tool behind a call: `bash`, `webfetch`, or an MCP server's tool name. */
   private static tool(event: Event): string | null {
     if (event.type === "hook.script") {
@@ -111,7 +121,8 @@ export class EventFacts {
       case "prompt.user":
         return event.data.text;
       case "admin.grant":
-        return event.data.patterns.join(", ");
+        // One pattern per line: a rule splits them back apart, and a command-prefix pattern never holds a newline.
+        return event.data.patterns.join("\n");
       case "session.start":
       case "session.end":
         return "session";

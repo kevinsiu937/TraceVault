@@ -1,0 +1,27 @@
+# The user approves a shell command for "always", and the agent later runs a
+# different command that the approval covers, which OpenCode runs without
+# asking. A "once" approval covers only the call shown, so it never starts a
+# match. The call the user approved is not a use: its call id is skipped.
+# One finding per approval: the approval and the first other covered command.
+#
+# Coverage follows OpenCode's own pattern matching ("date *" covers "date" and
+# "date -u", not "datediff"), applied to the whole command line. A compound
+# command whose first part is covered counts, even if OpenCode asked about a
+# later part.
+id: escalation-then-use
+version: 1
+severity: medium
+explanation: The user approved a command pattern for the rest of the session, and the agent then ran a different command under that approval without being asked.
+window: session
+steps:
+  - match:
+      type: { equals: admin.grant }
+      tool: { equals: bash }
+      outcome: { equals: always }
+    bind: { target: scope, call: approved }
+  - match:
+      type: { equals: hook.script }
+      tool: { equals: bash }
+      outcome: { in: [ok, error, timeout] }
+      target: { allowed_by: scope }
+      call: { other_than: approved }

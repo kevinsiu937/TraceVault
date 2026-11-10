@@ -1,7 +1,9 @@
+import { AllowedByCondition } from "../scanner/dynamic/AllowedByCondition.js";
 import { ConditionRegistry } from "../scanner/dynamic/ConditionRegistry.js";
 import { EqualsCondition } from "../scanner/dynamic/EqualsCondition.js";
 import { GlobCondition } from "../scanner/dynamic/GlobCondition.js";
 import { InCondition } from "../scanner/dynamic/InCondition.js";
+import { OtherThanCondition } from "../scanner/dynamic/OtherThanCondition.js";
 import { OutsideCondition } from "../scanner/dynamic/OutsideCondition.js";
 import { RegexCondition } from "../scanner/dynamic/RegexCondition.js";
 import { RuleSetLoader } from "../scanner/dynamic/RuleSetLoader.js";
@@ -20,6 +22,8 @@ export class WorkflowScannerAssembly {
       glob: GlobCondition.parse,
       regex: RegexCondition.parse,
       outside: OutsideCondition.parse,
+      allowed_by: AllowedByCondition.parse,
+      other_than: OtherThanCondition.parse,
     });
     return new WorkflowScanner(new RuleSetLoader(conditions).load(directory));
   }
