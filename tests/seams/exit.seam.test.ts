@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -25,7 +25,8 @@ import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const RULES = join(import.meta.dirname, "../../rules");
-const EXIT = join(import.meta.dirname, "../fixtures/rules/phase-2-exit");
+const FIXTURES = join(import.meta.dirname, "../fixtures");
+const EXIT = join(FIXTURES, "rules/phase-2-exit");
 
 interface ExitRun {
   readonly source: "recorded" | "authored";
@@ -96,6 +97,23 @@ describe.each(["permission-probe.sh", "phase-2-exit-run.sh", "refusal-probe.sh"]
     expect(result.error).toBeUndefined();
     expect(result.stderr).toContain("probe execution reached");
     expect(existsSync(join(output, "workspace/opencode.json"))).toBe(true);
+  });
+});
+
+describe("frozen fixtures", () => {
+  const PLACEHOLDER_USERS = new Set(["dev", "example"]);
+  const USER_FOLDER = /(?:\/Users\/|\/home\/|[A-Za-z]:(?:\\+|\/)Users(?:\\+|\/))([^\\/"'\s]+)/g;
+
+  it("name no user folder except the placeholders dev and example", () => {
+    const leaks = readdirSync(FIXTURES, { recursive: true, encoding: "utf8" })
+      .filter((file) => statSync(join(FIXTURES, file)).isFile())
+      .flatMap((file) =>
+        [...readFileSync(join(FIXTURES, file), "latin1").matchAll(USER_FOLDER)]
+          .filter(([, user]) => !PLACEHOLDER_USERS.has((user ?? "").toLowerCase()))
+          .map(([path]) => `${file}: ${path}`),
+      );
+
+    expect(leaks).toEqual([]);
   });
 });
 
