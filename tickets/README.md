@@ -45,10 +45,10 @@ Spec: `docs/spec/phase-2.md`.
 | 30 | Destructive action after a declared freeze | 28 | done |
 | 31 | Scope drift: access outside the project | 28 | done (subagent probe open) |
 | 32 | Escalation then use (probe first) | 28 | blocked: live probe needs model access |
-| 33 | Phase 2 exit verification | 27, 28, 29, 30, 31 | live three-rule/clean exit recorded; destructive-after-freeze scenario open |
-| 34 | Opt-in blocking: refuse before it runs | 33 | blocked |
+| 33 | Phase 2 exit verification | 27, 28, 29, 30, 31 | done |
+| 34 | Opt-in blocking: refuse before it runs | 33 | open: refusal probe first |
 
-**Frontier now:** 33 has recorded DeepSeek trigger and clean fixtures and a green gate; its deletion-after-freeze requirement remains open because the agent refused deletion. 34 remains blocked by 33. 32's permission-grant probe is still open; model access is now available through DeepSeek.
+**Frontier now:** 34, starting with its refusal probe. 32's permission-grant probe is still open and off the exit path. Model access is available through DeepSeek. Phase 2 is complete when 32 is resolved and 34 is done.
 
 ## Dependency shape
 
