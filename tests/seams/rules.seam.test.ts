@@ -225,7 +225,7 @@ steps:
   });
 });
 
-describe("seam C: a step that repeats inside a window", () => {
+describe("seam C: matching inside a window", () => {
   let directory: string;
   const [start, denied] = fixture("probing", "trigger").events;
 
@@ -273,6 +273,15 @@ describe("seam C: a step that repeats inside a window", () => {
     );
 
     expect(found).toEqual([["s2", "d3", "d4"]]);
+  });
+
+  it("closes only the oldest match on an event that would close several, and leaves the others open", () => {
+    const found = scan(
+      "  - match:\n      type: { equals: session.start }\n  - match:\n      outcome: { equals: denied }\n",
+      [at(start, "s1", 0), at(start, "s2", 10), at(denied, "d1", 20), at(denied, "d2", 30)],
+    );
+
+    expect(found).toEqual([["s1", "d1"], ["s2", "d2"]]);
   });
 });
 

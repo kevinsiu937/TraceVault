@@ -24,7 +24,8 @@ interface PartialMatch {
  * timeline order. A partial match expires when it outlives the window and
  * closes exactly once, on the event that satisfies its last step. An event
  * that advances an open match does not also start a new one, so repeated
- * steps never produce overlapping findings.
+ * steps never produce overlapping findings. An event closes at most one match,
+ * the oldest; a younger match it would also close stays open as it was.
  */
 export class RuleMatcher {
   private open: PartialMatch[] = [];
@@ -48,7 +49,7 @@ export class RuleMatcher {
       if (advanced !== null) {
         consumed = true;
       }
-      if (advanced === null) {
+      if (advanced === null || (advanced.next === this.rule.steps.length && findings.length > 0)) {
         stillOpen.push(partial);
       } else if (advanced.next === this.rule.steps.length) {
         findings.push(this.finding(advanced));
