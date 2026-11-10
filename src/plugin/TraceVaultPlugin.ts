@@ -1,5 +1,6 @@
 import type { EventForwarderPort } from "./EventForwarderPort.js";
 import type { PendingGapStore } from "./PendingGapStore.js";
+import { PermissionRequests, type PermissionProperties } from "./PermissionRequests.js";
 
 interface ToolExecuteInput {
   tool: string;
@@ -36,7 +37,7 @@ interface ToolPart {
 
 interface PluginEvent {
   type?: string;
-  properties?: {
+  properties?: PermissionProperties & {
     sessionID?: string;
     part?: ToolPart;
     info?: {
@@ -86,6 +87,7 @@ export class TraceVaultPlugin {
   private readonly forwarder: EventForwarderPort;
   private readonly gaps: PendingGapStore;
   private readonly now: () => number;
+  private readonly permissions: PermissionRequests;
   private readonly pendingArgs = new Map<string, Record<string, unknown>>();
   private readonly pendingStarts = new Map<string, number>();
 
@@ -93,10 +95,12 @@ export class TraceVaultPlugin {
     forwarder: EventForwarderPort,
     gaps: PendingGapStore,
     now: () => number = () => performance.now(),
+    permissions: PermissionRequests = new PermissionRequests(),
   ) {
     this.forwarder = forwarder;
     this.gaps = gaps;
     this.now = now;
+    this.permissions = permissions;
   }
 
   hooks(): TraceVaultHooks {
@@ -180,6 +184,17 @@ export class TraceVaultPlugin {
         }
         if (event.type === "session.idle" && typeof sessionID === "string") {
           await this.send({ hook: "session.idle", sessionID }, sessionID);
+          return;
+        }
+        if (event.type === "permission.asked") {
+          this.permissions.ask(event.properties ?? {});
+          return;
+        }
+        if (event.type === "permission.replied") {
+          const grant = this.permissions.reply(event.properties ?? {});
+          if (grant !== null) {
+            await this.send(grant, grant.sessionID);
+          }
           return;
         }
         if (event.type !== "message.part.updated") {

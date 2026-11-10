@@ -44,6 +44,17 @@ export class PluginHookCapture implements CapturePort {
         { text: hook.text, message_id: hook.messageID, truncated: hook.truncated },
       );
     }
+    if (hook.kind === "permission.granted") {
+      return this.factory.adminGrant(
+        { sessionId: hook.sessionID, correlationId: hook.requestID, receivedAt },
+        {
+          permission: hook.permission,
+          patterns: hook.patterns,
+          reply: hook.reply,
+          ...(hook.callID === undefined ? {} : { call_id: hook.callID }),
+        },
+      );
+    }
 
     const outcome: Outcome =
       hook.kind === "tool.failed"

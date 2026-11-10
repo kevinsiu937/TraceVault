@@ -1,3 +1,4 @@
+import type { AdminGrantData } from "./AdminGrantData.js";
 import type { CapturePath } from "./CapturePath.js";
 import type { Event } from "./Event.js";
 import { EventId } from "./EventId.js";
@@ -72,6 +73,10 @@ export class EventFactory {
 
   promptUser(meta: EventMeta, data: UserPromptData): Event {
     return { ...this.envelope(meta), type: "prompt.user", data };
+  }
+
+  adminGrant(meta: EventMeta, data: AdminGrantData): Event {
+    return { ...this.envelope(meta), type: "admin.grant", data };
   }
 
   private envelope(meta: EventMeta): Omit<Event, "type" | "data"> {

@@ -107,15 +107,16 @@ A hook or script the agent ran as part of its own dispatch.
 ```
 
 ### `admin.grant`
-A permission or role is elevated.
+The user approves a permission prompt. Only an approval at a prompt is an event: a call that `opencode.json` already allows raises no prompt, and a rejected prompt grants nothing (the refused call is stored as `denied`). The envelope's `correlation_id` is OpenCode's permission request id, so the grant is never mistaken for a duplicate of the call it approved.
 ```jsonc
 "data": {
-  "scope": "write:/etc",
-  "grantor": "user",                  // user | config | default
-  "expires_at": null,                 // null ⇒ unflagged, but the static scanner will complain
-  "reviewed": false
+  "permission": "bash",
+  "patterns": ["date *"],             // once ⇒ the patterns shown; always ⇒ the request's always list
+  "reply": "always",                  // once | always
+  "call_id": "call_..."               // the call that raised the prompt; absent when OpenCode names none
 }
 ```
+Recorded shape: `tests/fixtures/permission-grants.json` (10 Nov 2026, OpenCode 1.18.32). The plugin holds each `permission.asked` until its `permission.replied` arrives, because a reply names only the request.
 
 ## Meta events (not agent activity, but required by the design)
 

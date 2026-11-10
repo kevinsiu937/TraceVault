@@ -7,4 +7,5 @@ export type EventType =
   | "session.end"
   | "capture.gap"
   | "capture.duplicate"
-  | "prompt.user";
+  | "prompt.user"
+  | "admin.grant";

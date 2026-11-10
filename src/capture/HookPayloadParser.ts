@@ -48,13 +48,24 @@ export interface UserPromptPayload {
   readonly truncated: boolean;
 }
 
+export interface PermissionGrantedPayload {
+  readonly kind: "permission.granted";
+  readonly sessionID: string;
+  readonly requestID: string;
+  readonly permission: string;
+  readonly patterns: readonly string[];
+  readonly reply: "once" | "always";
+  readonly callID?: string;
+}
+
 export type ParsedHook =
   | ToolAfterPayload
   | ToolFailedPayload
   | SessionStartedPayload
   | SessionIdlePayload
   | CaptureGapPayload
-  | UserPromptPayload;
+  | UserPromptPayload
+  | PermissionGrantedPayload;
 
 export class HookPayloadParser {
   parse(raw: unknown): ParsedHook {
@@ -78,6 +89,9 @@ export class HookPayloadParser {
     }
     if (hook === "chat.message") {
       return this.parseUserPrompt(payload);
+    }
+    if (hook === "permission.granted") {
+      return this.parseGrant(payload);
     }
     if (hook === "session.created" || hook === "session.idle") {
       const sessionID = this.asString(payload["sessionID"], "sessionID");
@@ -151,6 +165,25 @@ export class HookPayloadParser {
       createdAt,
       text,
       truncated: truncated ?? false,
+    };
+  }
+
+  private parseGrant(payload: Record<string, unknown>): PermissionGrantedPayload {
+    const { reply, patterns, callID } = payload;
+    if (reply !== "once" && reply !== "always") {
+      throw new TypeError("reply must be once or always");
+    }
+    if (!Array.isArray(patterns) || patterns.length === 0 || !patterns.every((item) => typeof item === "string" && item.length > 0)) {
+      throw new TypeError("patterns must be a non-empty list of strings");
+    }
+    return {
+      kind: "permission.granted",
+      sessionID: this.asString(payload["sessionID"], "sessionID"),
+      requestID: this.asString(payload["requestID"], "requestID"),
+      permission: this.asString(payload["permission"], "permission"),
+      patterns: patterns as string[],
+      reply,
+      ...(typeof callID === "string" && callID.length > 0 ? { callID } : {}),
     };
   }
 

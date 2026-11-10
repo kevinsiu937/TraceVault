@@ -367,6 +367,54 @@ describe("seam B: hook payload in, stored events out", () => {
     expect(start?.data).toEqual({ project_dir: "/home/dev/probe/projA" });
   });
 
+  describe("permission grants", () => {
+    type PluginEvent = Parameters<ReturnType<TraceVaultPlugin["hooks"]>["event"]>[0]["event"];
+    const recorded = JSON.parse(readFileSync(join(import.meta.dirname, "../fixtures/permission-grants.json"), "utf8")) as {
+      events: (PluginEvent & { at: string })[];
+    };
+    const SESSION = "ses_e39fa9a30ffesXOo2umOlivSmb";
+
+    async function replay(events: readonly (PluginEvent & { at: string })[]): Promise<void> {
+      const sent: unknown[] = [];
+      const plugin = new TraceVaultPlugin(
+        { forward: async (payload: unknown): Promise<void> => void sent.push(payload) },
+        new PendingGapStore(join(directory, "pending-gaps.json")),
+        clockFrom([]),
+      );
+      for (const { at, ...event } of events) {
+        await plugin.hooks().event({ event });
+        for (const payload of sent.splice(0)) {
+          expect(service.recordHookPayload(payload, new Date(at))).toBe("stored");
+        }
+      }
+    }
+
+    it("stores each approved request as a grant of the patterns it asked for, or of its always list", async () => {
+      await replay(recorded.events);
+
+      const grants = store.listBySession(SESSION).filter((event) => event.type === "admin.grant");
+      expect(grants.map((event) => [event.correlation_id, event.data])).toEqual([
+        ["per_1c605725a0018382dIT90zO50W", { permission: "bash", patterns: ["ls"], reply: "once", call_id: "call_00_ET_ZlSyc4X30mAMK1H88v1y0040" }],
+        ["per_1c6060ff8001GJClvY4U1c9f9z", { permission: "bash", patterns: ["pwd"], reply: "once", call_id: "call_00_ET_uRjS2O7dbPbbK0R432ip1397" }],
+        ["per_1c606a470001pEBigTy1YlI8LD", { permission: "bash", patterns: ["ls -a"], reply: "once", call_id: "call_00_ET_jnrsih5kMdSks105vyJ16512" }],
+        ["per_1c6078ffe001IbNdVG6H1B88Wx", { permission: "bash", patterns: ["date"], reply: "once", call_id: "call_00_ET_xVs3tEUGHNgsQgbFkrYJ0298" }],
+        ["per_1c607f801001203xjMHla4PtfN", { permission: "bash", patterns: ["date *"], reply: "always", call_id: "call_00_6cva3A02zmyJOkhX1Bt32058" }],
+      ]);
+      expect(grants.map((event) => event.timestamp)).toEqual(
+        recorded.events.filter((event) => event.type === "permission.replied").map((event) => event.at),
+      );
+    });
+
+    it("stores nothing for a rejected request", async () => {
+      const [asked, replied] = recorded.events;
+      if (asked === undefined || replied === undefined) throw new Error("fixture lost its first request");
+
+      await replay([asked, { ...replied, properties: { ...replied.properties, reply: "reject" } }]);
+
+      expect(store.listBySession(SESSION)).toEqual([]);
+    });
+  });
+
   it("omits the duration for a failure with no before hook", async () => {
     const sent: unknown[] = [];
     const plugin = new TraceVaultPlugin(

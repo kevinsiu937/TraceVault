@@ -1,3 +1,4 @@
+import type { AdminGrantData } from "./AdminGrantData.js";
 import type { CaptureDuplicateData } from "./CaptureDuplicateData.js";
 import type { CaptureGapData } from "./CaptureGapData.js";
 import type { CapturePath } from "./CapturePath.js";
@@ -38,4 +39,5 @@ export type Event = EventEnvelope &
     | { readonly type: "capture.gap"; readonly data: CaptureGapData }
     | { readonly type: "capture.duplicate"; readonly data: CaptureDuplicateData }
     | { readonly type: "prompt.user"; readonly data: UserPromptData }
+    | { readonly type: "admin.grant"; readonly data: AdminGrantData }
   );

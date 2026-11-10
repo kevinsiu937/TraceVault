@@ -26,6 +26,7 @@ const CALLS: Readonly<Record<EventType, boolean>> = {
   "capture.gap": false,
   "capture.duplicate": false,
   "prompt.user": false,
+  "admin.grant": false,
 };
 
 /**
@@ -87,6 +88,9 @@ export class EventFacts {
     if (event.type === "hook.script") {
       return event.data.target_tool;
     }
+    if (event.type === "admin.grant") {
+      return event.data.permission;
+    }
     return event.type === "mcp.call" ? event.data.tool : null;
   }
 
@@ -106,6 +110,8 @@ export class EventFacts {
         return event.data.of_event_id;
       case "prompt.user":
         return event.data.text;
+      case "admin.grant":
+        return event.data.patterns.join(", ");
       case "session.start":
       case "session.end":
         return "session";
@@ -125,6 +131,8 @@ export class EventFacts {
         return "duplicate";
       case "prompt.user":
         return "prompt";
+      case "admin.grant":
+        return event.data.reply;
       case "session.start":
       case "session.end":
         return "boundary";
