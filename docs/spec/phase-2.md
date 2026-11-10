@@ -34,17 +34,63 @@ The last ticket adds an opt-in guard. It refuses a call before it runs when a si
 
 **Stage and placement.** The workflow scanner is its own stage and imports only `schema`. The service consumes it through a scanner port and hands the dashboard flags through `InvestigationServicePort`; the dashboard never sees the scanner. The plugin consumes the same port for blocking. The composition root chooses the implementation.
 
-**Rule files.** One YAML file per rule under `rules/`. Lists that several rules share, such as sensitive paths, are named YAML lists under `rules/lists/`, referenced by name; the loader rejects an unknown name. Each file declares an id, a version, a severity, an explanation, a window (in events or seconds), and one or more steps. A step has a match condition and an optional repeat count. Steps may bind a field value that later steps must equal. A loader parses each file once into a typed rule and rejects unknown keys, missing fields and invalid patterns, naming the file and the field.
+**Rule files.** One YAML file per rule under `rules/`, named `<id>.yaml`. A `.yml` file stops loading with a message to rename it. Lists that several rules share, such as sensitive paths, are named YAML lists under `rules/lists/`, each a `name` matching its file and a list of `items`, referenced by name; the loader rejects an unknown name. A loader parses each file once into a typed rule and rejects unknown keys, missing fields and invalid patterns, naming the file and the field.
+
+**Rule format.** A rule file has these keys:
+
+| Key | Meaning |
+|---|---|
+| `id` | The rule id. It must equal the file name. |
+| `version` | A positive whole number, reported on each finding. |
+| `severity` | `low`, `medium` or `high`. |
+| `explanation` | The sentence a finding shows. |
+| `window` | `{ seconds: n }`: the last step must match within n seconds of the match's first event. `session`: no limit inside the session. Required when a rule spans more than one event, through two or more steps or a step that repeats. |
+| `steps` | One or more steps, matched in order. |
+| `blockable` | Optional, `false` by default. `true` lets the opt-in guard refuse a pending call that matches. Allowed only on a rule that matches one event (one step, no repeat) and does not test `outcome`. |
+
+A step has exactly one of `match` or `any`, and three optional keys:
+
+- `match: { <fact>: { <operator>: <argument> } }` tests facts of one event. Every fact it names must hold, and each fact names exactly one operator.
+- `any: [{ label, match }, ...]` holds when any alternative does. Every alternative needs a `label`, and a finding lists the labels that matched, so it says which pattern fired.
+- `repeat: n`, a whole number, 1 by default: the step must match n events before the next step starts.
+- `each: true`, on the last step only: the match stays open, so every later matching event inside the window is its own finding.
+- `bind: { <fact>: <name> }`: the step remembers that fact's value for later steps' `outside`, `allowed_by` and `other_than`. A fact the event lacks stays unbound.
+
+The operators:
+
+| Operator | Argument | Holds when the fact |
+|---|---|---|
+| `equals` | a string | is exactly that string |
+| `in` | a list of strings | is one of them |
+| `glob` | a list of path globs | is a path that matches one. `**` spans folders; `*` and `?` stay inside one. Paths and patterns are normalised first |
+| `regex` | a regular expression | contains a match, ignoring case |
+| `outside` | a binding name | is a path outside the bound folder. A relative path is resolved against that folder |
+| `allowed_by` | a binding name | is a command that one of the bound permission patterns allows, matched as OpenCode matches them |
+| `other_than` | a binding name | differs from the bound value |
+
+An argument written `{ list: <name> }` is replaced by that list's items before the operator sees it. A fact the event does not have never matches.
 
 **One parser dependency.** Rules are parsed with the `yaml` package, TraceVault's first runtime dependency. It has no transitive dependencies, ships its own types, and follows YAML 1.2. The reason is recorded in ADR 0004.
 
 **Open for extension.** A new rule is a new YAML file and touches no code. A new kind of match condition (glob, regex, equals, any-of) is a new class registered in the composition root. Nothing grows a `switch`.
 
-**Facts, not raw fields.** Rules match on a closed set of event facts (type, target, outcome, operation, path, tool, text, project, call) produced by one projection in `schema/`, which the timeline builder also uses. The loader rejects an unknown fact, so a schema change cannot silently break a hand-edited rule.
+**Facts, not raw fields.** Rules match on a closed set of event facts produced by one projection in `schema/`, which the timeline builder also uses. The loader rejects an unknown fact, so a schema change cannot silently break a hand-edited rule.
 
-**Matching.** The scanner walks a session's deduplicated events in timeline order. It holds partial matches and raises a finding when the last step matches inside the window. A partial match closes once. A last step marked `each` keeps the match open instead, so every later event that matches that step inside the window is its own finding: a `.env` read followed by two `curl` calls yields two findings. One event closes at most one match per rule, the oldest still open.
+| Fact | Value |
+|---|---|
+| `type` | The event type. |
+| `target` | What the timeline shows as the target: a path, a command, a URL, a prompt's text, or a grant's patterns, one per line. |
+| `outcome` | `ok`, `error`, `denied` or `timeout` for a call. Other events: `once` or `always` for a grant, `unguarded` for a call the guard could not check, `prompt`, `gap`, `duplicate`, or `boundary` for a session start or end. |
+| `operation` | A document access's `read`, `write`, `delete` or `rename`. |
+| `path` | A document access's path. |
+| `tool` | A hook script's tool, an MCP call's tool name, a grant's permission, or the tool of a call the guard could not check. |
+| `text` | A user prompt's text. A prompt the agent injected itself has none. |
+| `project` | A session start's project folder. |
+| `call` | A call's id, or the id of the call a permission grant was raised for. |
 
-**Findings are computed at read time, never stored.** The store stays raw evidence. A finding carries the rule id, the rule version, a digest of the whole rule set, a severity, the explanation, and the ids of the events that satisfied it. A rule edit therefore re-evaluates every session, and the digest shows which rule set produced a finding. The `scan.finding` type in the event schema becomes a read-model shape, not a stored event.
+**Matching.** The scanner walks a session's deduplicated events in timeline order. It holds partial matches and raises a finding when the last step matches inside the window. An event that advances an open match does not also start a new one, so a repeated step never yields overlapping findings. A partial match closes once. A last step marked `each` keeps the match open instead, so every later event that matches that step inside the window is its own finding: a `.env` read followed by two `curl` calls yields two findings. One event closes at most one match per rule, the oldest still open.
+
+**Findings are computed at read time, never stored.** The store stays raw evidence. A finding carries the rule id, the rule version, a digest of the whole rule set, a severity, the explanation, the ids of the events that satisfied it, and the labels of any `any` alternatives that matched. A rule edit therefore re-evaluates every session, and the digest shows which rule set produced a finding. The `scan.finding` type in the event schema becomes a read-model shape, not a stored event.
 
 **Scan scope.** Flags are computed over the whole session before any filter applies. A filtered view shows the flags on its visible rows and keeps the session's finding count unchanged.
 
