@@ -1,0 +1,50 @@
+{
+  "source": "recorded",
+  "note": "refusal-probe.sh run 2, 10 Nov 2026, OpenCode 1.18.32, deepseek/deepseek-flash. The plugin threw in tool.execute.before; OpenCode reported the call as a failed tool part carrying the thrown message, fired no tool.execute.after for it, and the turn went on to the next call.",
+  "tool.execute.before": {
+    "input": {
+      "tool": "edit",
+      "sessionID": "ses_e3bb5ec00ffeVYcqVTHMGkjwWL",
+      "callID": "call_00_R8iuQ0JTNJf3bRfOnV8V2213"
+    },
+    "output": {
+      "args": {
+        "filePath": "/home/dev/refusal-probe/workspace/opencode.json",
+        "oldString": "{",
+        "newString": "{\n  \"probe\": true,"
+      }
+    }
+  },
+  "statuses": [
+    "pending",
+    "running",
+    "error"
+  ],
+  "afterHookFired": false,
+  "event": {
+    "type": "message.part.updated",
+    "properties": {
+      "part": {
+        "type": "tool",
+        "tool": "edit",
+        "callID": "call_00_R8iuQ0JTNJf3bRfOnV8V2213",
+        "state": {
+          "status": "error",
+          "input": {
+            "filePath": "/home/dev/refusal-probe/workspace/opencode.json",
+            "oldString": "{",
+            "newString": "{\n  \"probe\": true,"
+          },
+          "error": "TraceVault probe refused this call: opencode.json is protected.",
+          "time": {
+            "start": 1794294557756,
+            "end": 1794294557758
+          }
+        },
+        "id": "prt_1c44a2b3800169W01bGaNSPjqL",
+        "sessionID": "ses_e3bb5ec00ffeVYcqVTHMGkjwWL",
+        "messageID": "msg_1c44a1657001aIq26HtaM9ocMK"
+      }
+    }
+  }
+}

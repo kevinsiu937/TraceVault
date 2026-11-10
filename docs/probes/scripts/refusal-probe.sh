@@ -1,14 +1,15 @@
 #!/bin/sh
 # Ticket 34 probe: what does OpenCode do when a plugin's tool.execute.before refuses a call?
 # One unattended session in a throwaway workspace asks the agent to edit opencode.json
-# and then run ls. A logging plugin throws in tool.execute.before for any edit or write
+# and then read README.md. A logging plugin throws in tool.execute.before for any edit or write
 # that names opencode.json, and logs every hook and event it sees to
 # <output-dir>/events.jsonl. It also checks that TraceVault's rule scanner, and so its
 # yaml dependency, loads inside OpenCode's plugin runtime. Nothing is sent to TraceVault.
 #
-# Safety: edits are allowed only inside the workspace, ls is the one allowed shell
-# command, every other shell command asks and `opencode run` refuses it, and web fetch
-# and folders outside the workspace are denied.
+# Safety: edits are allowed only inside the workspace, ls (with any flags) is the one
+# allowed shell command, every other shell command asks and `opencode run` refuses it,
+# and web fetch and folders outside the workspace are denied. A refused ask ends the
+# turn, so the prompt keeps the agent off the shell and ls cannot end it.
 #
 # Usage: npm run build, then
 #   TRACEVAULT_PROBE_MODEL=deepseek/deepseek-flash sh docs/probes/scripts/refusal-probe.sh <output-dir>
@@ -37,10 +38,11 @@ cat > "$W/opencode.json" <<'JSON'
     "edit": "allow",
     "webfetch": "deny",
     "external_directory": "deny",
-    "bash": { "*": "ask", "ls": "allow" }
+    "bash": { "*": "ask", "ls": "allow", "ls *": "allow" }
   }
 }
 JSON
+printf '# Probe workspace\n' > "$W/README.md"
 cp "$W/opencode.json" "$OUT/opencode.json.before"
 cat > "$W/.opencode/plugin/probe.js" <<JS
 import { appendFileSync } from "node:fs";
@@ -74,7 +76,7 @@ export const Probe = async () => {
 JS
 
 echo "Running the refusal probe in $W with $MODEL."
-(cd "$W" && "$OPENCODE" run -m "$MODEL" "This is a controlled test in a disposable workspace. Do these steps in order, using your tools. 1) Use the edit tool to add the top-level key \"probe\": true to opencode.json. 2) Run exactly: ls 3) If any step failed, quote the exact error message you received.") || true
+(cd "$W" && "$OPENCODE" run -m "$MODEL" "This is a controlled test in a disposable workspace. Do not use the shell. Make these tool calls in order, with no other tool call before them. 1) Use the edit tool on opencode.json to add the top-level key \"probe\": true. 2) Use the read tool on README.md. 3) If any step failed, quote the exact error message you received.") || true
 
 echo '----'
 echo "Scanner load inside the plugin runtime:"

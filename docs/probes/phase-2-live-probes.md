@@ -30,9 +30,9 @@ The model reply stalled after the events above were logged, so the run was stopp
 
 Which shape this runtime sends to a plugin is the open question, and per `AGENTS.md` it must be observed, not guessed. `docs/probes/scripts/permission-probe.sh` runs OpenCode interactively with a logging plugin. Approve the one prompt it shows, and the script prints every permission record it received.
 
-## 34: what a refused call looks like (not yet run)
+## 34: what a refused call looks like
 
-Blocking must not be built on a guessed hook behaviour. `docs/probes/scripts/refusal-probe.sh` starts one `opencode run` session in a throwaway workspace. A logging plugin throws in `tool.execute.before` for any edit or write that names `opencode.json`. The agent is asked to edit `opencode.json`, run `ls`, and quote any error it received. The plugin logs every hook and event to `<output-dir>/events.jsonl`, with full tool and text parts.
+Blocking must not be built on a guessed hook behaviour. `docs/probes/scripts/refusal-probe.sh` starts one `opencode run` session in a throwaway workspace. A logging plugin throws in `tool.execute.before` for any edit or write that names `opencode.json`. The agent is asked to edit `opencode.json`, read `README.md`, and quote any error it received. The plugin logs every hook and event to `<output-dir>/events.jsonl`, with full tool and text parts.
 
 The run answers the ticket's questions from the log:
 
@@ -44,6 +44,27 @@ The run answers the ticket's questions from the log:
 - Whether `WorkflowScannerAssembly`, and so the `yaml` package, loads inside OpenCode's plugin runtime, from the `"probe":"scanner"` line.
 
 The script also reports whether `opencode.json` stayed unchanged. Scrub local paths before freezing any of the log into `tests/fixtures/`.
+
+**Run 1 (10 Nov 2026, OpenCode 1.18.32, `deepseek/deepseek-flash`).** The refusal was not observed. Before any edit, the model ran `ls -la` and a `glob` in parallel. Only a bare `ls` was allowed, so `ls -la` asked, `opencode run` rejected it, and the session went idle without attempting the edit. `opencode.json` stayed unchanged. The run still settled three facts:
+
+- `WorkflowScannerAssembly` loads `rules/` inside the plugin runtime, which is Bun 1.3.14. The `yaml` package works there.
+- `tool.execute.before` fires before the permission check. The hook logged the `ls -la` call, and `permission.asked` followed it.
+- `tool.execute.after` does not fire for a call whose permission was rejected. The call shows only as a `message.part.updated` tool part with `status: "error"` and its full input.
+
+The script now allows `ls` with any flags, plants `README.md`, and asks the agent to read it instead of using the shell.
+
+**Run 2 (10 Nov 2026, same setup).** The refusal was observed in session `ses_e3bb5ec00ffeVYcqVTHMGkjwWL`.
+
+- The model sees the reason. OpenCode returned the thrown error as the tool result, and the model quoted "TraceVault probe refused this call: opencode.json is protected." word for word.
+- A failed-tool event fires. The edit's tool part went `pending`, `running`, then `error`, with the thrown message in `state.error` and the full arguments in `state.input`. TraceVault's existing `event` hook already turns such a part into a `tool.failed` capture.
+- `tool.execute.after` does not fire for the refused call.
+- The turn continues. The next call, a read of `README.md`, ran normally, and no `session.error` fired.
+- The model did not retry the refused edit.
+- `opencode.json` stayed unchanged.
+
+The refused call is frozen, with paths scrubbed, in `tests/fixtures/tool-refused-by-hook.json`.
+
+One consequence for the build: the thrown message is the only thing about the refusal that reaches capture. `DenialSignal` treats an error as a denial by its wording (denied, permission, rejected, not allowed, blocked). The probe's wording ("refused") would be stored as an error, not a denial. The guard's message therefore needs a word `DenialSignal` recognises, and the rule id.
 
 ## Live runs this machine could not make
 
