@@ -8,4 +8,5 @@ export type EventType =
   | "capture.gap"
   | "capture.duplicate"
   | "prompt.user"
-  | "admin.grant";
+  | "admin.grant"
+  | "guard.failure";

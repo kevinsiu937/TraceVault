@@ -1,10 +1,12 @@
 # The agent edits its own configuration or standing instructions.
 # opencode.json and .opencode/ hold its permissions, tools and agents;
 # AGENTS.md steers every future session. Reads are fine; writes are the risk.
+# Blockable: with `init --block`, such a write is refused before it runs.
 id: self-modification
 version: 1
 severity: high
 explanation: The agent changed its own configuration or standing instructions, which can widen what it is allowed to do.
+blockable: true
 steps:
   - match:
       type: { equals: document.access }

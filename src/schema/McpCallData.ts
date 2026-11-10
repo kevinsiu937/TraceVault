@@ -6,4 +6,6 @@ export interface McpCallData {
   readonly args_digest: string;
   readonly args_size_bytes: number;
   readonly outcome: Outcome;
+  /** The blockable rule the opt-in guard refused this call with. */
+  readonly blocked_by?: string;
 }

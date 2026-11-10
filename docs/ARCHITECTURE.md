@@ -129,7 +129,7 @@ src/store/        EventStorePort, SqliteEventStore, CanonicalJson, HashChain, St
 src/service/      InvestigationServicePort, InvestigationService, SessionSummary,
                   TimelineBuilder, TimelineEntry
 src/dashboard/    DashboardServer, routes/, view/
-src/plugin/       PluginConfig, TraceVaultPlugin, EventForwarder
+src/plugin/       PluginConfig, TraceVaultPlugin, EventForwarder, PermissionRequests, CallGuard
 src/cli/          index, RunCommand, InitCommand, AgentConfigFile
 
 tests/seams/      capture.seam.test.ts, dashboard.seam.test.ts

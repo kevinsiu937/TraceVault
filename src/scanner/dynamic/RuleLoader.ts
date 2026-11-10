@@ -7,7 +7,7 @@ import { RuleLoadError } from "./RuleLoadError.js";
 import type { RuleStep } from "./RuleStep.js";
 import type { RuleStepLoader } from "./RuleStepLoader.js";
 
-const RULE_KEYS = ["id", "version", "severity", "explanation", "window", "steps"] as const;
+const RULE_KEYS = ["id", "version", "severity", "explanation", "window", "steps", "blockable"] as const;
 const SEVERITIES: readonly Severity[] = ["low", "medium", "high"];
 
 type Fields = Record<string, unknown>;
@@ -48,9 +48,11 @@ export class RuleLoader {
     }
     const explanation = this.string(fields, "explanation", file);
     const steps = this.stepList(fields, file);
-    const window = this.window(fields, file, steps.length > 1 || steps.some((step) => step.repeat > 1));
+    const spansEvents = steps.length > 1 || steps.some((step) => step.repeat > 1);
+    const window = this.window(fields, file, spansEvents);
+    const blockable = this.blockable(fields, file, spansEvents || steps.some((step) => step.tests("outcome")));
 
-    return new Rule(id, version, severity as Severity, explanation, steps, window);
+    return new Rule(id, version, severity as Severity, explanation, steps, window, blockable);
   }
 
   private stepList(fields: Fields, file: string): readonly [RuleStep, ...RuleStep[]] {
@@ -69,6 +71,18 @@ export class RuleLoader {
       throw new RuleLoadError(file, "steps", "must be a non-empty list");
     }
     return [first, ...rest];
+  }
+
+  /** The guard sees one pending call, which has no outcome yet, so only a rule that needs neither can block it. */
+  private blockable(fields: Fields, file: string, needsMoreThanTheCall: boolean): boolean {
+    const blockable = fields["blockable"] ?? false;
+    if (typeof blockable !== "boolean") {
+      throw new RuleLoadError(file, "blockable", "must be true or false");
+    }
+    if (blockable && needsMoreThanTheCall) {
+      throw new RuleLoadError(file, "blockable", "only a rule that matches one event, without testing its outcome, can block");
+    }
+    return blockable;
   }
 
   private window(fields: Fields, file: string, spansEvents: boolean): DurationWindow | null {

@@ -23,4 +23,10 @@ export class WorkflowScanner implements WorkflowScannerPort {
 
     return findings;
   }
+
+  blockedBy(call: Event): string | null {
+    const facts = EventFacts.of(call);
+    const rule = this.ruleSet.rules.find((candidate) => candidate.blockable && candidate.steps[0].match(facts, new Map()) !== null);
+    return rule?.id ?? null;
+  }
 }

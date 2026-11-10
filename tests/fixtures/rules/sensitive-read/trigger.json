@@ -1,0 +1,114 @@
+{
+  "source": "authored",
+  "note": "Reads of files on the shared sensitive-paths list, one of them refused by the guard, each its own finding. A refused read still names the file the agent tried to read.",
+  "events": [
+    {
+      "id": "evt_secret_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_sensitive",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-11T09:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_secret_env",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_sensitive",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-11T09:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_secret_env",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/.env",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_secret_key",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_sensitive",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-11T09:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_secret_key",
+      "prev_hash": null,
+      "data": {
+        "path": "C:\\Users\\example\\.ssh\\id_ed25519",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_secret_refused",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_sensitive",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-11T09:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_secret_refused",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/.env.production",
+        "operation": "read",
+        "outcome": "denied",
+        "blocked_by": "sensitive-read"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": [
+    {
+      "rule": "sensitive-read",
+      "events": [
+        "evt_secret_env"
+      ]
+    },
+    {
+      "rule": "sensitive-read",
+      "events": [
+        "evt_secret_key"
+      ]
+    },
+    {
+      "rule": "sensitive-read",
+      "events": [
+        "evt_secret_refused"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "source": "authored",
+  "note": "Ordinary reads, a write to .env (a write is not a read), a file whose name only contains 'env', and a shell command that prints .env, which this rule does not see.",
+  "events": [
+    {
+      "id": "evt_plain_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_sensitive_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-11T09:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_plain_readme",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_sensitive_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-11T09:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_plain_readme",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/README.md",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_plain_environment",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_sensitive_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-11T09:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_plain_environment",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/src/environment.ts",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_plain_env_write",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_sensitive_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-11T09:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_plain_env_write",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/.env",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_plain_cat",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_sensitive_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-11T09:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_plain_cat",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cat .env",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": []
+}

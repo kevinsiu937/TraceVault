@@ -106,6 +106,12 @@ A hook or script the agent ran as part of its own dispatch.
 }
 ```
 
+### A call the guard refused
+With `tracevault init --block`, the plugin may refuse a call before it runs. The refused call is stored as its ordinary type (`skill.call`, `document.access`, `mcp.call` or `hook.script`) with `outcome: "denied"`, and its `data` gains one field:
+```jsonc
+"blocked_by": "self-modification"     // id of the blockable rule that refused it; absent on every other call
+```
+
 ### `admin.grant`
 The user approves a permission prompt. Only an approval at a prompt is an event: a call that `opencode.json` already allows raises no prompt, and a rejected prompt grants nothing (the refused call is stored as `denied`). The envelope's `correlation_id` is OpenCode's permission request id, so the grant is never mistaken for a duplicate of the call it approved.
 ```jsonc
@@ -125,7 +131,7 @@ Recorded shape: `tests/fixtures/permission-grants.json` (10 Nov 2026, OpenCode 1
 | `session.start` / `session.end` | Timeline bounds; `end` missing ⇒ session still open or crash |
 | `capture.gap` | A path could not observe a window. Fields: `capture_path`, `from`, `to`, `reason`. **This is what "gaps shown rather than hidden" means in data.** |
 | `capture.duplicate` | Two paths saw the same action — recorded so the investigator can prove de-duplication rather than trust it |
-| `guard.failure` | Phase 2, opt-in blocking only: the guard failed internally and let a call through unenforced. Fields: `correlation_id` of the call, `reason` |
+| `guard.failure` | Opt-in blocking only: the guard could not decide (rules would not load, or it failed internally) and let a call through unenforced. Fields: `tool`, `call_id`, `reason`. `correlation_id` stays null, so the call's own event is not taken for a duplicate |
 | `scan.finding` | A scanner raised a flag. **Read-model shape, not a stored event** (Phase 2 decision: findings are computed at read time). Fields: `rule_id`, `rule_version`, `rule_set_digest`, `rule_source` (`static`/`workflow`), `severity`, `event_ids[]`, `explanation` |
 
 ## Open questions for Kevin

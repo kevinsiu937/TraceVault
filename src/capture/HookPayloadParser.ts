@@ -16,6 +16,7 @@ export interface ToolFailedPayload {
   readonly args: Record<string, unknown>;
   readonly error: string;
   readonly durationMs: number | null;
+  readonly blockedBy?: string;
 }
 
 export interface SessionStartedPayload {
@@ -58,6 +59,14 @@ export interface PermissionGrantedPayload {
   readonly callID?: string;
 }
 
+export interface GuardFailurePayload {
+  readonly kind: "guard.failure";
+  readonly sessionID: string;
+  readonly callID: string;
+  readonly tool: string;
+  readonly reason: string;
+}
+
 export type ParsedHook =
   | ToolAfterPayload
   | ToolFailedPayload
@@ -65,7 +74,8 @@ export type ParsedHook =
   | SessionIdlePayload
   | CaptureGapPayload
   | UserPromptPayload
-  | PermissionGrantedPayload;
+  | PermissionGrantedPayload
+  | GuardFailurePayload;
 
 export class HookPayloadParser {
   parse(raw: unknown): ParsedHook {
@@ -92,6 +102,15 @@ export class HookPayloadParser {
     }
     if (hook === "permission.granted") {
       return this.parseGrant(payload);
+    }
+    if (hook === "guard.failure") {
+      return {
+        kind: "guard.failure",
+        sessionID: this.asString(payload["sessionID"], "sessionID"),
+        callID: this.asString(payload["callID"], "callID"),
+        tool: this.asString(payload["tool"], "tool"),
+        reason: this.asString(payload["reason"], "reason"),
+      };
     }
     if (hook === "session.created" || hook === "session.idle") {
       const sessionID = this.asString(payload["sessionID"], "sessionID");
@@ -141,6 +160,7 @@ export class HookPayloadParser {
       args: input["args"] === undefined ? {} : this.asRecord(input["args"], "input.args"),
       error: this.asString(payload["error"], "error"),
       durationMs: this.duration(payload["durationMs"]),
+      ...(payload["blockedBy"] === undefined ? {} : { blockedBy: this.asString(payload["blockedBy"], "blockedBy") }),
     };
   }
 

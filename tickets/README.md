@@ -46,9 +46,9 @@ Spec: `docs/spec/phase-2.md`.
 | 31 | Scope drift: access outside the project | 28 | done (subagent probe open) |
 | 32 | Escalation then use (probe first) | 28 | done |
 | 33 | Phase 2 exit verification | 27, 28, 29, 30, 31 | done |
-| 34 | Opt-in blocking: refuse before it runs | 33 | open: refusal probe first |
+| 34 | Opt-in blocking: refuse before it runs | 33 | done |
 
-**Frontier now:** 34. Its refusal probe is done; the guard is next. Phase 2 is complete when 34 is done.
+**Phase 2 is complete.** Every ticket from 27 to 34 is done; 31 keeps one open note, a probe of `project_dir` on resumed and subagent sessions. Phase 3 starts only when Kevin says so.
 
 ## Dependency shape
 

@@ -1,0 +1,15 @@
+# The agent reads a file whose contents are secrets or credentials. A read on
+# its own leaks nothing, so the severity is low; the exfiltration chain is the
+# rule that says something may have left the machine.
+# Blockable: with `init --block`, such a read is refused before it runs. Only
+# the file tools are checked: `cat .env` in a shell is a command, not a read.
+id: sensitive-read
+version: 1
+severity: low
+explanation: The agent read a file that holds secrets or credentials.
+blockable: true
+steps:
+  - match:
+      type: { equals: document.access }
+      operation: { equals: read }
+      path: { glob: { list: sensitive-paths } }

@@ -28,6 +28,7 @@ const CALLS: Readonly<Record<EventType, boolean>> = {
   "capture.duplicate": false,
   "prompt.user": false,
   "admin.grant": false,
+  "guard.failure": false,
 };
 
 /**
@@ -101,6 +102,9 @@ export class EventFacts {
     if (event.type === "admin.grant") {
       return event.data.permission;
     }
+    if (event.type === "guard.failure") {
+      return event.data.tool;
+    }
     return event.type === "mcp.call" ? event.data.tool : null;
   }
 
@@ -123,6 +127,8 @@ export class EventFacts {
       case "admin.grant":
         // One pattern per line: a rule splits them back apart, and a command-prefix pattern never holds a newline.
         return event.data.patterns.join("\n");
+      case "guard.failure":
+        return event.data.reason;
       case "session.start":
       case "session.end":
         return "session";
@@ -144,6 +150,8 @@ export class EventFacts {
         return "prompt";
       case "admin.grant":
         return event.data.reply;
+      case "guard.failure":
+        return "unguarded";
       case "session.start":
       case "session.end":
         return "boundary";

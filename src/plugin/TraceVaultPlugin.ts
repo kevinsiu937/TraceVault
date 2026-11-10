@@ -1,3 +1,4 @@
+import type { CallGuard } from "./CallGuard.js";
 import type { EventForwarderPort } from "./EventForwarderPort.js";
 import type { PendingGapStore } from "./PendingGapStore.js";
 import { PermissionRequests, type PermissionProperties } from "./PermissionRequests.js";
@@ -87,6 +88,7 @@ export class TraceVaultPlugin {
   private readonly forwarder: EventForwarderPort;
   private readonly gaps: PendingGapStore;
   private readonly now: () => number;
+  private readonly guard: CallGuard | null;
   private readonly permissions: PermissionRequests;
   private readonly pendingArgs = new Map<string, Record<string, unknown>>();
   private readonly pendingStarts = new Map<string, number>();
@@ -95,11 +97,14 @@ export class TraceVaultPlugin {
     forwarder: EventForwarderPort,
     gaps: PendingGapStore,
     now: () => number = () => performance.now(),
+    /** Null unless the install opted in to blocking; then it may refuse a call before it runs. */
+    guard: CallGuard | null = null,
     permissions: PermissionRequests = new PermissionRequests(),
   ) {
     this.forwarder = forwarder;
     this.gaps = gaps;
     this.now = now;
+    this.guard = guard;
     this.permissions = permissions;
   }
 
@@ -108,6 +113,13 @@ export class TraceVaultPlugin {
       "tool.execute.before": async (input, output) => {
         this.pendingArgs.set(this.key(input), output.args);
         this.pendingStarts.set(this.key(input), this.now());
+        const verdict = this.guard?.inspect({ ...input, args: output.args });
+        if (verdict?.kind === "failed") {
+          await this.send({ hook: "guard.failure", ...input, reason: verdict.reason }, input.sessionID);
+        } else if (verdict?.kind === "refuse") {
+          // OpenCode hands the thrown message to the model as the call's result (probed 10 Nov 2026).
+          throw new Error(verdict.message);
+        }
       },
       "tool.execute.after": async (input, output) => {
         const key = this.key(input);
@@ -212,12 +224,14 @@ export class TraceVaultPlugin {
         const key = `${partSession}:${part.callID}`;
         const args = part.state.input ?? this.pendingArgs.get(key) ?? {};
         const durationMs = this.takeDuration(key);
+        const blockedBy = this.guard?.refusedBy(partSession, part.callID) ?? null;
         await this.send(
           {
             hook: "tool.failed",
             input: { tool: part.tool, sessionID: partSession, callID: part.callID, args },
             error: typeof part.state.error === "string" ? part.state.error : "tool call failed",
             ...(durationMs === null ? {} : { durationMs }),
+            ...(blockedBy === null ? {} : { blockedBy }),
           },
           partSession,
         );

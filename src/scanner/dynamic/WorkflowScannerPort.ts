@@ -8,4 +8,10 @@ export interface WorkflowScannerPort {
    * a filtered view must not change what the rules see.
    */
   scan(events: readonly Event[]): Finding[];
+
+  /**
+   * The id of the first blockable rule that one pending call matches, or null.
+   * The call has not run, so its outcome means nothing; no blockable rule tests it.
+   */
+  blockedBy(call: Event): string | null;
 }

@@ -6,4 +6,6 @@ export interface DocumentAccessData {
   readonly path: string;
   readonly operation: DocumentOperation;
   readonly outcome: Outcome;
+  /** The blockable rule the opt-in guard refused this call with. */
+  readonly blocked_by?: string;
 }

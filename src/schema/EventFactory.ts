@@ -5,6 +5,7 @@ import { EventId } from "./EventId.js";
 import type { CaptureDuplicateData } from "./CaptureDuplicateData.js";
 import type { CaptureGapData } from "./CaptureGapData.js";
 import type { DocumentAccessData } from "./DocumentAccessData.js";
+import type { GuardFailureData } from "./GuardFailureData.js";
 import type { HookScriptData } from "./HookScriptData.js";
 import type { McpCallData } from "./McpCallData.js";
 import type { SessionLifecycleData } from "./SessionLifecycleData.js";
@@ -31,17 +32,19 @@ export type ClassifiedTool =
 export class EventFactory {
   constructor(private readonly capturePath: CapturePath = "plugin_hook") {}
 
-  fromClassified(meta: EventMeta, classified: ClassifiedTool): Event {
+  /** `blockedBy` names the rule the opt-in guard refused the call with. */
+  fromClassified(meta: EventMeta, classified: ClassifiedTool, blockedBy?: string): Event {
     const base = this.envelope(meta);
+    const refusal = blockedBy === undefined ? {} : { blocked_by: blockedBy };
     switch (classified.type) {
       case "hook.script":
-        return { ...base, type: "hook.script", data: classified.data };
+        return { ...base, type: "hook.script", data: { ...classified.data, ...refusal } };
       case "document.access":
-        return { ...base, type: "document.access", data: classified.data };
+        return { ...base, type: "document.access", data: { ...classified.data, ...refusal } };
       case "mcp.call":
-        return { ...base, type: "mcp.call", data: classified.data };
+        return { ...base, type: "mcp.call", data: { ...classified.data, ...refusal } };
       case "skill.call":
-        return { ...base, type: "skill.call", data: classified.data };
+        return { ...base, type: "skill.call", data: { ...classified.data, ...refusal } };
     }
   }
 
@@ -77,6 +80,10 @@ export class EventFactory {
 
   adminGrant(meta: EventMeta, data: AdminGrantData): Event {
     return { ...this.envelope(meta), type: "admin.grant", data };
+  }
+
+  guardFailure(meta: EventMeta, data: GuardFailureData): Event {
+    return { ...this.envelope(meta), type: "guard.failure", data };
   }
 
   private envelope(meta: EventMeta): Omit<Event, "type" | "data"> {

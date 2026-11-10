@@ -16,6 +16,7 @@ const META_TYPES: ReadonlySet<Event["type"]> = new Set([
   "session.end",
   "capture.gap",
   "capture.duplicate",
+  "guard.failure",
 ]);
 
 export class InvestigationService implements InvestigationServicePort {

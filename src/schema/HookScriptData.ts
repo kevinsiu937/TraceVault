@@ -6,4 +6,6 @@ export interface HookScriptData {
   readonly target: string;
   readonly exit_code: number | null;
   readonly outcome: Outcome;
+  /** The blockable rule the opt-in guard refused this call with. */
+  readonly blocked_by?: string;
 }

@@ -54,7 +54,8 @@ export const VERSION = "0.1.0";
 const USAGE = `tracevault ${VERSION}
 
 Usage:
-  tracevault init [--dir <path>]          attach TraceVault to a project
+  tracevault init [--dir <path>] [--block]   attach TraceVault to a project;
+                                          --block refuses calls a blockable rule matches
   tracevault uninstall [--dir <path>]     remove TraceVault and restore the configuration
   tracevault import [--db <path>]         import the agent's existing session history
   tracevault run [--port <n>] [--db <path>]   start the local service
@@ -183,8 +184,9 @@ function importAgentHistory(store: EventStorePort): string {
   }
 }
 
-function parseDirOption(args: readonly string[]): string {
+function parseDirOption(args: readonly string[], allowBlock: boolean): { directory: string; block: boolean } {
   let directory = process.cwd();
+  let block = false;
   const pending = [...args];
 
   while (pending.length > 0) {
@@ -202,10 +204,15 @@ function parseDirOption(args: readonly string[]): string {
       continue;
     }
 
+    if (flag === "--block" && allowBlock) {
+      block = true;
+      continue;
+    }
+
     throw new TypeError(`unknown option '${flag}'`);
   }
 
-  return directory;
+  return { directory, block };
 }
 
 function errorMessage(error: unknown): string {
@@ -325,11 +332,11 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   if (first === "init" || first === "uninstall") {
     try {
-      const projectDir = parseDirOption(argv.slice(1));
+      const { directory, block } = parseDirOption(argv.slice(1), first === "init");
       const summary =
         first === "init"
-          ? new InitCommand(projectDir).install()
-          : new UninstallCommand(projectDir).uninstall();
+          ? new InitCommand(directory, block).install()
+          : new UninstallCommand(directory).uninstall();
       process.stdout.write(`${summary}\n`);
       return 0;
     } catch (error) {

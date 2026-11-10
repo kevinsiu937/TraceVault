@@ -56,9 +56,17 @@ export class PluginHookCapture implements CapturePort {
       );
     }
 
+    if (hook.kind === "guard.failure") {
+      return this.factory.guardFailure(
+        { sessionId: hook.sessionID, correlationId: null, receivedAt },
+        { tool: hook.tool, call_id: hook.callID, reason: hook.reason },
+      );
+    }
+
+    const blockedBy = hook.kind === "tool.failed" ? hook.blockedBy : undefined;
     const outcome: Outcome =
       hook.kind === "tool.failed"
-        ? this.denial.isDenial(hook.error)
+        ? blockedBy !== undefined || this.denial.isDenial(hook.error)
           ? "denied"
           : "error"
         : hook.exitCode !== null && hook.exitCode !== 0
@@ -76,6 +84,7 @@ export class PluginHookCapture implements CapturePort {
         durationMs: hook.durationMs,
       },
       classified,
+      blockedBy,
     );
   }
 }

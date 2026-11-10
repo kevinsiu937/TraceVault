@@ -3,6 +3,7 @@ import type { CaptureDuplicateData } from "./CaptureDuplicateData.js";
 import type { CaptureGapData } from "./CaptureGapData.js";
 import type { CapturePath } from "./CapturePath.js";
 import type { DocumentAccessData } from "./DocumentAccessData.js";
+import type { GuardFailureData } from "./GuardFailureData.js";
 import type { HookScriptData } from "./HookScriptData.js";
 import type { McpCallData } from "./McpCallData.js";
 import type { SessionLifecycleData } from "./SessionLifecycleData.js";
@@ -40,4 +41,5 @@ export type Event = EventEnvelope &
     | { readonly type: "capture.duplicate"; readonly data: CaptureDuplicateData }
     | { readonly type: "prompt.user"; readonly data: UserPromptData }
     | { readonly type: "admin.grant"; readonly data: AdminGrantData }
+    | { readonly type: "guard.failure"; readonly data: GuardFailureData }
   );

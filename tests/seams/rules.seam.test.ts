@@ -163,6 +163,29 @@ steps:
     expect(load()).toThrow(new RegExp(`probe\\.yaml: steps\\[0\\]\\.match\\.call\\.${operator}: expects the name`));
   });
 
+  it.each(["true", "false"])("loads blockable: %s on a rule that matches one event", (value) => {
+    write("probe.yaml", `${VALID.replace("steps:", `blockable: ${value}\nsteps:`)}`);
+
+    expect(load()).not.toThrow();
+  });
+
+  it.each([
+    ["a second step", "window: session\nsteps:\n  - match:\n      type: { equals: session.start }\n  - match:\n      type: { equals: document.access }\n"],
+    ["a repeated step", "window: { seconds: 60 }\nsteps:\n  - repeat: 2\n    match:\n      type: { equals: document.access }\n"],
+    ["a test of the outcome", "steps:\n  - match:\n      outcome: { equals: ok }\n"],
+    ["a test of the outcome in one alternative", "steps:\n  - any:\n      - label: read\n        match:\n          operation: { equals: read }\n      - label: refused\n        match:\n          outcome: { equals: denied }\n"],
+  ])("refuses blockable on a rule with %s", (_, steps) => {
+    write("probe.yaml", `${VALID.slice(0, VALID.indexOf("steps:"))}blockable: true\n${steps}`);
+
+    expect(load()).toThrow(/probe\.yaml: blockable: only a rule that matches one event, without testing its outcome, can block/);
+  });
+
+  it("refuses a blockable value that is not true or false", () => {
+    write("probe.yaml", VALID.replace("steps:", "blockable: yes\nsteps:"));
+
+    expect(load()).toThrow(/probe\.yaml: blockable: must be true or false/);
+  });
+
   it("rejects a match operator it does not know", () => {
     write("probe.yaml", VALID.replace("{ equals: document.access }", "{ like: document.access }"));
 

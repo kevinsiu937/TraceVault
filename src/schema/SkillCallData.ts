@@ -6,4 +6,6 @@ export interface SkillCallData {
   readonly params_digest: string;
   readonly params_size_bytes: number;
   readonly outcome: Outcome;
+  /** The blockable rule the opt-in guard refused this call with. */
+  readonly blocked_by?: string;
 }

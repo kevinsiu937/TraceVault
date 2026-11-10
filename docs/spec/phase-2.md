@@ -88,4 +88,4 @@ The last ticket adds an opt-in guard. It refuses a call before it runs when a si
 - User prompts are stored truncated at 200 characters, so a freeze phrase past that limit is invisible to the destructive-action rule.
 - Outbound requests made from shell commands are matched by pattern and are easy to evade. A finding names the pattern that matched and claims nothing more.
 - Escalation-then-use checks shell approvals only, and matches the whole command line against the approved pattern. A compound command whose first part is covered counts, even when OpenCode asked about a later part.
-- What OpenCode does when the pre-call hook refuses a call is unknown until ticket 34's probe.
+- The guard sees what capture sees. It checks the file tools (`read`, `write`, `edit`, `patch`), so a shell command that writes `opencode.json` or prints `.env` is not refused.

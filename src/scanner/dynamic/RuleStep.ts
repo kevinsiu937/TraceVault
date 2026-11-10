@@ -41,6 +41,11 @@ export class RuleStep {
     return null;
   }
 
+  /** Whether any alternative of this step tests the fact. */
+  tests(fact: FactName): boolean {
+    return this.alternatives.some((alternative) => alternative.conditions.has(fact));
+  }
+
   private holds(alternative: StepAlternative, facts: EventFacts, bound: Bindings): boolean {
     for (const [fact, condition] of alternative.conditions) {
       if (!condition.matches(facts.get(fact), bound)) {

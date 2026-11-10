@@ -112,6 +112,44 @@ describe("seam B: install writes the plugin, uninstall restores the project", ()
     expect(snapshot(projectDir)).toEqual(before);
   });
 
+  it("installs the guard only when init is given --block", () => {
+    new InitCommand(projectDir).install();
+    const plain = readFileSync(join(projectDir, LOADER), "utf8");
+    new UninstallCommand(projectDir).uninstall();
+    new InitCommand(projectDir, true).install();
+    const blocking = readFileSync(join(projectDir, LOADER), "utf8");
+
+    expect(plain).not.toContain("GuardAssembly");
+    expect(blocking).toContain("new GuardAssembly().fromDirectory(");
+    expect(blocking).toContain(JSON.stringify(join(import.meta.dirname, "../../rules")));
+  });
+
+  it("restores the project byte-for-byte after an install with blocking on", async () => {
+    const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const before = snapshot(projectDir);
+
+    try {
+      await expect(main(["init", "--block", "--dir", projectDir])).resolves.toBe(0);
+      expect(readFileSync(join(projectDir, LOADER), "utf8")).toContain("GuardAssembly");
+      await expect(main(["uninstall", "--dir", projectDir])).resolves.toBe(0);
+    } finally {
+      stdout.mockRestore();
+    }
+
+    expect(snapshot(projectDir)).toEqual(before);
+  });
+
+  it("refuses --block on uninstall", async () => {
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+    try {
+      await expect(main(["uninstall", "--block", "--dir", projectDir])).resolves.toBe(1);
+      expect(stderr).toHaveBeenCalledWith(expect.stringContaining("unknown option '--block'"));
+    } finally {
+      stderr.mockRestore();
+    }
+  });
+
   it("runs init and uninstall through the CLI with --dir", async () => {
     const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 

@@ -12,5 +12,7 @@ export class Rule {
     readonly steps: readonly [RuleStep, ...RuleStep[]],
     /** Null only for a rule that matches one event, where a window means nothing. */
     readonly window: DurationWindow | null,
+    /** The opt-in guard may refuse a pending call that matches this rule. */
+    readonly blockable: boolean = false,
   ) {}
 }

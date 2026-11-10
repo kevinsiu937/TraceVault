@@ -4,7 +4,7 @@ import type { WorkflowScannerPort } from "../scanner/dynamic/WorkflowScannerPort
 import { DistinctEvents } from "./DistinctEvents.js";
 import type { TimelineEntry } from "./TimelineEntry.js";
 
-const NO_RULES: WorkflowScannerPort = { scan: () => [] };
+const NO_RULES: WorkflowScannerPort = { scan: () => [], blockedBy: () => null };
 
 /**
  * Findings for one session, and the flags they put on its timeline rows.

@@ -211,7 +211,7 @@ describe("seam A: live timeline updates", () => {
 
     const [read, curl] = payloads;
     expect(read?.eventId).toBe(envId);
-    expect(read?.html).not.toContain('class="flag"');
+    expect(read?.html).not.toContain('data-rule="exfiltration-chain"');
     expect(read?.updates).toEqual([]);
     expect(curl?.html).toContain('data-rule="exfiltration-chain"');
     expect(curl?.updates.map((update) => update.eventId)).toEqual([envId]);
