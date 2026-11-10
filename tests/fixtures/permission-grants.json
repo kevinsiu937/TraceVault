@@ -1,0 +1,161 @@
+{
+  "source": "recorded",
+  "note": "Ticket 32 permission-probe.sh, 10 Nov 2026, OpenCode 1.18.32 with DeepSeek selected. Kevin approved four requests once and the final date request always. Only permission events are included; no payload fields are invented.",
+  "events": [
+    {
+      "at": "2026-11-10T15:13:28.155Z",
+      "type": "permission.asked",
+      "properties": {
+        "id": "per_1c605725a0018382dIT90zO50W",
+        "sessionID": "ses_e39fa9a30ffesXOo2umOlivSmb",
+        "permission": "bash",
+        "patterns": [
+          "ls"
+        ],
+        "metadata": {
+          "command": "ls"
+        },
+        "always": [
+          "ls *"
+        ],
+        "tool": {
+          "messageID": "msg_1c6056613001epEM1r0DyvkVAP",
+          "callID": "call_00_ET_ZlSyc4X30mAMK1H88v1y0040"
+        }
+      }
+    },
+    {
+      "at": "2026-11-10T15:13:30.083Z",
+      "type": "permission.replied",
+      "properties": {
+        "sessionID": "ses_e39fa9a30ffesXOo2umOlivSmb",
+        "requestID": "per_1c605725a0018382dIT90zO50W",
+        "reply": "once"
+      }
+    },
+    {
+      "at": "2026-11-10T15:14:08.504Z",
+      "type": "permission.asked",
+      "properties": {
+        "id": "per_1c6060ff8001GJClvY4U1c9f9z",
+        "sessionID": "ses_e39fa9a30ffesXOo2umOlivSmb",
+        "permission": "bash",
+        "patterns": [
+          "pwd"
+        ],
+        "metadata": {
+          "command": "pwd"
+        },
+        "always": [
+          "pwd *"
+        ],
+        "tool": {
+          "messageID": "msg_1c6060c26001g6qXoEpFJSeq44",
+          "callID": "call_00_ET_uRjS2O7dbPbbK0R432ip1397"
+        }
+      }
+    },
+    {
+      "at": "2026-11-10T15:14:09.569Z",
+      "type": "permission.replied",
+      "properties": {
+        "sessionID": "ses_e39fa9a30ffesXOo2umOlivSmb",
+        "requestID": "per_1c6060ff8001GJClvY4U1c9f9z",
+        "reply": "once"
+      }
+    },
+    {
+      "at": "2026-11-10T15:14:46.513Z",
+      "type": "permission.asked",
+      "properties": {
+        "id": "per_1c606a470001pEBigTy1YlI8LD",
+        "sessionID": "ses_e39fa9a30ffesXOo2umOlivSmb",
+        "permission": "bash",
+        "patterns": [
+          "ls -a"
+        ],
+        "metadata": {
+          "command": "ls -a"
+        },
+        "always": [
+          "ls *"
+        ],
+        "tool": {
+          "messageID": "msg_1c6069fee001fjoc9a5CTtd4CQ",
+          "callID": "call_00_ET_jnrsih5kMdSks105vyJ16512"
+        }
+      }
+    },
+    {
+      "at": "2026-11-10T15:14:47.345Z",
+      "type": "permission.replied",
+      "properties": {
+        "sessionID": "ses_e39fa9a30ffesXOo2umOlivSmb",
+        "requestID": "per_1c606a470001pEBigTy1YlI8LD",
+        "reply": "once"
+      }
+    },
+    {
+      "at": "2026-11-10T15:15:46.814Z",
+      "type": "permission.asked",
+      "properties": {
+        "id": "per_1c6078ffe001IbNdVG6H1B88Wx",
+        "sessionID": "ses_e39fa9a30ffesXOo2umOlivSmb",
+        "permission": "bash",
+        "patterns": [
+          "date"
+        ],
+        "metadata": {
+          "command": "date"
+        },
+        "always": [
+          "date *"
+        ],
+        "tool": {
+          "messageID": "msg_1c6078bad0013fsiGAZBIVU781",
+          "callID": "call_00_ET_xVs3tEUGHNgsQgbFkrYJ0298"
+        }
+      }
+    },
+    {
+      "at": "2026-11-10T15:15:48.443Z",
+      "type": "permission.replied",
+      "properties": {
+        "sessionID": "ses_e39fa9a30ffesXOo2umOlivSmb",
+        "requestID": "per_1c6078ffe001IbNdVG6H1B88Wx",
+        "reply": "once"
+      }
+    },
+    {
+      "at": "2026-11-10T15:16:13.442Z",
+      "type": "permission.asked",
+      "properties": {
+        "id": "per_1c607f801001203xjMHla4PtfN",
+        "sessionID": "ses_e39fa9a30ffesXOo2umOlivSmb",
+        "permission": "bash",
+        "patterns": [
+          "date"
+        ],
+        "metadata": {
+          "command": "date"
+        },
+        "always": [
+          "date *"
+        ],
+        "tool": {
+          "messageID": "msg_1c607f1bf00111UYyh9f4VZMRj",
+          "callID": "call_00_6cva3A02zmyJOkhX1Bt32058"
+        }
+      }
+    },
+    {
+      "at": "2026-11-10T15:16:44.264Z",
+      "type": "permission.replied",
+      "properties": {
+        "sessionID": "ses_e39fa9a30ffesXOo2umOlivSmb",
+        "requestID": "per_1c607f801001203xjMHla4PtfN",
+        "reply": "always"
+      }
+    }
+  ]
+}

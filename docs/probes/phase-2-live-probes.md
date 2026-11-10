@@ -19,7 +19,7 @@ Recorded on 7 November 2026 against OpenCode 1.18.32 on macOS. The probe was a p
 
 The model reply stalled after the events above were logged, so the run was stopped. The events needed were already recorded.
 
-## 32: permission grants (not yet run)
+## 32: permission grants
 
 **Static evidence only.** The installed `@opencode-ai/plugin` 1.18.32 declares a `permission.ask` hook, `(input: Permission, output: { status: "ask" | "deny" | "allow" })`. Its SDK declares permission events in two shapes:
 
@@ -29,6 +29,16 @@ The model reply stalled after the events above were logged, so the run was stopp
 | `sdk/dist/v2/gen` | `permission.asked` (`PermissionRequest`, with `permission`, `patterns`, `always`, `tool.callID`) | `permission.replied` (`sessionID`, `requestID`, `reply: "once" \| "always" \| "reject"`) |
 
 Which shape this runtime sends to a plugin is the open question, and per `AGENTS.md` it must be observed, not guessed. `docs/probes/scripts/permission-probe.sh` runs OpenCode interactively with a logging plugin. Approve the one prompt it shows, and the script prints every permission record it received.
+
+**Recorded run (10 Nov 2026, OpenCode 1.18.32, DeepSeek selected).** Kevin ran the interactive permission probe and approved the prompts himself. The plugin received the v2 event shapes. The ten permission events are frozen in `tests/fixtures/permission-grants.json`, marked `recorded` and checked for local paths.
+
+- `permission.asked` carries `id`, `sessionID`, `permission`, `patterns`, `metadata`, `always`, and `tool` (`messageID`, `callID`).
+- `permission.replied` carries `sessionID`, `requestID`, and `reply`. Join it to the request by session and request id.
+- The first four replies are `once`: `ls`, `pwd`, `ls -a`, and `date`. The fifth request, another `date`, received `always`.
+- For `date`, the request's `patterns` is `["date"]`, while its `always` patterns are `["date *"]`. These are different scopes and must not be conflated.
+- The reply itself supplies no scope. A capture implementation must retain the matching asked event, use `patterns` for `once` and `always` for `always`, and ignore rejected replies.
+
+The probe proves that grant events reach plugins. It does not prove TraceVault stores them or that an escalation rule works. Both remain unimplemented. The proposed `admin.grant` schema needs Kevin's approval before implementation because the existing draft's expiry and review fields are absent from the recorded payload.
 
 ## 34: what a refused call looks like
 
