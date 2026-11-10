@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "A deletion with no freeze, a harness-injected 'do not delete', ordinary phrases that only sound like a freeze (each followed by a deletion), and a real freeze followed only by reads and harmless commands.",
+  "note": "A deletion with no freeze, a harness-injected 'do not delete', ordinary phrases that only sound like a freeze (each followed by a deletion), and a real freeze followed only by reads and harmless commands. After the freeze, git rm --cached only untracks files, and find piped to xargs only counts lines.",
   "events": [
     {
       "id": "evt_freeze_start",
@@ -317,6 +317,54 @@
         "hook": "tool.execute.after",
         "target_tool": "bash",
         "target": "npm run format -- --rm-unused",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_untrack",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:08.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_freeze_untrack",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "git rm -r --cached .",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_count",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:09.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_freeze_count",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "find src -name '*.ts' | xargs wc -l",
         "exit_code": 0,
         "outcome": "ok"
       },

@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "A freeze, a read, a second freeze, then two deletions: each deletion is its own finding, and names only the first freeze.",
+  "note": "A freeze, a read, a second freeze, then deletions written six ways (rm, a file delete, xargs rm, find -delete, find -exec rm, git rm): each deletion is its own finding, and names only the first freeze.",
   "events": [
     {
       "id": "evt_freeze_start",
@@ -133,6 +133,102 @@
         "outcome": "ok"
       },
       "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_xargs_rm",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_freeze_xargs_rm",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "git ls-files -o '*.log' | xargs -0 rm -f",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_find_delete",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:06.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_freeze_find_delete",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "find . -name '*.tmp' -delete",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_find_exec_rm",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:07.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_freeze_find_exec_rm",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "find build -type f -exec rm {} +",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_freeze_git_rm",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_freeze",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:08.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_freeze_git_rm",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "git rm docs/old.md",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
     }
   ],
   "expect": [
@@ -148,6 +244,34 @@
       "events": [
         "evt_freeze_freeze",
         "evt_freeze_delete"
+      ]
+    },
+    {
+      "rule": "destructive-action",
+      "events": [
+        "evt_freeze_freeze",
+        "evt_freeze_xargs_rm"
+      ]
+    },
+    {
+      "rule": "destructive-action",
+      "events": [
+        "evt_freeze_freeze",
+        "evt_freeze_find_delete"
+      ]
+    },
+    {
+      "rule": "destructive-action",
+      "events": [
+        "evt_freeze_freeze",
+        "evt_freeze_find_exec_rm"
+      ]
+    },
+    {
+      "rule": "destructive-action",
+      "events": [
+        "evt_freeze_freeze",
+        "evt_freeze_git_rm"
       ]
     }
   ]

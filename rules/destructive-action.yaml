@@ -11,6 +11,11 @@
 #   - read-only as an instruction: "read-only mode / please / from here / from
 #     now", "stay / remain read-only". Describing a thing as read-only ("make
 #     the field read-only") is not a freeze.
+#
+# A deletion is a file delete, or a shell command that deletes: rm and its
+# kin at the start of a command or after xargs, find -delete or -exec rm,
+# git rm (not --cached, which only untracks), git clean -f, git reset --hard,
+# a force push, Remove-Item or del.
 id: destructive-action
 version: 1
 severity: high
@@ -30,4 +35,4 @@ steps:
         match:
           type: { equals: hook.script }
           tool: { equals: bash }
-          target: { regex: '(^|[;&|]\s*)(sudo\s+)?(rm|rmdir|unlink|shred)\s|\bgit\s+(clean\s+-\w*f|reset\s+--hard|push\s+(-f|--force))|\bRemove-Item\b|\bdel\s+/' }
+          target: { regex: '(^|[;&|]\s*)(sudo\s+)?(rm|rmdir|unlink|shred)\s|\bxargs\s+(-\S+\s+)*(rm|rmdir|unlink|shred)\b|\bfind\s[^;&|]*\s(-delete\b|-exec\s+(rm|rmdir|unlink|shred)\b)|\bgit\s+(rm\s(?!.*--cached)|clean\s+-\w*f|reset\s+--hard|push\s+(-f|--force))|\bRemove-Item\b|\bdel\s+/' }
