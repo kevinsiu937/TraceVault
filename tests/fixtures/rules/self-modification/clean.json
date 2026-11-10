@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "Reads of agent config and writes to look-alike paths.",
+  "note": "Reads of agent config, writes to look-alike paths, and a write whose path only passes through .opencode/ on the way to src/.",
   "events": [
     {
       "id": "evt_fixture_start",
@@ -127,6 +127,28 @@
       "prev_hash": null,
       "data": {
         "path": "/home/dev/demo/src/app.ts",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_fixture_write_through_config",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_fixture",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T09:00:06.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_write_source",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/.opencode/../src/app.ts",
         "operation": "write",
         "outcome": "ok"
       },
