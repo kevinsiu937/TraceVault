@@ -19,6 +19,13 @@ const ESCAPES: Record<string, string> = {
   "'": "&#39;",
 };
 
+/** A row whose flags changed live. A row the page draws inside a collapsed run also carries that run, redrawn. */
+export interface LiveRowUpdate {
+  readonly eventId: string;
+  readonly html: string;
+  readonly run: { readonly ids: readonly string[]; readonly html: string } | null;
+}
+
 /** The centre List pane of the cockpit. */
 export class TimelineView implements SessionPaneView {
   readonly id = "list";
@@ -144,9 +151,17 @@ source.onmessage = (message) => {
   // Rows whose flags changed because this event closed a rule match, rendered by the server.
   for (const update of entry.updates) {
     const existing = timeline.querySelector('li.event[data-event-id="' + update.eventId + '"]');
-    const replacement = fromHtml(update.html);
-    if (existing !== null && replacement !== null) existing.replaceWith(replacement);
+    if (existing === null) continue;
+    // Inside a collapsed run, redraw the whole run so its header shows the flag, if the page's run still holds exactly those calls.
+    const group = existing.closest("li.event-group");
+    const members = group === null ? "" : [...group.querySelectorAll("li.event")].map((row) => row.dataset.eventId).join(" ");
+    const whole = group !== null && update.run !== null && members === update.run.ids.join(" ");
+    const replacement = fromHtml(whole ? update.run.html : update.html);
+    if (replacement === null) continue;
+    if (whole && group.querySelector("details").open) replacement.querySelector("details").open = true;
+    (whole ? group : existing).replaceWith(replacement);
   }
+  if (entry.html === null) return;
   if (timeline.querySelector('[data-event-id="' + entry.eventId + '"]') !== null) return;
   const row = fromHtml(entry.html);
   if (row === null) return;
@@ -171,7 +186,38 @@ source.onmessage = (message) => {
   }
 
   renderEntry(entry: TimelineEntry): string {
-    return this.row.render(entry, { href: `?event=${encodeURIComponent(entry.eventId)}` });
+    return this.row.render(entry, { href: this.liveHref(entry) });
+  }
+
+  /** `changed` rows, each with the collapsed run the page groups it into, grouped as `render` groups them. */
+  renderUpdates(
+    changed: readonly TimelineEntry[],
+    all: readonly TimelineEntry[],
+    shown: readonly TimelineEntry[],
+    filterActive: boolean,
+  ): LiveRowUpdate[] {
+    const runs = this.turnBuilder
+      .build(all, shown, filterActive)
+      .flatMap((turn) => this.grouper.group(turn.entries))
+      .flatMap((item) => (item.kind === "repeat" ? [item.entries] : []));
+    return changed.map((entry) => {
+      const run = runs.find((members) => members.some((member) => member.eventId === entry.eventId));
+      return {
+        eventId: entry.eventId,
+        html: this.renderEntry(entry),
+        run:
+          run === undefined
+            ? null
+            : {
+                ids: run.map((member) => member.eventId),
+                html: this.repeatRow.render(run, { href: (member) => this.liveHref(member), selectedEventId: null }),
+              },
+      };
+    });
+  }
+
+  private liveHref(entry: TimelineEntry): string {
+    return `?event=${encodeURIComponent(entry.eventId)}`;
   }
 
   private counts(entries: readonly TimelineEntry[]): { kind: string; count: number }[] {

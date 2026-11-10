@@ -138,6 +138,19 @@ describe("seam A: the investigation cockpit", () => {
     expect(body.match(/<style>/g)).toHaveLength(1);
   });
 
+  it("serves inline scripts that parse", async () => {
+    seedSiblings();
+
+    const body = await (await fetch(`${baseUrl}/sessions/${SESSION}`)).text();
+    const scripts = [...body.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((match) => match[1] ?? "");
+
+    expect(scripts.length).toBeGreaterThan(0);
+    for (const script of scripts) {
+      // Parsed, never run: a syntax error would stop every live update on the page.
+      expect(() => new Function(script)).not.toThrow();
+    }
+  });
+
   it("shows session identity, aggregate counts and sibling stepping", async () => {
     seedSiblings();
 

@@ -50,7 +50,7 @@ The last ticket adds an opt-in guard. It refuses a call before it runs when a si
 
 **Dashboard.** A flagged row carries a flag marker naming the rule. A collapsed repeated-call run shows its members' flags on its header, so collapsing never hides a flag. Flags appear on session pages only; the session list shows no finding counts in Phase 2, so the list page does not scan every session. The session page lists the session's findings, and each one links to its events. Flags are never colour-only.
 
-**Live flags.** When a live event closes a match, the stream pushes server-rendered rows for the flagged events and the page swaps them in. The rendering stays on the server, where Seam A can assert it.
+**Live flags.** When a live event closes a match, the stream pushes server-rendered rows for the flagged events and the page swaps them in, even when a filter hides the closing event itself. A flagged row inside a collapsed run of repeated calls redraws the whole run, so the run's header shows the flag. The rendering stays on the server, where Seam A can assert it.
 
 **Capture extensions.** Two rule families need data Phase 1 does not capture.
 - Scope drift needs the session's project folder. It goes on `session.start`, from OpenCode's `session.directory` column on import and from the plugin context on the live path.

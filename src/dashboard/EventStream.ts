@@ -28,27 +28,27 @@ export class EventStream {
     );
     const unsubscribe = this.service.subscribe(sessionId, (entry) => {
       // shortcut: one full timeline lookup per live event (O(n) per event); batch or index if a session ever streams thousands of events a second.
-      const timeline = this.service.getTimeline(sessionId, filter);
+      const all = this.service.getTimeline(sessionId);
+      const timeline = filter.active ? this.service.getTimeline(sessionId, filter) : all;
       const position = timeline.findIndex((candidate) => candidate.eventId === entry.eventId);
-      // Absent from the filtered timeline: filtered out, or a duplicate collapsed at read time.
+      // Absent from the shown timeline: filtered out, or a duplicate collapsed at read time.
+      // It still sends the shown rows whose flags it changed.
       const current = timeline[position];
-      if (current === undefined) {
+      if (current !== undefined) {
+        sentFlags.set(current.eventId, current.flags.join(" "));
+      }
+      const changed = timeline.filter((candidate) => (sentFlags.get(candidate.eventId) ?? "") !== candidate.flags.join(" "));
+      for (const candidate of changed) {
+        sentFlags.set(candidate.eventId, candidate.flags.join(" "));
+      }
+      if (current === undefined && changed.length === 0) {
         return;
       }
-      sentFlags.set(current.eventId, current.flags.join(" "));
-      const updates = timeline
-        .filter((candidate) => (sentFlags.get(candidate.eventId) ?? "") !== candidate.flags.join(" "))
-        .map((candidate) => {
-          sentFlags.set(candidate.eventId, candidate.flags.join(" "));
-          return { eventId: candidate.eventId, html: this.view.renderEntry(candidate) };
-        });
-      const payload = {
-        eventId: current.eventId,
-        time: current.time,
-        position,
-        html: this.view.renderEntry(current),
-        updates,
-      };
+      const updates = this.view.renderUpdates(changed, all, timeline, filter.active);
+      const payload =
+        current === undefined
+          ? { eventId: null, time: null, position: null, html: null, updates }
+          : { eventId: current.eventId, time: current.time, position, html: this.view.renderEntry(current), updates };
       response.write(`data: ${JSON.stringify(payload)}\n\n`);
     });
     request.on("close", () => {
