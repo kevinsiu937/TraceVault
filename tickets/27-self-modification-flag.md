@@ -31,3 +31,5 @@ This ticket is Phase 2's tracer bullet. It cuts every new piece once: the rule f
 - Loading supports one step per rule. A multi-step rule fails with "only single-step rules are supported" until ticket 28.
 - Deletion check: removing each new behaviour fails the suite, except one. Scanning the filtered rows instead of the whole session gives the same flags while every rule has one step. Ticket 28 pins it with a filter that hides the first step of a chain.
 - Live check: the built service flagged an `edit` of `opencode.json` on its row and in a one-finding panel, and left a `read` of the same file unflagged.
+
+**Review fix (10 Nov 2026, `.yml` files):** The loader read only `*.yaml`, so a rule saved as `.yml` was skipped without a word and never ran. Now a `.yml` file in `rules/` or `rules/lists/` stops loading. The error names the file and the name to rename it to, such as `probe.yml: file name: rename it to probe.yaml`, and `tracevault run` exits 1 with that message. Two seam C loader tests cover a rule file and a list file. Skipping `.yml` again, checking only the rules folder, or dropping the `lists/` prefix from the message each fails the suite.

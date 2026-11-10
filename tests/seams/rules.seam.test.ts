@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -209,6 +209,20 @@ steps:
     write("other.yaml", VALID);
 
     expect(load()).toThrow(/other\.yaml: id: must match the file name/);
+  });
+
+  it("refuses a rule file that ends in .yml instead of skipping it", () => {
+    write("probe.yml", VALID);
+
+    expect(load()).toThrow(/probe\.yml: file name: rename it to probe\.yaml/);
+  });
+
+  it("refuses a list file that ends in .yml instead of skipping it", () => {
+    write("probe.yaml", VALID);
+    mkdirSync(join(directory, "lists"));
+    write("lists/names.yml", "- alice\n");
+
+    expect(load()).toThrow(/lists\/names\.yml: file name: rename it to lists\/names\.yaml/);
   });
 
   it("gives the rule set a new digest when a rule file changes", () => {
