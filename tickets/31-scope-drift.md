@@ -7,9 +7,9 @@
 
 **Blocked by:** 28.
 
-**Status:** done, except the subagent half of the probe (see the first box)
+**Status:** done
 
-- [ ] Probe first: for a resumed session and a subagent, record which plugin-context field equals the session's directory, and freeze the payload. **Partly done:** a new root session was probed and frozen (`tests/fixtures/event-session-created.json`). `session.created` carries `info.directory`, while the plugin context's `worktree` is `/` outside git. **Resume answered (11 Nov 2026)** from the Phase 2 exit run (`tests/fixtures/rules/phase-2-exit/trigger.json`, recorded 9 Nov): five `opencode run --continue` turns kept the same session id, emitted no new `session.created`, and so kept the `project_dir` recorded when the session was created. **Still open:** a subagent, and a session resumed from a different folder. `docs/probes/scripts/subagent-probe.sh` records both; Kevin runs it, because Claude Code's safety check refuses an unattended tool-using agent run. See `docs/probes/phase-2-live-probes.md`
+- [x] Probe first: for a resumed session and a subagent, record which plugin-context field equals the session's directory, and freeze the payload. A new root session was probed and frozen (`tests/fixtures/event-session-created.json`): `session.created` carries `info.directory`, while the plugin context's `worktree` is `/` outside git. Resume from the same folder comes from the Phase 2 exit run (9 Nov): `--continue` keeps the session id and emits no new `session.created`. `subagent-probe.sh` (11 Nov) shows that a subagent emits its own `session.created` with `parentID` and the parent's `directory` (frozen as `tests/fixtures/event-session-created-subagent.json`), and that `--session` from another folder still runs in the session's original folder. So `info.directory` from `session.created` is the right source in every case; no plugin-context field is used. See `docs/probes/phase-2-live-probes.md`
 - [x] Seam B: both capture paths store the project folder on `session.start`
 - [x] A read outside the project folder is flagged; a read inside is not
 - [x] A session with no known project folder produces no scope-drift finding

@@ -17,7 +17,14 @@ Recorded on 7 November 2026 against OpenCode 1.18.32 on macOS. The probe was a p
 
 **Resume from the same folder:** answered by the Phase 2 exit run (9 Nov 2026, `tests/fixtures/rules/phase-2-exit/trigger.json`). Five `opencode run --continue` turns kept session id `ses_e3f5213bdffe2Azqaj9zXvLkXP` and emitted no new `session.created`. The session has one `session.start`, whose `project_dir` is the folder it was created in, and one `session.end` per turn.
 
-**Not probed yet:** a subagent's `session.created`, and resuming a session from a different folder. Both need a run in which the agent uses a tool. Claude Code's safety check refused a run with `--auto` (auto-approved permissions), so neither was observed. `docs/probes/scripts/subagent-probe.sh` records both for Kevin to run. Expected: a subagent's `session.created` carries its own `info.directory`. Unproven.
+**Subagent and resume from another folder (11 Nov 2026):** `docs/probes/scripts/subagent-probe.sh`, run by Kevin with `deepseek/deepseek-flash`, outside git.
+
+| Case | Observed |
+|---|---|
+| A subagent started with the task tool | Its own `session.created`, with `info.parentID` set to the root session and `info.directory` set to the parent's folder. Its tool calls carry the subagent's session id. The task tool part's `state.metadata` names both sessions (`parentSessionId`, `sessionId`). |
+| `opencode run --session <root id>` started in another folder | OpenCode loaded the plugin for both folders but ran the session in its original folder. No new `session.created`; every `session.updated` kept the original `info.directory`; a relative `notes.md` resolved against the original folder and failed with "File not found". The run did not exit after `session.idle` and was stopped by hand. |
+
+**Decision:** unchanged. A subagent gets its own `session.start` with its own `project_dir`, so scope drift checks it against its own folder. A resumed session keeps working in the folder it was created in, so the recorded `project_dir` stays right wherever the resume starts. The probe logged a subset of `info` and not `properties.sessionID`; OpenCode 1.18.32's event schema declares `session.created` as `{ sessionID, info }`, so the frozen fixture sets `sessionID` to `info.id`, as in the recorded root session. Fixture: `tests/fixtures/event-session-created-subagent.json`, path scrubbed.
 
 The model reply stalled after the events above were logged, so the run was stopped. The events needed were already recorded.
 

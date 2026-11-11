@@ -43,12 +43,12 @@ Spec: `docs/spec/phase-2.md`.
 | 28 | Exfiltration chain: a sensitive read, then data leaves | 27 | done |
 | 29 | Probing: repeated denied calls | 28 | done |
 | 30 | Destructive action after a declared freeze | 28 | done |
-| 31 | Scope drift: access outside the project | 28 | done (subagent probe open) |
+| 31 | Scope drift: access outside the project | 28 | done |
 | 32 | Escalation then use (probe first) | 28 | done |
 | 33 | Phase 2 exit verification | 27, 28, 29, 30, 31 | done |
 | 34 | Opt-in blocking: refuse before it runs | 33 | done |
 
-**Phase 2 is complete.** Every ticket from 27 to 34 is done; 31 keeps one open note, a probe of `project_dir` on subagent sessions and on a session resumed from another folder (`docs/probes/scripts/subagent-probe.sh`, run by Kevin). Phase 3 starts only when Kevin says so.
+**Phase 2 is complete.** Every ticket from 27 to 34 is done. Phase 3 starts only when Kevin says so.
 
 ## Dependency shape
 

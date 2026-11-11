@@ -367,6 +367,32 @@ describe("seam B: hook payload in, stored events out", () => {
     expect(start?.data).toEqual({ project_dir: "/home/dev/probe/projA" });
   });
 
+  it("stores a subagent's own session start, naming its parent and the folder it works in", async () => {
+    const sent: unknown[] = [];
+    const plugin = new TraceVaultPlugin(
+      { forward: async (payload: unknown): Promise<void> => void sent.push(payload) },
+      new PendingGapStore(join(directory, "pending-gaps.json")),
+      clockFrom([]),
+    );
+    const recorded = JSON.parse(readFileSync(join(import.meta.dirname, "../fixtures/event-session-created-subagent.json"), "utf8")) as {
+      event: Parameters<ReturnType<TraceVaultPlugin["hooks"]>["event"]>[0]["event"];
+    };
+
+    await plugin.hooks().event({ event: recorded.event });
+    for (const payload of sent) {
+      service.recordHookPayload(payload, RECEIVED_AT);
+    }
+
+    const [start] = store.listBySession("ses_e35d2ed28ffeH1gY9y6THRXbBo");
+    expect(start).toMatchObject({
+      type: "session.start",
+      data: {
+        parent_session_id: "ses_e35d2fc03ffe1X6GOxbBd5fuBG",
+        project_dir: "/home/dev/probe/workspace",
+      },
+    });
+  });
+
   describe("permission grants", () => {
     type PluginEvent = Parameters<ReturnType<TraceVaultPlugin["hooks"]>["event"]>[0]["event"];
     const recorded = JSON.parse(readFileSync(join(import.meta.dirname, "../fixtures/permission-grants.json"), "utf8")) as {

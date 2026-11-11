@@ -1,0 +1,16 @@
+{
+  "_note": "Recorded 11 Nov 2026 from OpenCode 1.18.32 by docs/probes/scripts/subagent-probe.sh: the session.created a task-tool subagent emits. The probe logged info.id, parentID, directory, projectID and title; properties.sessionID was not logged and is set to info.id, as OpenCode's event schema requires a sessionID on session.created and the recorded root session (event-session-created.json) carries info.id there. Local path scrubbed.",
+  "event": {
+    "type": "session.created",
+    "properties": {
+      "sessionID": "ses_e35d2ed28ffeH1gY9y6THRXbBo",
+      "info": {
+        "id": "ses_e35d2ed28ffeH1gY9y6THRXbBo",
+        "parentID": "ses_e35d2fc03ffe1X6GOxbBd5fuBG",
+        "directory": "/home/dev/probe/workspace",
+        "projectID": "global",
+        "title": "Read README.md first line (@general subagent)"
+      }
+    }
+  }
+}
