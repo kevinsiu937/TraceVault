@@ -1,0 +1,105 @@
+{
+  "source": "recorded",
+  "note": "The configuration recorded by config-probe.sh, redacted. Web fetch is denied and the shell asks, but the build agent overrides the shell with bash: allow, and id_rsa is readable by default.",
+  "config": {
+    "$schema": "https://opencode.ai/config.json",
+    "permission": {
+      "bash": {
+        "*": "ask",
+        "ls *": "allow"
+      },
+      "edit": {
+        "*": "allow",
+        "opencode.json": "deny"
+      },
+      "webfetch": "deny"
+    },
+    "provider": {
+      "tvprobe-literal": {
+        "options": {
+          "apiKey": "[redacted]"
+        }
+      },
+      "tvprobe-env": {
+        "options": {
+          "apiKey": "[redacted]"
+        }
+      },
+      "tvprobe-file": {
+        "options": {
+          "apiKey": "[redacted]"
+        }
+      }
+    },
+    "mcp": {
+      "tvprobe-local": {
+        "type": "local",
+        "command": [
+          "node",
+          "-e",
+          "process.exit(0)"
+        ],
+        "enabled": false,
+        "environment": {
+          "GITHUB_TOKEN": "[redacted]",
+          "LITERAL_TOKEN": "[redacted]"
+        }
+      },
+      "tvprobe-remote": {
+        "type": "remote",
+        "url": "http://127.0.0.1:9/mcp",
+        "enabled": false,
+        "headers": {
+          "Authorization": "[redacted]"
+        }
+      }
+    },
+    "agent": {
+      "build": {
+        "permission": {
+          "bash": "allow"
+        },
+        "options": {}
+      },
+      "tvprobe-reviewer": {
+        "name": "tvprobe-reviewer",
+        "description": "tvprobe reviewer, defined in a file",
+        "mode": "subagent",
+        "permission": {
+          "edit": "deny"
+        },
+        "prompt": "Review only.",
+        "options": {}
+      }
+    },
+    "mode": {},
+    "plugin": [
+      "file:///home/dev/probe/workspace/.opencode/plugin/probe.js"
+    ],
+    "command": {},
+    "plugin_origins": [
+      {
+        "spec": "file:///home/dev/probe/workspace/.opencode/plugin/probe.js",
+        "source": "/home/dev/probe/workspace/.opencode",
+        "scope": "local"
+      }
+    ],
+    "username": "dev"
+  },
+  "expect": [
+    {
+      "subject": "build",
+      "evidence": [
+        {
+          "value": "id_rsa",
+          "entry": "OpenCode default"
+        },
+        {
+          "label": "shell",
+          "value": "curl https://example.com",
+          "entry": "/agent/build/permission/bash"
+        }
+      ]
+    }
+  ]
+}

@@ -81,21 +81,25 @@ A unit table pins this resolution. A new OpenCode version means checking these d
 
 A check is one of:
 
-- `allows: { permission, target }`. The subject agent would run a call for that permission and target without asking. A target is a concrete example, such as `rm -rf /` or `.env`, not a pattern, because the question is about a call the agent could make. A target may also be a list of examples, or `{ list: <name> }` for a shared list, and the check holds when any one of them is allowed. The finding names the example that was allowed.
-- `match: { <fact>: { <operator>: <argument> } }`. This tests the subject's facts with the Phase 2 operators.
-- `any: [{ label, allows | match }, ...]`. This holds when any alternative holds, and the finding lists the labels that did, as in Phase 2.
+- `allows: { permission, target }`. The subject agent would run a call for that permission and target without asking. A target is a concrete example, such as `rm -rf /` or `.env`, not a pattern, because the question is about a call the agent could make. A target may also be a list of examples, and the check holds when any one of them is allowed. The finding names the example that was allowed.
+  `configured: true` counts only an allowance the configuration made, never one that OpenCode's defaults make.
+- `remote_mcp: true`. The subject agent may call the tools of an enabled remote MCP server without asking. OpenCode names those tools `<server>_<tool>`, so the check asks about `<server>_*`.
+- `match: { <fact>: { regex: <pattern> } }`. One of the subject's fact values contains a match, ignoring case. `regex` is the one operator configuration facts support so far.
+- `any: [{ label, <check> }, ...]`. This holds when any alternative holds. Every alternative that holds adds its evidence, labelled.
+
+A check suits one subject: `allows` and `remote_mcp` need `agent`, and `match` needs `mcp-server`. The loader rejects a check on the wrong subject.
 
 Subject facts:
 
 | Subject | Facts |
 |---|---|
-| `agent` | `name`, `mode` (`primary`, `subagent` or `all`), `native` (built-in or not) |
-| `mcp-server` | `name`, `type` (`local` or `remote`), `url`, `command`, `secret_keys` (one per line), `enabled` |
+| `agent` | None yet. An agent is examined through `allows` and `remote_mcp`. |
+| `mcp-server` | `secret_keys`: the names under the server's `environment` and `headers`, whose values are never stored. |
 | `tool` | `id`, `source` (`builtin`, `plugin` or `mcp`), `server`, `description`, `parameter_text` (every description inside the parameter schema, one per line) |
 
-The agents that exist are OpenCode's built-in agents plus the agents in the configuration. A disabled agent is not a subject.
+The agents that exist are OpenCode's built-in agents that are offered tools (build, plan, general and explore) plus the agents in the configuration. A disabled agent is not a subject, and neither is an MCP server with `enabled: false`, which never starts.
 
-**Findings are computed at read time, never stored.** A static finding carries the rule id, the rule version, the rule-set digest, the severity, the source, the subject, a JSON pointer to the configuration entry behind it (absent for a tool finding), the matched labels, the example call that was allowed, the explanation, and the id of the snapshot or tool event it came from. A rule edit re-checks every session.
+**Findings are computed at read time, never stored.** A static finding carries the rule id, the rule version, the rule-set digest, the severity, the source, the subject and its kind, the explanation, the id of the snapshot or tool event it came from, and its evidence. Each piece of evidence is the value found (an example call the agent would make without asking, a server URL or a credential name), the label of the alternative that held, if any, and a JSON pointer to the configuration entry behind it, or "OpenCode default". A rule edit re-checks every session.
 
 **Rule families and their first rules.** Each family is one ticket and starts with the rules listed here.
 
@@ -103,9 +107,9 @@ The agents that exist are OpenCode's built-in agents plus the agents in the conf
 |---|---|---|
 | Excessive permissions | `shell-unrestricted`: an agent can run any shell command without asking | OWASP Agentic ASI05 Unexpected Code Execution |
 | Missing boundaries | `config-self-edit`: an agent can edit `opencode.json`, `.opencode/` or `AGENTS.md` without asking | CVE-2025-53773 |
-| Ungoverned grants | `default-ask-removed`: a question OpenCode asks by default is answered "allow" in advance. This covers `.env` reads, folders outside the project and repeated calls, one label each | Least-privilege baseline |
+| Ungoverned grants | `default-ask-removed`: the configuration answers "allow" in advance to a question OpenCode asks by default. This covers `.env` reads, folders outside the project and repeated calls, one label each | Least-privilege baseline |
 | Dangerous combinations | `read-and-egress`: one agent can read a sensitive file and also send data out (web fetch, an unrestricted shell or a remote MCP server), all without asking | OWASP Agentic ASI02 Tool Misuse and Exploitation |
-| Unscoped credentials | `secret-in-config`: a secret is written literally in the configuration. `mcp-holds-credentials`: an MCP server receives credential-named environment variables or headers | OWASP MCP01:2025 Token Mismanagement and Secret Exposure |
+| Unscoped credentials | `mcp-holds-credentials`: an enabled MCP server receives credential-named environment variables or headers. A rule for a secret written literally in the configuration was dropped on 11 Nov 2026; see Known Blind Spots | OWASP MCP01:2025 Token Mismanagement & Secret Exposure |
 | Tool poisoning | `tool-hidden-instructions`: a tool or parameter description contains instruction patterns aimed at the model. `tool-invisible-text`: it contains zero-width, bidirectional-control or Unicode tag characters | OWASP MCP03:2025 Tool Poisoning |
 
 Each ticket checks its source identifiers against the published list before the rule ships.
@@ -145,6 +149,11 @@ Each ticket checks its source identifiers against the published list before the 
 - A session gets the configuration of the process that saw it. A configuration edited while that process runs is not seen until the next process starts.
 - Redaction goes by key. A secret under an ordinary key, such as a token passed as an MCP command argument or inside a URL, is not recognised and is stored as written.
 - The snapshot cannot show whether a secret was written literally or as a reference, because OpenCode substitutes references before plugins see the configuration.
+
+- A secret written literally in the configuration is not detected. OpenCode substitutes `{env:…}` and `{file:…}` references before plugins see the configuration, so the snapshot cannot tell a literal from a reference, and Kevin chose on 11 Nov 2026 not to read configuration files to find out.
+- `config-self-edit` checks paths inside the project. An edit to the user-level OpenCode folder also passes OpenCode's question about folders outside the project, and the rule does not combine the two.
+- `read-and-egress` checks secret files inside the project. Files such as `~/.ssh/id_rsa` sit outside it, behind the same outside-folder question.
+- Each rule checks example calls, not every possible call. `default-ask-removed` uses one folder outside the project, so an allowance for a single other folder is not reported.
 
 ## Further Notes
 

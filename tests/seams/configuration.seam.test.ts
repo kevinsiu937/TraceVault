@@ -289,9 +289,11 @@ describe("seam A: the Configuration view", () => {
 
     const session = await (await fetch(`${baseUrl}/sessions/${SESSION}`)).text();
     const page = await (await fetch(`${baseUrl}/sessions/${SESSION}/config`)).text();
-    const finding = page.match(/<li class="config-finding"[\s\S]*?<\/li>/)?.[0] ?? "";
+    const finding = page.match(/<li class="config-finding" data-rule="shell-unrestricted"[\s\S]*?<\/ul><\/li>/)?.[0] ?? "";
+    const count = page.match(/<li class="config-finding"/g)?.length ?? 0;
 
-    expect(session).toContain("Configuration · 1 finding<");
+    expect(count).toBeGreaterThan(1);
+    expect(session).toContain(`Configuration · ${count} findings<`);
     expect(finding).toContain('data-rule="shell-unrestricted"');
     expect(finding).toContain(">high<");
     expect(finding).toContain("OWASP Agentic ASI05 Unexpected Code Execution");
@@ -305,8 +307,23 @@ describe("seam A: the Configuration view", () => {
 
     const page = await (await fetch(`${baseUrl}/sessions/${SESSION}/config`)).text();
 
-    expect(page.match(/<li class="config-finding"/g)).toHaveLength(4);
+    expect(page.match(/<li class="config-finding" data-rule="shell-unrestricted"/g)).toHaveLength(4);
     expect(page).toContain("OpenCode default");
+  });
+
+  it("names the credentials an MCP server receives, never their values", async () => {
+    await seedWithConfiguration({
+      permission: { bash: "ask", webfetch: "deny", edit: "ask" },
+      mcp: { github: { type: "local", command: ["npx", "server-github"], environment: { GITHUB_TOKEN: "tvview-FAKE-0301" } } },
+    });
+
+    const page = await (await fetch(`${baseUrl}/sessions/${SESSION}/config`)).text();
+    const finding = page.match(/<li class="config-finding" data-rule="mcp-holds-credentials"[\s\S]*?<\/ul><\/li>/)?.[0] ?? "";
+
+    expect(finding).toContain("OWASP MCP MCP01:2025 Token Mismanagement &amp; Secret Exposure");
+    expect(finding).toContain("MCP server <code>github</code>");
+    expect(finding).toContain("<code>GITHUB_TOKEN</code>, from <code>/mcp/github/environment/GITHUB_TOKEN</code>");
+    expect(page).not.toContain("tvview-FAKE-0301");
   });
 
   it("keeps the configuration off the timeline and out of the event count", async () => {

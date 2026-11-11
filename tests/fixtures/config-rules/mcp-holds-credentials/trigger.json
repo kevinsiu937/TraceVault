@@ -1,0 +1,48 @@
+{
+  "source": "authored",
+  "note": "Two enabled servers as the plugin stores them, values already redacted: a local one given a GitHub token and a remote one given an Authorization header. Probe configurations keep servers disabled so that none starts.",
+  "config": {
+    "mcp": {
+      "github": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "@modelcontextprotocol/server-github"
+        ],
+        "environment": {
+          "GITHUB_TOKEN": "[redacted]",
+          "LOG_LEVEL": "[redacted]"
+        }
+      },
+      "docs": {
+        "type": "remote",
+        "url": "https://mcp.example.com/mcp",
+        "headers": {
+          "Authorization": "[redacted]",
+          "X-Client": "[redacted]"
+        }
+      }
+    }
+  },
+  "expect": [
+    {
+      "subject": "github",
+      "evidence": [
+        {
+          "value": "GITHUB_TOKEN",
+          "entry": "/mcp/github/environment/GITHUB_TOKEN"
+        }
+      ]
+    },
+    {
+      "subject": "docs",
+      "evidence": [
+        {
+          "value": "Authorization",
+          "entry": "/mcp/docs/headers/Authorization"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+# OpenCode asks before three things by default: reading a .env file, touching
+# a folder outside the project, and repeating the same call (doom_loop). This
+# rule flags a configuration that answers "allow" in advance. `configured: true`
+# leaves out what OpenCode's own defaults allow, such as the explore agent's
+# .env reads, because that is not a question the configuration removed.
+# Targets follow OpenCode's own asks: a folder as "<dir>/*", a loop by tool name.
+id: default-ask-removed
+version: 1
+severity: medium
+explanation: The configuration switched off a question OpenCode asks by default, so the agent no longer stops for it.
+source:
+  kind: baseline
+  title: Least-privilege baseline
+subject: agent
+when:
+  - any:
+      - label: env-read
+        allows: { permission: read, target: ".env", configured: true }
+      - label: outside-project
+        allows: { permission: external_directory, target: "/etc/*", configured: true }
+      - label: repeated-call
+        allows: { permission: doom_loop, target: bash, configured: true }

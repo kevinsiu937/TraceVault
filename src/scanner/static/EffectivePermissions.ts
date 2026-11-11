@@ -15,11 +15,10 @@ export interface PermissionDecision {
   readonly entry: string;
 }
 
-const DEFAULT = "OpenCode default";
 const ACTIONS: readonly string[] = ["allow", "ask", "deny"];
 
 // Recorded from the OpenCode 1.18.32 bundle (docs/probes/phase-3-live-probes.md); check again after an upgrade.
-// shortcut: the folders OpenCode allows for itself (temp, its data folder) are left out, add them when a rule asks about external_directory.
+// shortcut: the folders OpenCode allows for itself (temp, its data folder) are left out, add them when a rule asks about one of those folders.
 const DEFAULTS: Block = {
   "*": "allow",
   doom_loop: "ask",
@@ -44,6 +43,9 @@ const NATIVE: Readonly<Record<string, Block>> = {
  * permission and pattern both match decides; "ask" applies when none does.
  */
 export class EffectivePermissions {
+  /** The entry a decision names when no configuration entry made it. */
+  static readonly DEFAULT = "OpenCode default";
+
   private constructor(private readonly byAgent: ReadonlyMap<string, readonly PermissionRule[]>) {}
 
   static of(config: Block): EffectivePermissions {
@@ -77,14 +79,14 @@ export class EffectivePermissions {
         return { action: rule.action, entry: rule.entry };
       }
     }
-    return { action: "ask", entry: DEFAULT };
+    return { action: "ask", entry: EffectivePermissions.DEFAULT };
   }
 
   /** A string applies to every pattern of that permission; a map lists patterns in order. */
   private static rules(value: unknown, prefix: string | null): PermissionRule[] {
     const rules: PermissionRule[] = [];
     for (const [permission, setting] of Object.entries(EffectivePermissions.block(value))) {
-      const entry = prefix === null ? DEFAULT : `${prefix}/${EffectivePermissions.escape(permission)}`;
+      const entry = prefix === null ? EffectivePermissions.DEFAULT : `${prefix}/${EffectivePermissions.escape(permission)}`;
       const patterns = typeof setting === "string" ? { "*": setting } : EffectivePermissions.block(setting);
       for (const [pattern, action] of Object.entries(patterns)) {
         if (typeof action === "string" && ACTIONS.includes(action)) {

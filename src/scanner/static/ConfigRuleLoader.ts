@@ -2,18 +2,21 @@ import { createHash } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 
-import type { RuleSource, RuleSourceKind } from "../../schema/ConfigFinding.js";
+import type { ConfigSubjectKind, RuleSource, RuleSourceKind } from "../../schema/ConfigFinding.js";
 import type { Severity } from "../../schema/Finding.js";
 import { RuleLoadError } from "../rules/RuleLoadError.js";
 import { RuleYaml } from "../rules/RuleYaml.js";
-import { type AllowsCheck, ConfigRule } from "./ConfigRule.js";
+import { type ConfigAlternative, type ConfigCheck, ConfigRule } from "./ConfigRule.js";
 import type { ConfigRuleSet } from "./StaticScanner.js";
 
 const RULE_KEYS = ["id", "version", "severity", "explanation", "source", "subject", "when"];
 const SEVERITIES: readonly Severity[] = ["low", "medium", "high"];
 const SOURCE_KINDS: readonly RuleSourceKind[] = ["owasp-mcp", "owasp-agentic", "cve", "baseline"];
-// Later tickets add mcp-server and tool.
-const SUBJECTS = ["agent"];
+const SUBJECTS: readonly ConfigSubjectKind[] = ["agent", "mcp-server"];
+const CHECKS = ["allows", "remote_mcp", "match"];
+// The check each subject may use; ticket 42 adds tool.
+const CHECK_SUBJECT: Readonly<Record<string, ConfigSubjectKind>> = { allows: "agent", remote_mcp: "agent", match: "mcp-server" };
+const MCP_FACTS = ["secret_keys"];
 
 type Fields = Record<string, unknown>;
 
@@ -55,8 +58,8 @@ export class ConfigRuleLoader {
     }
     const severity = this.oneOf(fields, "severity", SEVERITIES, file) as Severity;
     const explanation = this.string(fields, "explanation", file);
-    this.oneOf(fields, "subject", SUBJECTS, file);
-    return new ConfigRule(id, version, severity, explanation, this.source(fields, file), this.checks(fields, file));
+    const subject = this.oneOf(fields, "subject", SUBJECTS, file) as ConfigSubjectKind;
+    return new ConfigRule(id, version, severity, explanation, this.source(fields, file), subject, this.when(fields, file, subject));
   }
 
   private source(fields: Fields, file: string): RuleSource {
@@ -73,32 +76,83 @@ export class ConfigRuleLoader {
     return { kind, id: this.string(source, "id", file, "source."), title };
   }
 
-  private checks(fields: Fields, file: string): readonly [AllowsCheck, ...AllowsCheck[]] {
+  /** Each item is one check, or `any` of several labelled ones. */
+  private when(fields: Fields, file: string, subject: ConfigSubjectKind): ConfigAlternative[][] {
     const when = this.required(fields, "when", file);
     if (!Array.isArray(when) || when.length === 0) {
       throw new RuleLoadError(file, "when", "must be a non-empty list");
     }
-    const checks = when.map((item, index) => {
+    return when.map((item, index) => {
       const field = `when[${index}]`;
-      const check = this.object(item, file, field);
-      if (Object.keys(check).length !== 1 || !Object.hasOwn(check, "allows")) {
-        throw new RuleLoadError(file, field, "must be { allows: { permission, target } }");
+      const entry = this.object(item, file, field);
+      if (!Object.hasOwn(entry, "any")) {
+        return [{ check: this.check(entry, file, field, subject) }];
       }
-      const allows = this.object(check["allows"], file, `${field}.allows`);
-      this.onlyKeys(allows, ["permission", "target"], file, `${field}.allows.`);
-      const permission = this.string(allows, "permission", file, `${field}.allows.`);
-      const target = this.required(allows, "target", file, `${field}.allows.`);
-      const targets = typeof target === "string" ? [target] : target;
-      if (!Array.isArray(targets) || targets.length === 0 || !targets.every((one) => typeof one === "string" && one.length > 0)) {
-        throw new RuleLoadError(file, `${field}.allows.target`, "must be an example or a non-empty list of examples");
+      this.onlyKeys(entry, ["any"], file, `${field}.`);
+      const alternatives = entry["any"];
+      if (!Array.isArray(alternatives) || alternatives.length === 0) {
+        throw new RuleLoadError(file, `${field}.any`, "must be a non-empty list");
       }
-      return { permission, targets: targets as string[] };
+      return alternatives.map((alternative, position) => {
+        const at = `${field}.any[${position}]`;
+        const fields = this.object(alternative, file, at);
+        const label = this.string(fields, "label", file, `${at}.`);
+        const { label: _, ...check } = fields;
+        return { label, check: this.check(check, file, at, subject) };
+      });
     });
-    const [first, ...rest] = checks;
-    if (first === undefined) {
-      throw new RuleLoadError(file, "when", "must be a non-empty list");
+  }
+
+  private check(fields: Fields, file: string, field: string, subject: ConfigSubjectKind): ConfigCheck {
+    const [kind, ...extra] = Object.keys(fields);
+    if (kind === undefined || extra.length > 0 || !CHECKS.includes(kind)) {
+      throw new RuleLoadError(file, field, `must be one check: ${CHECKS.join(", ")}, or any`);
     }
-    return [first, ...rest];
+    if (CHECK_SUBJECT[kind] !== subject) {
+      throw new RuleLoadError(file, field, `${kind} needs subject ${CHECK_SUBJECT[kind]}`);
+    }
+    if (kind === "remote_mcp") {
+      if (fields[kind] !== true) {
+        throw new RuleLoadError(file, `${field}.remote_mcp`, "must be true");
+      }
+      return { kind: "remote_mcp" };
+    }
+    if (kind === "match") {
+      return this.match(this.object(fields[kind], file, `${field}.match`), file, `${field}.match`);
+    }
+    const allows = this.object(fields[kind], file, `${field}.allows`);
+    this.onlyKeys(allows, ["permission", "target", "configured"], file, `${field}.allows.`);
+    const permission = this.string(allows, "permission", file, `${field}.allows.`);
+    const target = this.required(allows, "target", file, `${field}.allows.`);
+    const targets = typeof target === "string" ? [target] : target;
+    if (!Array.isArray(targets) || targets.length === 0 || !targets.every((one) => typeof one === "string" && one.length > 0)) {
+      throw new RuleLoadError(file, `${field}.allows.target`, "must be an example or a non-empty list of examples");
+    }
+    const configured = allows["configured"] ?? false;
+    if (typeof configured !== "boolean") {
+      throw new RuleLoadError(file, `${field}.allows.configured`, "must be true or false");
+    }
+    return { kind: "allows", permission, targets: targets as string[], configured };
+  }
+
+  private match(match: Fields, file: string, field: string): ConfigCheck {
+    const [fact, ...extra] = Object.keys(match);
+    if (fact === undefined || extra.length > 0) {
+      throw new RuleLoadError(file, field, "must name exactly one fact");
+    }
+    if (!MCP_FACTS.includes(fact)) {
+      throw new RuleLoadError(file, `${field}.${fact}`, `unknown fact; mcp-server has ${MCP_FACTS.join(", ")}`);
+    }
+    const operator = this.object(match[fact], file, `${field}.${fact}`);
+    if (Object.keys(operator).length !== 1 || !Object.hasOwn(operator, "regex")) {
+      throw new RuleLoadError(file, `${field}.${fact}`, "must be { regex: <pattern> }, the one operator configuration facts support");
+    }
+    const source = this.string(operator, "regex", file, `${field}.${fact}.`);
+    try {
+      return { kind: "match", fact: "secret_keys", pattern: new RegExp(source, "i") };
+    } catch (error) {
+      throw new RuleLoadError(file, `${field}.${fact}.regex`, error instanceof Error ? error.message : String(error));
+    }
   }
 
   private onlyKeys(fields: Fields, allowed: readonly string[], file: string, prefix: string): void {

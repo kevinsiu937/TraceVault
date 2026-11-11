@@ -64,8 +64,12 @@ ${body}
     return `<ol class="config-findings">${sorted
       .map((finding) => {
         const source = [SOURCE_NAMES[finding.source.kind], finding.source.id, finding.source.title].filter((part) => part !== undefined && part.length > 0).join(" ");
+        const subject = finding.subjectKind === "agent" ? "Agent" : "MCP server";
+        const evidence = finding.evidence
+          .map((item) => `<li>${item.label === undefined ? "" : `${this.escape(item.label)}: `}<code>${this.escape(item.value)}</code>, from <code>${this.escape(item.entry)}</code></li>`)
+          .join("");
         return `<li class="config-finding" data-rule="${this.escape(finding.ruleId)}" data-severity="${finding.severity}"><span class="pill">${finding.severity}</span> <strong>${this.escape(finding.ruleId)}</strong> · ${this.escape(source)}
-<p>Agent <code>${this.escape(finding.subject)}</code> may run <code>${this.escape(finding.example)}</code> without asking, because of <code>${this.escape(finding.entry)}</code>. ${this.escape(finding.explanation)}</p></li>`;
+<p>${subject} <code>${this.escape(finding.subject)}</code>. ${this.escape(finding.explanation)}</p><ul>${evidence}</ul></li>`;
       })
       .join("\n")}</ol>`;
   }

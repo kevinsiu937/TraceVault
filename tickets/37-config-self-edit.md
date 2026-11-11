@@ -4,11 +4,16 @@
 
 **Blocked by:** 36.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The rule uses one named list of example configuration targets, and the finding names the example the agent may edit
-- [ ] An agent with edits allowed everywhere is flagged; an agent whose edit permission asks or denies on every configuration target is not
-- [ ] An agent-level block that re-allows configuration edits after a top-level deny is flagged, with a pointer to the agent's entry
-- [ ] Source: CVE-2025-53773 (GitHub Copilot edited its own settings to auto-approve tools), checked against NVD
-- [ ] Seam C trigger and clean fixtures
-- [ ] `npm run build`, `npm run typecheck` and `npm test` all pass
+- [x] The rule lists its example configuration targets inline, since no other rule shares them, and the finding names the example the agent may edit
+- [x] An agent with edits allowed everywhere is flagged; an agent whose edit permission asks or denies on every configuration target is not
+- [x] An agent-level block that re-allows configuration edits after a top-level deny is flagged, with a pointer to the agent's entry
+- [x] Source: CVE-2025-53773 (GitHub Copilot edited its own settings to auto-approve tools), checked against the official CVE record: "GitHub Copilot and Visual Studio Remote Code Execution Vulnerability", CWE-77
+- [x] Seam C trigger and clean fixtures
+- [x] `npm run build`, `npm run typecheck` and `npm test` all pass
+
+**Implementation notes (11 Nov 2026):**
+- **Targets.** Paths relative to the project, the form OpenCode asks about edits in: `opencode.json`, `opencode.jsonc`, `.opencode/opencode.json`, an agent file, a plugin file and `AGENTS.md`. The user-level OpenCode folder is left out, because an edit there also passes the outside-folder question, and that gap is in the spec's Known Blind Spots.
+- **Recorded trigger.** The configuration from ticket 35's probe denies edits to `opencode.json` only, so `opencode.jsonc` and `.opencode/` stay open, and four agents are flagged at `/permission/edit/*`. A separate Seam C test covers an agent block that re-allows edits after a top-level deny.
+- **Default configuration.** build and general are flagged at "OpenCode default"; plan and explore deny edits themselves.

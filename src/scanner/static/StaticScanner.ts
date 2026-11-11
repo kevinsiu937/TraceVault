@@ -1,6 +1,7 @@
-import type { ConfigFinding } from "../../schema/ConfigFinding.js";
-import type { AllowsCheck, ConfigRule } from "./ConfigRule.js";
+import type { ConfigEvidence, ConfigFinding } from "../../schema/ConfigFinding.js";
+import type { ConfigCheck, ConfigRule } from "./ConfigRule.js";
 import { EffectivePermissions } from "./EffectivePermissions.js";
+import { type McpServer, McpServers } from "./McpServers.js";
 import type { ConfigSnapshotEvent, StaticScannerPort } from "./StaticScannerPort.js";
 
 export interface ConfigRuleSet {
@@ -9,17 +10,27 @@ export interface ConfigRuleSet {
   readonly digest: string;
 }
 
+type Found = Omit<ConfigEvidence, "label">;
+
 export class StaticScanner implements StaticScannerPort {
   constructor(private readonly ruleSet: ConfigRuleSet) {}
 
   scan(snapshot: ConfigSnapshotEvent): ConfigFinding[] {
     const permissions = EffectivePermissions.of(snapshot.data.config);
+    const servers = McpServers.of(snapshot.data.config);
+    const subjects = { agent: permissions.agents(), "mcp-server": servers.map((server) => server.name) };
+
     return this.ruleSet.rules.flatMap((rule) =>
-      permissions.agents().flatMap((agent) => {
-        const allowed = rule.checks.map((check) => this.allowed(permissions, agent, check));
-        const [first] = allowed;
-        if (first === undefined || first === null || allowed.includes(null)) {
-          return [];
+      subjects[rule.subject].flatMap((subject) => {
+        const evidence: ConfigEvidence[] = [];
+        for (const alternatives of rule.when) {
+          const held = alternatives.flatMap(({ label, check }) =>
+            this.find(check, subject, permissions, servers).map((found) => (label === undefined ? found : { label, ...found })),
+          );
+          if (held.length === 0) {
+            return [];
+          }
+          evidence.push(...held);
         }
         return [
           {
@@ -29,9 +40,9 @@ export class StaticScanner implements StaticScannerPort {
             severity: rule.severity,
             explanation: rule.explanation,
             source: rule.source,
-            subject: agent,
-            entry: first.entry,
-            example: first.example,
+            subjectKind: rule.subject,
+            subject,
+            evidence,
             eventIds: [snapshot.id],
           },
         ];
@@ -39,14 +50,26 @@ export class StaticScanner implements StaticScannerPort {
     );
   }
 
-  /** The first example this agent would run without asking, and the entry that lets it; null when none. */
-  private allowed(permissions: EffectivePermissions, agent: string, check: AllowsCheck): { example: string; entry: string } | null {
-    for (const example of check.targets) {
-      const decision = permissions.decide(agent, check.permission, example);
-      if (decision.action === "allow") {
-        return { example, entry: decision.entry };
-      }
+  private find(check: ConfigCheck, subject: string, permissions: EffectivePermissions, servers: readonly McpServer[]): Found[] {
+    switch (check.kind) {
+      case "allows":
+        // The first example the agent would run without asking is enough to show the rule holds.
+        for (const example of check.targets) {
+          const decision = permissions.decide(subject, check.permission, example);
+          if (decision.action === "allow" && !(check.configured && decision.entry === EffectivePermissions.DEFAULT)) {
+            return [{ value: example, entry: decision.entry }];
+          }
+        }
+        return [];
+      case "remote_mcp":
+        return servers.flatMap((server) => {
+          const decision = permissions.decide(subject, McpServers.toolKey(server.name), "*");
+          return server.remote && decision.action === "allow" ? [{ value: server.url ?? server.name, entry: decision.entry }] : [];
+        });
+      case "match":
+        return (servers.find((server) => server.name === subject)?.secretKeys ?? [])
+          .filter((key) => check.pattern.test(key.name))
+          .map((key) => ({ value: key.name, entry: key.entry }));
     }
-    return null;
   }
 }

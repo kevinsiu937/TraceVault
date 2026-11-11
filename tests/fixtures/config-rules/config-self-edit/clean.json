@@ -1,0 +1,16 @@
+{
+  "source": "authored",
+  "note": "Edits are allowed, except to every file that configures or instructs the agent.",
+  "config": {
+    "permission": {
+      "edit": {
+        "*": "allow",
+        "opencode.json": "deny",
+        "opencode.jsonc": "deny",
+        ".opencode/*": "deny",
+        "AGENTS.md": "ask"
+      }
+    }
+  },
+  "expect": []
+}

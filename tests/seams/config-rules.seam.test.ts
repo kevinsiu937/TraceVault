@@ -4,6 +4,7 @@ import { basename, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { ConfigRuleLoader } from "../../src/scanner/static/ConfigRuleLoader.js";
+import { EffectivePermissions } from "../../src/scanner/static/EffectivePermissions.js";
 import { StaticScanner } from "../../src/scanner/static/StaticScanner.js";
 import type { StaticScannerPort } from "../../src/scanner/static/StaticScannerPort.js";
 import { EventFactory } from "../../src/schema/EventFactory.js";
@@ -15,7 +16,7 @@ interface ConfigRuleFixture {
   readonly source: "recorded" | "authored";
   readonly note?: string;
   readonly config: Record<string, unknown>;
-  readonly expect: readonly { readonly subject: string; readonly entry: string; readonly example: string }[];
+  readonly expect: readonly { readonly subject: string; readonly evidence: readonly { label?: string; value: string; entry: string }[] }[];
 }
 
 function fixture(ruleId: string, name: "trigger" | "clean"): ConfigRuleFixture {
@@ -60,7 +61,7 @@ describe("seam C: a configuration in, static findings out", () => {
         const found = scanner
           .scan(snapshot(trigger.config))
           .filter((finding) => finding.ruleId === ruleId)
-          .map(({ subject, entry, example }) => ({ subject, entry, example }));
+          .map(({ subject, evidence }) => ({ subject, evidence }));
 
         expect(trigger.expect.length).toBeGreaterThan(0);
         expect(found).toEqual(trigger.expect);
@@ -77,7 +78,7 @@ describe("seam C: a configuration in, static findings out", () => {
   it("names the rule, its source and the snapshot event behind every finding", () => {
     const event = snapshot(fixture("shell-unrestricted", "trigger").config);
 
-    const [finding] = scanner.scan(event);
+    const finding = scanner.scan(event).find((candidate) => candidate.ruleId === "shell-unrestricted");
 
     expect(finding).toEqual({
       ruleId: "shell-unrestricted",
@@ -86,9 +87,9 @@ describe("seam C: a configuration in, static findings out", () => {
       severity: "high",
       explanation: expect.any(String),
       source: { kind: "owasp-agentic", id: "ASI05", title: "Unexpected Code Execution" },
+      subjectKind: "agent",
       subject: "build",
-      entry: "/agent/build/permission/bash",
-      example: "rm -rf /",
+      evidence: [{ value: "rm -rf /", entry: "/agent/build/permission/bash" }],
       eventIds: [event.id],
     });
   });
@@ -97,9 +98,54 @@ describe("seam C: a configuration in, static findings out", () => {
     const entries = scanner
       .scan(snapshot({}))
       .filter((finding) => finding.ruleId === "shell-unrestricted")
-      .map((finding) => `${finding.subject}: ${finding.entry}`);
+      .map((finding) => `${finding.subject}: ${finding.evidence[0]?.entry}`);
 
     expect(entries).toEqual(["build: OpenCode default", "plan: OpenCode default", "general: OpenCode default", "explore: OpenCode default"]);
+  });
+});
+
+describe("seam C: what each static rule family looks at", () => {
+  const scanner = scannerFor(RULES);
+
+  function found(ruleId: string, config: Record<string, unknown>) {
+    return scanner
+      .scan(snapshot(config))
+      .filter((finding) => finding.ruleId === ruleId)
+      .map(({ subject, evidence }) => ({ subject, evidence }));
+  }
+
+  it("points a configuration edit at the agent block that re-allows it after a top-level deny", () => {
+    const config = {
+      permission: { edit: { "*": "allow", "opencode.json": "deny", "opencode.jsonc": "deny", ".opencode/*": "deny", "AGENTS.md": "deny" } },
+      agent: { build: { permission: { edit: "allow" } } },
+    };
+
+    expect(found("config-self-edit", config)).toEqual([
+      { subject: "build", evidence: [{ value: "opencode.json", entry: "/agent/build/permission/edit" }] },
+    ]);
+  });
+
+  it("never reports a question that OpenCode's own defaults leave unasked, such as explore reading .env", () => {
+    expect(EffectivePermissions.of({}).decide("explore", "read", ".env")).toEqual({ action: "allow", entry: "OpenCode default" });
+    expect(found("default-ask-removed", {})).toEqual([]);
+  });
+
+  it("counts an enabled remote MCP server as a way out, except for explore, which may not call MCP tools", () => {
+    const server = { type: "remote", url: "https://mcp.example.com/mcp" };
+    const route = { label: "remote-mcp", value: "https://mcp.example.com/mcp", entry: "OpenCode default" };
+    const local = { type: "local", command: ["npx", "server-files"] };
+    const config = (enabled: boolean) => ({ permission: { webfetch: "deny", bash: "ask" }, mcp: { files: local, docs: { ...server, enabled } } });
+
+    expect(found("read-and-egress", config(true))).toEqual(
+      ["build", "plan", "general"].map((subject) => ({ subject, evidence: [{ value: "id_rsa", entry: "OpenCode default" }, route] })),
+    );
+    expect(found("read-and-egress", config(false))).toEqual([]);
+  });
+
+  it("matches a server's tools the way OpenCode names them, so a deny on them closes the route", () => {
+    const config = { permission: { webfetch: "deny", bash: "ask", "my_docs_*": "ask" }, mcp: { "my.docs": { type: "remote", url: "https://mcp.example.com/mcp" } } };
+
+    expect(found("read-and-egress", config)).toEqual([]);
   });
 });
 
@@ -148,6 +194,12 @@ when:
     ["a check without a target", VALID.replace(', target: "rm -rf /"', ""), /probe\.yaml: when\[0\]\.allows\.target: /],
     ["an empty check list", VALID.replace(/when:\n.*\n$/, "when: []\n"), /probe\.yaml: when: /],
     ["broken YAML", "id: [unclosed\n", /probe\.yaml: yaml: /],
+    ["an alternative without a label", VALID.replace('  - allows: { permission: bash, target: "rm -rf /" }', '  - any:\n      - allows: { permission: bash, target: "rm -rf /" }'), /probe\.yaml: when\[0\]\.any\[0\]\.label: required/],
+    ["a configured flag that is not a boolean", VALID.replace('target: "rm -rf /" }', 'target: "rm -rf /", configured: yes }'), /probe\.yaml: when\[0\]\.allows\.configured: /],
+    ["a check that does not suit the subject", VALID.replace("subject: agent", "subject: mcp-server"), /probe\.yaml: when\[0\]: allows needs subject agent/],
+    ["a fact the subject does not have", VALID.replace("subject: agent", "subject: mcp-server").replace('  - allows: { permission: bash, target: "rm -rf /" }', '  - match: { colour: { regex: red } }'), /probe\.yaml: when\[0\]\.match\.colour: /],
+    ["an operator facts do not support", VALID.replace("subject: agent", "subject: mcp-server").replace('  - allows: { permission: bash, target: "rm -rf /" }', '  - match: { secret_keys: { equals: TOKEN } }'), /probe\.yaml: when\[0\]\.match\.secret_keys: /],
+    ["a regex that does not compile", VALID.replace("subject: agent", "subject: mcp-server").replace('  - allows: { permission: bash, target: "rm -rf /" }', '  - match: { secret_keys: { regex: "(" } }'), /probe\.yaml: when\[0\]\.match\.secret_keys\.regex: /],
   ])("names the file and the field for %s", (_, content, message) => {
     write(content);
 

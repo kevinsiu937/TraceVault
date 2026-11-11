@@ -1,0 +1,18 @@
+# An agent can edit its own configuration or standing instructions without
+# being asked. opencode.json and .opencode/ hold its permissions, plugins and
+# agents; AGENTS.md steers every later session. Phase 2's self-modification
+# flag shows that an agent did it; this rule shows beforehand that it could.
+# Each target is a path relative to the project, as OpenCode asks about edits.
+id: config-self-edit
+version: 1
+severity: high
+explanation: This agent can change its own configuration or standing instructions without asking, so injected text could widen its own permissions.
+source:
+  kind: cve
+  id: CVE-2025-53773
+  title: GitHub Copilot and Visual Studio Remote Code Execution Vulnerability
+subject: agent
+when:
+  - allows:
+      permission: edit
+      target: ["opencode.json", "opencode.jsonc", ".opencode/opencode.json", ".opencode/agent/build.md", ".opencode/plugin/plugin.js", "AGENTS.md"]

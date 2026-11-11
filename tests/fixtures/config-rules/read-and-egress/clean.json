@@ -1,0 +1,21 @@
+{
+  "source": "authored",
+  "note": "Secret reads stay at OpenCode default, but web fetch is denied, the shell asks except for ls, and the only remote MCP server is disabled.",
+  "config": {
+    "permission": {
+      "webfetch": "deny",
+      "bash": {
+        "*": "ask",
+        "ls *": "allow"
+      }
+    },
+    "mcp": {
+      "docs": {
+        "type": "remote",
+        "url": "https://mcp.example.com/mcp",
+        "enabled": false
+      }
+    }
+  },
+  "expect": []
+}

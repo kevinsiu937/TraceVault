@@ -1,0 +1,33 @@
+{
+  "source": "authored",
+  "note": "One server with no credential-named variables or headers, and one disabled server, which runs nowhere and so holds nothing.",
+  "config": {
+    "mcp": {
+      "files": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "@modelcontextprotocol/server-filesystem",
+          "."
+        ],
+        "environment": {
+          "LOG_LEVEL": "[redacted]"
+        }
+      },
+      "github": {
+        "type": "local",
+        "command": [
+          "npx",
+          "-y",
+          "@modelcontextprotocol/server-github"
+        ],
+        "enabled": false,
+        "environment": {
+          "GITHUB_TOKEN": "[redacted]"
+        }
+      }
+    }
+  },
+  "expect": []
+}

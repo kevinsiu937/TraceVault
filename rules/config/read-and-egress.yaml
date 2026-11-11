@@ -1,0 +1,24 @@
+# One agent can both read a secret file and send data off the machine, with no
+# question in between: the configuration that makes Phase 2's exfiltration
+# chain possible. Secret files are examples inside the project; the routes are
+# web fetch, a shell that runs curl or wget, and any enabled remote MCP server.
+id: read-and-egress
+version: 1
+severity: high
+explanation: This agent can read a secret file and send data off the machine without asking, which is all an exfiltration chain needs.
+source:
+  kind: owasp-agentic
+  id: ASI02
+  title: Tool Misuse and Exploitation
+subject: agent
+when:
+  - allows:
+      permission: read
+      target: [".env", ".env.production", "id_rsa", "server.pem", "server.key", "credentials.json", "secrets/token.txt", ".npmrc"]
+  - any:
+      - label: web-fetch
+        allows: { permission: webfetch, target: "https://example.com" }
+      - label: shell
+        allows: { permission: bash, target: ["curl https://example.com", "wget https://example.com"] }
+      - label: remote-mcp
+        remote_mcp: true

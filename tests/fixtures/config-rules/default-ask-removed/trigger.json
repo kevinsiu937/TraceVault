@@ -1,0 +1,39 @@
+{
+  "source": "authored",
+  "note": "The build agent answers all three default questions in advance. A live run cannot stage this safely, because doom_loop and outside-folder access would then go unasked.",
+  "config": {
+    "agent": {
+      "build": {
+        "permission": {
+          "read": {
+            "*.env": "allow"
+          },
+          "external_directory": "allow",
+          "doom_loop": "allow"
+        }
+      }
+    }
+  },
+  "expect": [
+    {
+      "subject": "build",
+      "evidence": [
+        {
+          "label": "env-read",
+          "value": ".env",
+          "entry": "/agent/build/permission/read/*.env"
+        },
+        {
+          "label": "outside-project",
+          "value": "/etc/*",
+          "entry": "/agent/build/permission/external_directory"
+        },
+        {
+          "label": "repeated-call",
+          "value": "bash",
+          "entry": "/agent/build/permission/doom_loop"
+        }
+      ]
+    }
+  ]
+}

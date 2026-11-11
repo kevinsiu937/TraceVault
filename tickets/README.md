@@ -58,10 +58,10 @@ Spec: `docs/spec/phase-3.md`, approved 11 Nov 2026.
 |---|---|---|---|
 | 35 | The configuration a session ran under (probe first) | Phase 3 spec approved | done |
 | 36 | Shell without asking, flagged end to end (tracer bullet) | 35 | done |
-| 37 | Missing boundaries: the agent can edit its own configuration | 36 | open |
-| 38 | Ungoverned grants: a default question answered in advance | 36 | open |
-| 39 | Dangerous combination: read secrets and send data out | 36 | open |
-| 40 | Unscoped credentials: secrets in the configuration and in MCP servers | 36 | open |
+| 37 | Missing boundaries: the agent can edit its own configuration | 36 | done |
+| 38 | Ungoverned grants: a default question answered in advance | 36 | done |
+| 39 | Dangerous combination: read secrets and send data out | 36 | done |
+| 40 | Unscoped credentials: MCP servers that hold credentials | 36 | done |
 | 41 | The tools the model is offered (probe first) | 35 | open |
 | 42 | Tool poisoning: hidden instructions and invisible text | 36, 41 | open |
 | 43 | Phase 3 exit verification | 36, 37, 38, 39, 40, 42 | open |

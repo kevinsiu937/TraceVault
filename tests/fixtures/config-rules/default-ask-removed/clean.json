@@ -1,0 +1,16 @@
+{
+  "source": "authored",
+  "note": "All three questions are denied or left alone, and only the temporary folder is allowed outside the project, the way OpenCode allows it itself.",
+  "config": {
+    "permission": {
+      "read": {
+        "*.env": "deny"
+      },
+      "external_directory": {
+        "/tmp/*": "allow"
+      },
+      "doom_loop": "deny"
+    }
+  },
+  "expect": []
+}
