@@ -30,6 +30,7 @@ const CALLS: Readonly<Record<EventType, boolean>> = {
   "admin.grant": false,
   "guard.failure": false,
   "config.snapshot": false,
+  "mcp.tools": false,
 };
 
 /**
@@ -132,6 +133,8 @@ export class EventFacts {
         return event.data.reason;
       case "config.snapshot":
         return event.data.digest;
+      case "mcp.tools":
+        return event.data.server;
       case "session.start":
       case "session.end":
         return "session";
@@ -157,6 +160,8 @@ export class EventFacts {
         return "unguarded";
       case "config.snapshot":
         return "snapshot";
+      case "mcp.tools":
+        return "tools";
       case "session.start":
       case "session.end":
         return "boundary";

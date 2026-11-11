@@ -10,9 +10,9 @@ export class TimelineBuilder {
     return this.distinct.of(events).filter((event) => this.isRow(event)).map((event) => this.entry(event));
   }
 
-  /** A configuration snapshot belongs to the Configuration view, not to the timeline. */
+  /** A configuration snapshot and an MCP tool list belong to the Configuration view, not to the timeline. */
   isRow(event: Event): boolean {
-    return event.type !== "config.snapshot";
+    return event.type !== "config.snapshot" && event.type !== "mcp.tools";
   }
 
   entry(event: Event): TimelineEntry {

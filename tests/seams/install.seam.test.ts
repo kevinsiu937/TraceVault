@@ -112,6 +112,15 @@ describe("seam B: install writes the plugin, uninstall restores the project", ()
     expect(snapshot(projectDir)).toEqual(before);
   });
 
+  it("routes local MCP servers through the relay, on the Node.js that ran the install", () => {
+    new InitCommand(projectDir).install();
+    const loader = readFileSync(join(projectDir, LOADER), "utf8");
+
+    expect(loader).toContain(`new McpToolRelay(${JSON.stringify(process.execPath)}, `);
+    expect(loader).toContain(JSON.stringify(join(import.meta.dirname, "../../src/cli/mcp-relay.js")));
+    expect(loader).toContain("new SessionPreamble(undefined, undefined, relay)");
+  });
+
   it("installs the guard only when init is given --block", () => {
     new InitCommand(projectDir).install();
     const plain = readFileSync(join(projectDir, LOADER), "utf8");

@@ -8,6 +8,7 @@ import type { DocumentAccessData } from "./DocumentAccessData.js";
 import type { ConfigSnapshotData } from "./ConfigSnapshotData.js";
 import type { GuardFailureData } from "./GuardFailureData.js";
 import type { HookScriptData } from "./HookScriptData.js";
+import type { McpToolsData } from "./McpToolsData.js";
 import type { McpCallData } from "./McpCallData.js";
 import type { SessionLifecycleData } from "./SessionLifecycleData.js";
 import type { SkillCallData } from "./SkillCallData.js";
@@ -89,6 +90,10 @@ export class EventFactory {
 
   configSnapshot(meta: EventMeta, data: ConfigSnapshotData): Event {
     return { ...this.envelope(meta), type: "config.snapshot", data };
+  }
+
+  mcpTools(meta: EventMeta, data: McpToolsData): Event {
+    return { ...this.envelope(meta), type: "mcp.tools", data };
   }
 
   private envelope(meta: EventMeta): Omit<Event, "type" | "data"> {

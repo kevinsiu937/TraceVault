@@ -11,7 +11,16 @@ export class SessionConfiguration {
 
   latest(session: readonly Event[]): ConfigurationSnapshot | null {
     const event = this.snapshot(session);
-    return event === null ? null : { eventId: event.id, recordedAt: event.timestamp, digest: event.data.digest, config: event.data.config };
+    if (event === null) {
+      return null;
+    }
+    const lists = new Map<string, ConfigurationSnapshot["mcpTools"][number]>();
+    for (const candidate of session) {
+      if (candidate.type === "mcp.tools") {
+        lists.set(candidate.data.server, { eventId: candidate.id, server: candidate.data.server, tools: candidate.data.tools });
+      }
+    }
+    return { eventId: event.id, recordedAt: event.timestamp, digest: event.data.digest, config: event.data.config, mcpTools: [...lists.values()] };
   }
 
   findings(session: readonly Event[]): ConfigFinding[] {

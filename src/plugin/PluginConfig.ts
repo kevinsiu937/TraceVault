@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 const DEFAULT_STATE_DIR = process.env["LOCALAPPDATA"] ?? join(homedir(), ".local", "state");
 const DEFAULT_GAP_STATE = join(DEFAULT_STATE_DIR, "tracevault", "pending-gaps.json");
@@ -23,5 +23,10 @@ export class PluginConfig {
 
   get gapStatePath(): string {
     return this.gapPath;
+  }
+
+  /** Where the MCP relay hands off tool lists, beside the gap state. */
+  get mcpToolsDirectory(): string {
+    return join(dirname(this.gapPath), "mcp-tools");
   }
 }

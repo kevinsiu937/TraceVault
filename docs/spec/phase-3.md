@@ -46,13 +46,19 @@ Findings appear in a Configuration view of the session. Each finding names the r
 **Two new stored event types.**
 
 - `config.snapshot`: the resolved configuration after redaction, and a digest of it.
-- `tool.definition`: one tool's id, its source (built-in, plugin or MCP server), its description and its parameter schema.
+- `mcp.tools`: one local MCP server's name, the tools it listed (each with its name, description and input schema, as the server sent them), and a digest of that list.
 
 Both are meta events with no correlation id, so neither is mistaken for a duplicate. Neither is a timeline row. The configuration and the tool list belong to the OpenCode process, not to a session. The plugin therefore sends both into each session the first time that process sees the session, before the session's other events. A resumed session in a new process gets that process's configuration.
 
 **Redaction is a trust boundary.** Secret values never reach the store, so the redaction runs in the plugin, before anything is sent. A value is a secret when its key says so: `apiKey`, every value under a `headers` or `environment` map, and any key that contains `key`, `token`, `secret`, `password`, `auth` or `credential`, ignoring case. The keys under `env` count too. Every string inside a secret becomes `[redacted]`, and the shape is kept, so header and variable names stay visible. An empty string stays empty, because it holds no value. OpenCode substitutes references before the hook runs, so the plugin cannot tell a literal secret from an `{env:…}` reference and does not try. A test plants fake keys and checks that their bytes neither leave the plugin nor appear in the database file. A configuration the plugin cannot copy is recorded as a `capture.gap`, never as raw data.
 
-**Tool descriptions.** OpenCode's `tool.definition` hook passes a tool's description before the model sees it. The OpenCode 1.18.32 bundle suggests that the hook fires for built-in and plugin tools only. It appends the MCP tool catalog after the hook has run. Ticket 41 probes this. If the hook does not show MCP tools, the next candidate is OpenCode's own tool list endpoint, reached through the plugin's client. If neither shows MCP tool descriptions, the ticket stops and asks Kevin. Connecting to MCP servers from TraceVault would run third-party code, and the MCP proxy is not part of this phase.
+**Tool descriptions come through a relay.** Ticket 41's probe (11 Nov 2026) found that a plugin in OpenCode 1.18.32 cannot see MCP tool descriptions: the `tool.definition` hook and OpenCode's tool list endpoint show the built-in tools only. Kevin chose a relay for local servers on 11 Nov 2026.
+
+- **Routing.** In its `config` hook, after recording the snapshot, the plugin rewrites the command of each enabled local MCP server so that OpenCode starts TraceVault's relay entry (`dist/cli/mcp-relay.js`) with the original command after it. A probe showed OpenCode starts the rewritten command. Nothing on disk changes, so uninstalling restores nothing new.
+- **The relay** starts the original command and passes every byte between OpenCode and the server unchanged, in both directions, along with the server's errors, exit code and signals. It reads a copy of the traffic, and when the server answers a `tools/list` request, it writes the listed tools to a handoff file named after the OpenCode process and the server. A relay that cannot write the file still passes the traffic.
+- **Delivery.** Before each payload it sends for a session, the plugin reads the handoff files of its own process and sends an `mcp.tools` event for any server whose list that session has not seen in this form yet. OpenCode asks a server for its tools when it prepares a model request, after the session's first prompt, so the list reaches the session with a later payload: a tool call, or the end of the turn.
+- **Runtime.** The relay runs on the Node.js that ran `tracevault init`, whose path the generated loader carries, because OpenCode itself runs on Bun. If that runtime is gone, the plugin leaves the servers as they are and records a `capture.gap`.
+- **Not covered.** Remote MCP servers, built-in tools and tools defined by other plugins. See Known Blind Spots.
 
 **Effective permissions.** Rules never read raw configuration JSON. One value object answers the question "would this agent run this call without asking?". It resolves permissions the way OpenCode 1.18.32 does: OpenCode's defaults first, then the top-level `permission` block, then the agent's own block. The last rule whose permission and pattern both match decides, and "ask" applies when none matches. Patterns match with the wildcard semantics Phase 2 already implements for permission grants. The edit and read tools map onto the `edit` and `read` permissions. The defaults are recorded from the 1.18.32 bundle:
 
@@ -95,7 +101,7 @@ Subject facts:
 |---|---|
 | `agent` | None yet. An agent is examined through `allows` and `remote_mcp`. |
 | `mcp-server` | `secret_keys`: the names under the server's `environment` and `headers`, whose values are never stored. |
-| `tool` | `id`, `source` (`builtin`, `plugin` or `mcp`), `server`, `description`, `parameter_text` (every description inside the parameter schema, one per line) |
+| `tool` | `name`, `server`, `description`, `parameter_text` (every description inside the input schema, one per line). Only tools of local MCP servers reach the scanner. |
 
 The agents that exist are OpenCode's built-in agents that are offered tools (build, plan, general and explore) plus the agents in the configuration. A disabled agent is not a subject, and neither is an MCP server with `enabled: false`, which never starts.
 
@@ -120,7 +126,7 @@ Each ticket checks its source identifiers against the published list before the 
 
 **No new seam.** The configuration and the tool list are stored events, so Phase 3 reuses the three existing seams.
 
-- **Seam B** replays recorded `config` and `tool.definition` hook payloads through the plugin. It asserts the stored `config.snapshot` and `tool.definition` events, that secret bytes are absent from the database file, and that each session receives the snapshot exactly once per process.
+- **Seam B** replays recorded `config` hook payloads through the plugin, and real MCP stdio traffic through the relay and the plugin. It asserts the stored `config.snapshot` and `mcp.tools` events, that the relay changes no byte of the traffic, that secret bytes are absent from the database file, and that each session receives the snapshot exactly once per process.
 - **Seam C** runs a frozen snapshot and its tool events through the real static rules and the real scanner. The assertion is on rule ids, subjects, configuration pointers and event ids. One suite iterates `rules/config/*.yaml` and fails for any rule missing a trigger or clean fixture, the same way the Phase 2 suite does.
 - **Seam A** renders the Configuration view against a temporary database: the findings, the source identifiers, the redacted values and the "No configuration recorded" state.
 
@@ -133,7 +139,7 @@ Each ticket checks its source identifiers against the published list before the 
 ## Out of Scope
 
 - Reading configuration files from disk, or scanning a project that OpenCode has never started in.
-- Connecting to MCP servers, and the MCP proxy.
+- Connecting to MCP servers from TraceVault, and a full MCP proxy. The relay only passes traffic through and records tool lists.
 - Detecting a tool whose description changed between sessions (a "rug pull"). Every finding in Phase 3 is about one session.
 - Blocking or refusing anything because of a static finding.
 - Static findings on the session list, and a project-wide page of configurations.
@@ -154,6 +160,8 @@ Each ticket checks its source identifiers against the published list before the 
 - `config-self-edit` checks paths inside the project. An edit to the user-level OpenCode folder also passes OpenCode's question about folders outside the project, and the rule does not combine the two.
 - `read-and-egress` checks secret files inside the project. Files such as `~/.ssh/id_rsa` sit outside it, behind the same outside-folder question.
 - Each rule checks example calls, not every possible call. `default-ask-removed` uses one folder outside the project, so an allowance for a single other folder is not reported.
+
+- Tool descriptions are recorded for local (stdio) MCP servers only. A remote server, a built-in tool or a tool another plugin defines is never scanned for poisoning.
 
 ## Further Notes
 

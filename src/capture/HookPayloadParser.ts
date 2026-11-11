@@ -73,6 +73,13 @@ export interface ConfigSnapshotPayload {
   readonly config: Record<string, unknown>;
 }
 
+export interface McpToolsPayload {
+  readonly kind: "mcp.tools";
+  readonly sessionID: string;
+  readonly server: string;
+  readonly tools: readonly Record<string, unknown>[];
+}
+
 export type ParsedHook =
   | ToolAfterPayload
   | ToolFailedPayload
@@ -82,7 +89,8 @@ export type ParsedHook =
   | UserPromptPayload
   | PermissionGrantedPayload
   | GuardFailurePayload
-  | ConfigSnapshotPayload;
+  | ConfigSnapshotPayload
+  | McpToolsPayload;
 
 export class HookPayloadParser {
   parse(raw: unknown): ParsedHook {
@@ -124,6 +132,22 @@ export class HookPayloadParser {
         kind: "config.snapshot",
         sessionID: this.asString(payload["sessionID"], "sessionID"),
         config: this.asRecord(payload["config"], "config"),
+      };
+    }
+    if (hook === "mcp.tools") {
+      const tools = payload["tools"];
+      if (!Array.isArray(tools)) {
+        throw new TypeError("tools must be a list");
+      }
+      return {
+        kind: "mcp.tools",
+        sessionID: this.asString(payload["sessionID"], "sessionID"),
+        server: this.asString(payload["server"], "server"),
+        tools: tools.map((tool, index) => {
+          const record = this.asRecord(tool, `tools[${index}]`);
+          this.asString(record["name"], `tools[${index}].name`);
+          return record;
+        }),
       };
     }
     if (hook === "session.created" || hook === "session.idle") {

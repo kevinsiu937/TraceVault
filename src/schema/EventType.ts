@@ -10,4 +10,5 @@ export type EventType =
   | "prompt.user"
   | "admin.grant"
   | "guard.failure"
-  | "config.snapshot";
+  | "config.snapshot"
+  | "mcp.tools";

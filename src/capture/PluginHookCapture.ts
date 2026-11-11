@@ -65,6 +65,13 @@ export class PluginHookCapture implements CapturePort {
       );
     }
 
+    if (hook.kind === "mcp.tools") {
+      return this.factory.mcpTools(
+        { sessionId: hook.sessionID, correlationId: null, receivedAt },
+        { server: hook.server, digest: this.digest.describe(hook.tools).digest, tools: hook.tools },
+      );
+    }
+
     if (hook.kind === "guard.failure") {
       return this.factory.guardFailure(
         { sessionId: hook.sessionID, correlationId: null, receivedAt },

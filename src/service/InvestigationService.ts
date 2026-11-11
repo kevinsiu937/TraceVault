@@ -21,6 +21,7 @@ const META_TYPES: ReadonlySet<Event["type"]> = new Set([
   "capture.duplicate",
   "guard.failure",
   "config.snapshot",
+  "mcp.tools",
 ]);
 
 export class InvestigationService implements InvestigationServicePort {

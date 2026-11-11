@@ -45,7 +45,7 @@ Emits `Event` records. Three adapters, one schema. **The capture layer may never
 
 - `plugin-hook` — receives hook payloads from the agent plugin. Highest fidelity: sees built-in file edits, shell, network.
 - `session-store` — reads the agent's persisted session history, including sessions that predate installation. Used for backfill and for the events hook payloads do not carry.
-- `mcp-proxy` — registers as a local MCP proxy and rewires the agent's MCP server entries through it. Records server identity, tool name, arguments as transmitted, outcome, timestamp.
+- `mcp-proxy` — registers as a local MCP proxy and rewires the agent's MCP server entries through it. Phase 3 built its first slice, `McpRelay`: the plugin routes each local (stdio) server through it, and it records only the tools the server lists, changing no byte of the traffic. Records server identity, tool name, arguments as transmitted, outcome, timestamp.
 
 Each adapter is thin: translate, do not interpret. Interpretation belongs to the scanners.
 
@@ -130,14 +130,14 @@ Local HTTP API + WebSocket push. Three tabs: Sessions, Report, Simulations (disa
 
 ```
 src/schema/       Event, EventType, EventFactory, EventValidator, payloads/
-src/capture/      CapturePort, HookPayloadParser, PluginHookCapture
+src/capture/      CapturePort, HookPayloadParser, PluginHookCapture, McpRelay
 src/store/        EventStorePort, SqliteEventStore, CanonicalJson, HashChain, StoreVerifier
 src/service/      InvestigationServicePort, InvestigationService, SessionSummary,
                   TimelineBuilder, TimelineEntry
 src/dashboard/    DashboardServer, routes/, view/
 src/plugin/       PluginConfig, TraceVaultPlugin, EventForwarder, PermissionRequests, CallGuard,
-                  SessionDelivery, SessionPreamble, ConfigRedactor
-src/cli/          index, RunCommand, InitCommand, AgentConfigFile
+                  SessionDelivery, SessionPreamble, ConfigRedactor, McpToolRelay
+src/cli/          index, mcp-relay (the relay's entry), RunCommand, InitCommand, AgentConfigFile
 
 tests/seams/      capture.seam.test.ts, dashboard.seam.test.ts
 tests/fixtures/   frozen recorded payloads

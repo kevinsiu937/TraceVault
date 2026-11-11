@@ -27,6 +27,7 @@ export class ConfigurationView {
       ? `<p class="empty">No configuration recorded. The session was imported from OpenCode's history, or captured before TraceVault recorded configurations.</p>`
       : `<p class="sub">Recorded <time datetime="${this.escape(snapshot.recordedAt)}">${this.escape(snapshot.recordedAt)}</time> · <code>${this.escape(snapshot.digest)}</code></p>
 ${this.findings(findings)}
+${this.mcpTools(snapshot.mcpTools)}
 <p class="sub">Secret values were replaced with <code>[redacted]</code> before they left OpenCode.</p>
 <pre class="config-json">${this.escape(JSON.stringify(snapshot.config, null, 2))}</pre>`;
 
@@ -40,6 +41,9 @@ ${this.style.css()}
 .config-findings{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px}
 .config-finding{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
 .config-finding p{margin:6px 0 0;color:var(--muted)}
+.mcp-server{margin:16px 0 0}
+.mcp-server h3{font-size:15px;margin:0 0 6px}
+.mcp-server ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .config-json{margin:16px 0 0;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);font-size:12px;line-height:1.5;overflow:auto}
 </style>
 <title>TraceVault — Configuration — ${this.escape(name)}</title>
@@ -72,6 +76,24 @@ ${body}
 <p>${subject} <code>${this.escape(finding.subject)}</code>. ${this.escape(finding.explanation)}</p><ul>${evidence}</ul></li>`;
       })
       .join("\n")}</ol>`;
+  }
+
+  private mcpTools(lists: ConfigurationSnapshot["mcpTools"]): string {
+    if (lists.length === 0) {
+      return `<p class="sub">No local MCP server listed tools in this session.</p>`;
+    }
+    return lists
+      .map(({ server, tools }) => {
+        const items = tools
+          .map((tool) => {
+            const name = typeof tool["name"] === "string" ? tool["name"] : "";
+            const description = typeof tool["description"] === "string" ? tool["description"] : "";
+            return `<li><details><summary><code>${this.escape(name)}</code></summary><p>${this.escape(description)}</p><pre class="config-json">${this.escape(JSON.stringify(tool["inputSchema"] ?? {}, null, 2))}</pre></details></li>`;
+          })
+          .join("");
+        return `<section class="mcp-server"><h3><code>${this.escape(server)}</code> · ${tools.length} ${tools.length === 1 ? "tool" : "tools"}</h3><ul>${items}</ul></section>`;
+      })
+      .join("\n");
   }
 
   private escape(value: string): string {

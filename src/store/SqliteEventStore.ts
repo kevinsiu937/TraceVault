@@ -16,7 +16,7 @@ const { DatabaseSync } = createRequire(import.meta.url)("node:sqlite") as {
 };
 
 const ACTIVITY_FILTER =
-  "type NOT IN ('session.start','session.end','capture.gap','capture.duplicate','prompt.user','config.snapshot')";
+  "type NOT IN ('session.start','session.end','capture.gap','capture.duplicate','prompt.user','config.snapshot','mcp.tools')";
 
 export class SqliteEventStore implements EventStorePort {
   private readonly database: DatabaseSyncInstance;

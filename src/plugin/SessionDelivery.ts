@@ -16,10 +16,11 @@ export class SessionDelivery {
 
   async send(payload: unknown, sessionID: string): Promise<void> {
     try {
-      for (const first of this.preamble.for(sessionID)) {
-        await this.forwarder.forward(first);
+      const first = this.preamble.for(sessionID);
+      for (const preamble of first.payloads) {
+        await this.forwarder.forward(preamble);
       }
-      this.preamble.sent(sessionID);
+      first.delivered();
       await this.forwarder.forward(payload);
     } catch {
       // Capture is best-effort: a failed forward must never break the agent's tool call.
