@@ -17,6 +17,7 @@ export class SessionFindings {
     private readonly distinct: DistinctEvents = new DistinctEvents(),
   ) {}
 
+  // shortcut: rescans the whole session on every call (~90 ms at 10,000 events, see spec Known Blind Spots), scan once per request or match incrementally when sessions outgrow it.
   of(session: readonly Event[]): Finding[] {
     return this.scanner.scan(this.distinct.of(session));
   }
