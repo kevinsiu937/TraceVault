@@ -1,0 +1,14 @@
+# A local MCP tool's text holds characters a person does not see but the
+# model reads: zero-width characters, bidirectional controls, and the
+# Unicode tag block, which can spell out a whole hidden sentence.
+id: tool-invisible-text
+version: 1
+severity: high
+explanation: Possible tool poisoning. The text this tool shows the model contains characters that are invisible on screen.
+source:
+  kind: owasp-mcp
+  id: "MCP03:2025"
+  title: Tool Poisoning
+subject: tool
+when:
+  - match: { text: { regex: '[​-‏‪-‮⁠-⁤﻿\u{E0000}-\u{E007F}]+' } }

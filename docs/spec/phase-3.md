@@ -90,10 +90,10 @@ A check is one of:
 - `allows: { permission, target }`. The subject agent would run a call for that permission and target without asking. A target is a concrete example, such as `rm -rf /` or `.env`, not a pattern, because the question is about a call the agent could make. A target may also be a list of examples, and the check holds when any one of them is allowed. The finding names the example that was allowed.
   `configured: true` counts only an allowance the configuration made, never one that OpenCode's defaults make.
 - `remote_mcp: true`. The subject agent may call the tools of an enabled remote MCP server without asking. OpenCode names those tools `<server>_<tool>`, so the check asks about `<server>_*`.
-- `match: { <fact>: { regex: <pattern> } }`. One of the subject's fact values contains a match, ignoring case. `regex` is the one operator configuration facts support so far.
+- `match: { <fact>: { regex: <pattern> } }`. One of the subject's fact values contains a match, ignoring case. `regex` is the one operator configuration facts support so far. Patterns are matched with Unicode on, so a rule can name characters beyond U+FFFF. For a name, the evidence is the whole name; for tool text, it is the part that matched, with invisible characters spelled out and Unicode tag characters decoded into the sentence they hide.
 - `any: [{ label, <check> }, ...]`. This holds when any alternative holds. Every alternative that holds adds its evidence, labelled.
 
-A check suits one subject: `allows` and `remote_mcp` need `agent`, and `match` needs `mcp-server`. The loader rejects a check on the wrong subject.
+A check suits one subject: `allows` and `remote_mcp` need `agent`, and `match` needs `mcp-server` or `tool`. The loader rejects a check on the wrong subject.
 
 Subject facts:
 
@@ -101,7 +101,7 @@ Subject facts:
 |---|---|
 | `agent` | None yet. An agent is examined through `allows` and `remote_mcp`. |
 | `mcp-server` | `secret_keys`: the names under the server's `environment` and `headers`, whose values are never stored. |
-| `tool` | `name`, `server`, `description`, `parameter_text` (every description inside the input schema, one per line). Only tools of local MCP servers reach the scanner. |
+| `tool` | `text`: the tool's description and every description inside its input schema, each with a JSON pointer to where it sits. A tool is named `<server>/<tool>`, and only tools of local MCP servers reach the scanner. |
 
 The agents that exist are OpenCode's built-in agents that are offered tools (build, plan, general and explore) plus the agents in the configuration. A disabled agent is not a subject, and neither is an MCP server with `enabled: false`, which never starts.
 
@@ -161,6 +161,7 @@ Each ticket checks its source identifiers against the published list before the 
 - `read-and-egress` checks secret files inside the project. Files such as `~/.ssh/id_rsa` sit outside it, behind the same outside-folder question.
 - Each rule checks example calls, not every possible call. `default-ask-removed` uses one folder outside the project, so an allowance for a single other folder is not reported.
 
+- Two payloads of one session sent at the same moment can both carry the preamble, so a session may hold the same snapshot twice. The view reads the latest, so nothing changes on screen.
 - Tool descriptions are recorded for local (stdio) MCP servers only. A remote server, a built-in tool or a tool another plugin defines is never scanned for poisoning.
 
 ## Further Notes

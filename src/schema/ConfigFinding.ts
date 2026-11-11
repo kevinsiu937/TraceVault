@@ -9,7 +9,7 @@ export interface RuleSource {
   readonly title: string;
 }
 
-export type ConfigSubjectKind = "agent" | "mcp-server";
+export type ConfigSubjectKind = "agent" | "mcp-server" | "tool";
 
 /** One thing a rule found: a call an agent would make without asking, or a credential a server receives. */
 export interface ConfigEvidence {
@@ -32,7 +32,7 @@ export interface ConfigFinding {
   readonly explanation: string;
   readonly source: RuleSource;
   readonly subjectKind: ConfigSubjectKind;
-  /** The agent or MCP server the finding is about. */
+  /** The agent, the MCP server, or the tool as `<server>/<tool>`, the finding is about. */
   readonly subject: string;
   readonly evidence: readonly ConfigEvidence[];
   readonly eventIds: readonly string[];

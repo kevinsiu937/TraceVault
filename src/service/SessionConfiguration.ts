@@ -1,6 +1,6 @@
 import type { ConfigFinding } from "../schema/ConfigFinding.js";
 import type { Event } from "../schema/Event.js";
-import type { ConfigSnapshotEvent, StaticScannerPort } from "../scanner/static/StaticScannerPort.js";
+import type { ConfigSnapshotEvent, McpToolsEvent, StaticScannerPort } from "../scanner/static/StaticScannerPort.js";
 import type { ConfigurationSnapshot } from "./ConfigurationSnapshot.js";
 
 const NO_RULES: StaticScannerPort = { scan: () => [] };
@@ -25,7 +25,16 @@ export class SessionConfiguration {
 
   findings(session: readonly Event[]): ConfigFinding[] {
     const event = this.snapshot(session);
-    return event === null ? [] : this.scanner.scan(event);
+    if (event === null) {
+      return [];
+    }
+    const lists = new Map<string, McpToolsEvent>();
+    for (const candidate of session) {
+      if (candidate.type === "mcp.tools") {
+        lists.set(candidate.data.server, candidate);
+      }
+    }
+    return this.scanner.scan(event, [...lists.values()]);
   }
 
   private snapshot(session: readonly Event[]): ConfigSnapshotEvent | null {

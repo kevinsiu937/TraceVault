@@ -1,0 +1,39 @@
+{
+  "source": "recorded",
+  "note": "Phase 3 exit run, recorded live by docs/probes/scripts/phase-3-exit-run.sh with deepseek/deepseek-flash. The snapshot keeps only the workspace's own permission, agents and MCP servers; its digest is that of the full recorded snapshot.",
+  "events": [
+    {
+      "id": "evt_01M75SJ79GEQ9EE3A80207T69S",
+      "schema_version": 1,
+      "session_id": "ses_e3466e332ffel0Cqbe1ey4M1Qc",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-11T17:12:51.760Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": "sha256:f3873495833c0f64dde817af061b9a81ef8201d82c73653b2579b331ac8d8f53",
+      "raw_extra": {},
+      "type": "config.snapshot",
+      "data": {
+        "digest": "sha256:59bee34809bd4b7aef45e2e59a51f984aa6754af8f799d44e69c6861c51082db",
+        "config": {
+          "permission": {
+            "bash": {
+              "*": "ask",
+              "ls *": "allow"
+            },
+            "edit": "deny",
+            "webfetch": "deny",
+            "task": "deny"
+          },
+          "agent": {},
+          "mcp": {}
+        }
+      }
+    }
+  ]
+}

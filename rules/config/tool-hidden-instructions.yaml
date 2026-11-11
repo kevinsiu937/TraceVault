@@ -1,0 +1,26 @@
+# A local MCP tool's description, or a description inside its input schema,
+# carries an instruction aimed at the model rather than a description of the
+# tool. The model reads every tool's text whether or not it calls the tool.
+# Each alternative is one pattern; a new pattern is a new labelled entry.
+# Text patterns are easy to evade, so a finding means "possible".
+id: tool-hidden-instructions
+version: 1
+severity: high
+explanation: Possible tool poisoning. The text this tool shows the model contains an instruction aimed at the model.
+source:
+  kind: owasp-mcp
+  id: "MCP03:2025"
+  title: Tool Poisoning
+subject: tool
+when:
+  - any:
+      - label: ignore-instructions
+        match: { text: { regex: '\bignore (all |any )?(the )?(previous|prior|earlier|above) instructions' } }
+      - label: hide-from-user
+        match: { text: { regex: "\\b(do not|don't|never) (tell|mention|reveal|show|inform)\\b[^.]{0,40}\\buser" } }
+      - label: secret-file
+        match: { text: { regex: '~/\.ssh|\bid_(rsa|ed25519|ecdsa)\b|\.aws/credentials|(?<![\w.])\.env\b' } }
+      - label: call-first
+        match: { text: { regex: '\bbefore (using|calling|running|invoking) (this|any) tool' } }
+      - label: hidden-tag
+        match: { text: { regex: '<\s*/?\s*(important|system|instructions?|secret)\s*>' } }

@@ -6,17 +6,17 @@ import type { ConfigSubjectKind, RuleSource, RuleSourceKind } from "../../schema
 import type { Severity } from "../../schema/Finding.js";
 import { RuleLoadError } from "../rules/RuleLoadError.js";
 import { RuleYaml } from "../rules/RuleYaml.js";
-import { type ConfigAlternative, type ConfigCheck, ConfigRule } from "./ConfigRule.js";
+import { type ConfigAlternative, type ConfigCheck, ConfigRule, type MatchFact } from "./ConfigRule.js";
 import type { ConfigRuleSet } from "./StaticScanner.js";
 
 const RULE_KEYS = ["id", "version", "severity", "explanation", "source", "subject", "when"];
 const SEVERITIES: readonly Severity[] = ["low", "medium", "high"];
 const SOURCE_KINDS: readonly RuleSourceKind[] = ["owasp-mcp", "owasp-agentic", "cve", "baseline"];
-const SUBJECTS: readonly ConfigSubjectKind[] = ["agent", "mcp-server"];
+const SUBJECTS: readonly ConfigSubjectKind[] = ["agent", "mcp-server", "tool"];
 const CHECKS = ["allows", "remote_mcp", "match"];
-// The check each subject may use; ticket 42 adds tool.
-const CHECK_SUBJECT: Readonly<Record<string, ConfigSubjectKind>> = { allows: "agent", remote_mcp: "agent", match: "mcp-server" };
-const MCP_FACTS = ["secret_keys"];
+// allows and remote_mcp ask about an agent; match tests the facts of a server or a tool.
+const AGENT_CHECKS = ["allows", "remote_mcp"];
+const FACTS: Readonly<Record<ConfigSubjectKind, readonly MatchFact[]>> = { agent: [], "mcp-server": ["secret_keys"], tool: ["text"] };
 
 type Fields = Record<string, unknown>;
 
@@ -108,8 +108,8 @@ export class ConfigRuleLoader {
     if (kind === undefined || extra.length > 0 || !CHECKS.includes(kind)) {
       throw new RuleLoadError(file, field, `must be one check: ${CHECKS.join(", ")}, or any`);
     }
-    if (CHECK_SUBJECT[kind] !== subject) {
-      throw new RuleLoadError(file, field, `${kind} needs subject ${CHECK_SUBJECT[kind]}`);
+    if (AGENT_CHECKS.includes(kind) !== (subject === "agent")) {
+      throw new RuleLoadError(file, field, kind === "match" ? "match needs subject mcp-server or tool" : `${kind} needs subject agent`);
     }
     if (kind === "remote_mcp") {
       if (fields[kind] !== true) {
@@ -118,7 +118,7 @@ export class ConfigRuleLoader {
       return { kind: "remote_mcp" };
     }
     if (kind === "match") {
-      return this.match(this.object(fields[kind], file, `${field}.match`), file, `${field}.match`);
+      return this.match(this.object(fields[kind], file, `${field}.match`), file, `${field}.match`, FACTS[subject]);
     }
     const allows = this.object(fields[kind], file, `${field}.allows`);
     this.onlyKeys(allows, ["permission", "target", "configured"], file, `${field}.allows.`);
@@ -135,13 +135,14 @@ export class ConfigRuleLoader {
     return { kind: "allows", permission, targets: targets as string[], configured };
   }
 
-  private match(match: Fields, file: string, field: string): ConfigCheck {
+  private match(match: Fields, file: string, field: string, facts: readonly MatchFact[]): ConfigCheck {
     const [fact, ...extra] = Object.keys(match);
     if (fact === undefined || extra.length > 0) {
       throw new RuleLoadError(file, field, "must name exactly one fact");
     }
-    if (!MCP_FACTS.includes(fact)) {
-      throw new RuleLoadError(file, `${field}.${fact}`, `unknown fact; mcp-server has ${MCP_FACTS.join(", ")}`);
+    const known = facts.find((candidate) => candidate === fact);
+    if (known === undefined) {
+      throw new RuleLoadError(file, `${field}.${fact}`, `unknown fact; this subject has ${facts.join(", ")}`);
     }
     const operator = this.object(match[fact], file, `${field}.${fact}`);
     if (Object.keys(operator).length !== 1 || !Object.hasOwn(operator, "regex")) {
@@ -149,7 +150,8 @@ export class ConfigRuleLoader {
     }
     const source = this.string(operator, "regex", file, `${field}.${fact}.`);
     try {
-      return { kind: "match", fact: "secret_keys", pattern: new RegExp(source, "i") };
+      // "u" so a rule can name characters beyond U+FFFF, such as the Unicode tag block.
+      return { kind: "match", fact: known, pattern: new RegExp(source, "iu") };
     } catch (error) {
       throw new RuleLoadError(file, `${field}.${fact}.regex`, error instanceof Error ? error.message : String(error));
     }

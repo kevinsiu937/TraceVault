@@ -40,6 +40,7 @@ export class SessionPreamble {
     this.relayGap = problem === null ? null : this.gap(problem);
   }
 
+  // shortcut: two sends racing before either is delivered both carry the preamble (seen once in the Phase 3 exit run), mark it in flight if the duplicate ever matters.
   for(sessionID: string): PreamblePayloads {
     const payloads: unknown[] = [];
     const first = this.payload !== null && !this.configured.has(sessionID);

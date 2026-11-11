@@ -16,6 +16,8 @@ interface ConfigRuleFixture {
   readonly source: "recorded" | "authored";
   readonly note?: string;
   readonly config: Record<string, unknown>;
+  /** The latest tool list of each local MCP server, as the relay recorded them. */
+  readonly tools?: readonly { readonly server: string; readonly tools: readonly Record<string, unknown>[] }[];
   readonly expect: readonly { readonly subject: string; readonly evidence: readonly { label?: string; value: string; entry: string }[] }[];
 }
 
@@ -32,6 +34,19 @@ function snapshot(config: Record<string, unknown>) {
     throw new TypeError("not a snapshot");
   }
   return event;
+}
+
+function toolLists(fixture: ConfigRuleFixture) {
+  return (fixture.tools ?? []).map(({ server, tools }) => {
+    const event = new EventFactory().mcpTools(
+      { sessionId: "ses_fixture", correlationId: null, receivedAt: new Date("2026-11-11T10:00:01.000Z") },
+      { server, digest: "sha256:fixture", tools },
+    );
+    if (event.type !== "mcp.tools") {
+      throw new TypeError("not a tool list");
+    }
+    return event;
+  });
 }
 
 function scannerFor(directory: string): StaticScannerPort {
@@ -59,7 +74,7 @@ describe("seam C: a configuration in, static findings out", () => {
       it("raises exactly the expected findings on its trigger fixture", () => {
         const trigger = fixture(ruleId, "trigger");
         const found = scanner
-          .scan(snapshot(trigger.config))
+          .scan(snapshot(trigger.config), toolLists(trigger))
           .filter((finding) => finding.ruleId === ruleId)
           .map(({ subject, evidence }) => ({ subject, evidence }));
 
@@ -70,7 +85,7 @@ describe("seam C: a configuration in, static findings out", () => {
       it("stays silent on its clean fixture", () => {
         const clean = fixture(ruleId, "clean");
 
-        expect(scanner.scan(snapshot(clean.config)).filter((finding) => finding.ruleId === ruleId)).toEqual([]);
+        expect(scanner.scan(snapshot(clean.config), toolLists(clean)).filter((finding) => finding.ruleId === ruleId)).toEqual([]);
       });
     });
   }
@@ -146,6 +161,22 @@ describe("seam C: what each static rule family looks at", () => {
     const config = { permission: { webfetch: "deny", bash: "ask", "my_docs_*": "ask" }, mcp: { "my.docs": { type: "remote", url: "https://mcp.example.com/mcp" } } };
 
     expect(found("read-and-egress", config)).toEqual([]);
+  });
+});
+
+describe("seam C: tool findings", () => {
+  it("point at the tool list event they came from, not at the configuration", () => {
+    const trigger = fixture("tool-invisible-text", "trigger");
+    const lists = toolLists(trigger);
+    const [list] = lists;
+
+    const ids = scannerFor(RULES)
+      .scan(snapshot(trigger.config), lists)
+      .filter((finding) => finding.subjectKind === "tool")
+      .map((finding) => finding.eventIds);
+
+    expect(ids.length).toBeGreaterThan(0);
+    expect(ids.every((eventIds) => eventIds.length === 1 && eventIds[0] === list?.id)).toBe(true);
   });
 });
 

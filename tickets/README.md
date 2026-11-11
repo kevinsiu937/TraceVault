@@ -54,6 +54,8 @@ Spec: `docs/spec/phase-2.md`.
 
 Spec: `docs/spec/phase-3.md`, approved 11 Nov 2026.
 
+**Phase 3 is complete.** Every ticket from 35 to 43 is done. Phase 4 starts only when Kevin says so.
+
 | # | Ticket | Blocked by | Status |
 |---|---|---|---|
 | 35 | The configuration a session ran under (probe first) | Phase 3 spec approved | done |
@@ -63,8 +65,8 @@ Spec: `docs/spec/phase-3.md`, approved 11 Nov 2026.
 | 39 | Dangerous combination: read secrets and send data out | 36 | done |
 | 40 | Unscoped credentials: MCP servers that hold credentials | 36 | done |
 | 41 | The tools a local MCP server offers, through a relay | 35 | done |
-| 42 | Tool poisoning: hidden instructions and invisible text | 36, 41 | open |
-| 43 | Phase 3 exit verification | 36, 37, 38, 39, 40, 42 | open |
+| 42 | Tool poisoning: hidden instructions and invisible text | 36, 41 | done |
+| 43 | Phase 3 exit verification | 36, 37, 38, 39, 40, 42 | done |
 
 ## Dependency shape
 

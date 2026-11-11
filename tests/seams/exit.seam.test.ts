@@ -17,9 +17,13 @@ import { SessionHeaderView } from "../../src/dashboard/SessionHeaderView.js";
 import { SessionListView } from "../../src/dashboard/SessionListView.js";
 import { SessionPageView } from "../../src/dashboard/SessionPageView.js";
 import { TimelineView } from "../../src/dashboard/TimelineView.js";
+import { ConfigRuleLoader } from "../../src/scanner/static/ConfigRuleLoader.js";
+import { StaticScanner } from "../../src/scanner/static/StaticScanner.js";
+import type { ConfigSnapshotEvent, McpToolsEvent } from "../../src/scanner/static/StaticScannerPort.js";
 import type { Event } from "../../src/schema/Event.js";
 import { EventFactory } from "../../src/schema/EventFactory.js";
 import { InvestigationService } from "../../src/service/InvestigationService.js";
+import { SessionConfiguration } from "../../src/service/SessionConfiguration.js";
 import { SessionFindings } from "../../src/service/SessionFindings.js";
 import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
@@ -37,7 +41,7 @@ function run(name: "trigger" | "clean"): ExitRun {
   return JSON.parse(readFileSync(join(EXIT, `${name}.json`), "utf8")) as ExitRun;
 }
 
-describe.each(["permission-probe.sh", "phase-2-exit-run.sh", "refusal-probe.sh", "subagent-probe.sh", "config-probe.sh", "tool-probe.sh"])("probe output safety: %s", (script) => {
+describe.each(["permission-probe.sh", "phase-2-exit-run.sh", "refusal-probe.sh", "subagent-probe.sh", "config-probe.sh", "tool-probe.sh", "phase-3-exit-run.sh"])("probe output safety: %s", (script) => {
   let directory: string;
   let output: string;
   let bin: string;
@@ -203,6 +207,79 @@ describe("Phase 2 exit: the scripted session on the page", () => {
     expect(linked.length).toBeGreaterThan(0);
     for (const eventId of linked) {
       expect(body).toContain(`<li class="event" data-event-id="${eventId}"`);
+    }
+  });
+});
+
+describe("Phase 3 exit: the misconfigured and clean runs, frozen", () => {
+  const CONFIG_RULES = join(RULES, "config");
+  const scanner = new StaticScanner(new ConfigRuleLoader().loadDirectory(CONFIG_RULES));
+  const ruleIds = readdirSync(CONFIG_RULES).filter((file) => file.endsWith(".yaml")).map((file) => file.replace(/\.yaml$/, "")).sort();
+
+  function exit(name: "misconfigured" | "clean"): { source: string; events: Event[]; text: string } {
+    const text = readFileSync(join(FIXTURES, "phase-3-exit", `${name}.json`), "utf8");
+    return { ...(JSON.parse(text) as { source: string; events: Event[] }), text };
+  }
+
+  function scan(name: "misconfigured" | "clean") {
+    const [snapshot, ...lists] = exit(name).events;
+    return scanner.scan(snapshot as ConfigSnapshotEvent, lists as McpToolsEvent[]);
+  }
+
+  it("uses recorded sessions that each start with their configuration snapshot", () => {
+    for (const name of ["misconfigured", "clean"] as const) {
+      const fixture = exit(name);
+      expect(fixture.source, name).toBe("recorded");
+      expect(fixture.events[0]?.type, name).toBe("config.snapshot");
+    }
+  });
+
+  it("raises every static rule on the misconfigured run", () => {
+    expect([...new Set(scan("misconfigured").map((finding) => finding.ruleId))].sort()).toEqual(ruleIds);
+  });
+
+  it("resolves every finding to an event inside the fixture", () => {
+    const ids = new Set(exit("misconfigured").events.map((event) => event.id));
+
+    expect(scan("misconfigured").every((finding) => finding.eventIds.every((id) => ids.has(id)))).toBe(true);
+  });
+
+  it("raises nothing on the clean run", () => {
+    expect(scan("clean")).toEqual([]);
+  });
+
+  it("holds none of the planted credential", () => {
+    expect(exit("misconfigured").text).toContain("GITHUB_TOKEN");
+    expect(exit("misconfigured").text + exit("clean").text).not.toContain("tvexit-planted");
+  });
+
+  it("shows every rule on the misconfigured session's Configuration view", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "tracevault-exit3-"));
+    const store = new SqliteEventStore(join(directory, "events.db"));
+    const factory = new EventFactory();
+    const service = new InvestigationService(
+      new PluginHookCapture(new HookPayloadParser(), new ToolClassifier(new PayloadDigest()), factory),
+      store,
+      factory,
+      new TimelineBuilder(),
+      undefined,
+      new SessionConfiguration(scanner),
+    );
+    const server = new DashboardServer(service, new SessionListView(), new TimelineView(), new ActivityView());
+    try {
+      const events = exit("misconfigured").events;
+      for (const event of events) {
+        store.append(event);
+      }
+      const page = await (await fetch(`http://127.0.0.1:${await server.listen(0)}/sessions/${events[0]?.session_id}/config`)).text();
+
+      for (const ruleId of ruleIds) {
+        expect(page).toContain(`data-rule="${ruleId}"`);
+      }
+    } finally {
+      await server.close();
+      store.close();
+      rmSync(directory, { recursive: true, force: true });
     }
   });
 });

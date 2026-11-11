@@ -68,7 +68,7 @@ ${body}
     return `<ol class="config-findings">${sorted
       .map((finding) => {
         const source = [SOURCE_NAMES[finding.source.kind], finding.source.id, finding.source.title].filter((part) => part !== undefined && part.length > 0).join(" ");
-        const subject = finding.subjectKind === "agent" ? "Agent" : "MCP server";
+        const subject = { agent: "Agent", "mcp-server": "MCP server", tool: "Tool" }[finding.subjectKind];
         const evidence = finding.evidence
           .map((item) => `<li>${item.label === undefined ? "" : `${this.escape(item.label)}: `}<code>${this.escape(item.value)}</code>, from <code>${this.escape(item.entry)}</code></li>`)
           .join("");

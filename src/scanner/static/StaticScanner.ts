@@ -1,8 +1,9 @@
 import type { ConfigEvidence, ConfigFinding } from "../../schema/ConfigFinding.js";
-import type { ConfigCheck, ConfigRule } from "./ConfigRule.js";
+import type { ConfigCheck, ConfigRule, MatchFact } from "./ConfigRule.js";
 import { EffectivePermissions } from "./EffectivePermissions.js";
 import { type McpServer, McpServers } from "./McpServers.js";
-import type { ConfigSnapshotEvent, StaticScannerPort } from "./StaticScannerPort.js";
+import type { ConfigSnapshotEvent, McpToolsEvent, StaticScannerPort } from "./StaticScannerPort.js";
+import { ToolTexts } from "./ToolTexts.js";
 
 export interface ConfigRuleSet {
   readonly rules: readonly ConfigRule[];
@@ -12,20 +13,40 @@ export interface ConfigRuleSet {
 
 type Found = Omit<ConfigEvidence, "label">;
 
+/** One thing a rule may be about, the event it was recorded in, and its matchable facts. */
+interface Subject {
+  readonly name: string;
+  readonly eventId: string;
+  readonly facts: Readonly<Partial<Record<MatchFact, readonly Found[]>>>;
+}
+
+// Shown by code point, because the point of these characters is that nobody sees them.
+const INVISIBLE = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF\u{E0000}-\u{E007F}]/gu;
+
 export class StaticScanner implements StaticScannerPort {
   constructor(private readonly ruleSet: ConfigRuleSet) {}
 
-  scan(snapshot: ConfigSnapshotEvent): ConfigFinding[] {
+  scan(snapshot: ConfigSnapshotEvent, toolLists: readonly McpToolsEvent[] = []): ConfigFinding[] {
     const permissions = EffectivePermissions.of(snapshot.data.config);
     const servers = McpServers.of(snapshot.data.config);
-    const subjects = { agent: permissions.agents(), "mcp-server": servers.map((server) => server.name) };
+    const subjects: Record<ConfigRule["subject"], Subject[]> = {
+      agent: permissions.agents().map((name) => ({ name, eventId: snapshot.id, facts: {} })),
+      "mcp-server": servers.map((server) => ({
+        name: server.name,
+        eventId: snapshot.id,
+        facts: { secret_keys: server.secretKeys.map((key) => ({ value: key.name, entry: key.entry })) },
+      })),
+      tool: toolLists.flatMap((list) =>
+        list.data.tools.map((tool) => ({ name: `${list.data.server}/${String(tool["name"])}`, eventId: list.id, facts: { text: ToolTexts.of(tool) } })),
+      ),
+    };
 
     return this.ruleSet.rules.flatMap((rule) =>
-      subjects[rule.subject].flatMap((subject) => {
+      subjects[rule.subject].flatMap(({ name: subject, eventId, facts }) => {
         const evidence: ConfigEvidence[] = [];
         for (const alternatives of rule.when) {
           const held = alternatives.flatMap(({ label, check }) =>
-            this.find(check, subject, permissions, servers).map((found) => (label === undefined ? found : { label, ...found })),
+            this.find(check, subject, facts, permissions, servers).map((found) => (label === undefined ? found : { label, ...found })),
           );
           if (held.length === 0) {
             return [];
@@ -43,14 +64,21 @@ export class StaticScanner implements StaticScannerPort {
             subjectKind: rule.subject,
             subject,
             evidence,
-            eventIds: [snapshot.id],
+            eventIds: [eventId],
           },
         ];
       }),
     );
   }
 
-  private find(check: ConfigCheck, subject: string, permissions: EffectivePermissions, servers: readonly McpServer[]): Found[] {
+  /** Tag characters spell ASCII one for one, so a hidden sentence is shown as the sentence; other invisible characters by code point. */
+  private visible(text: string): string {
+    return text
+      .replace(/[\u{E0020}-\u{E007E}]+/gu, (run) => `[hidden text: ${[...run].map((character) => String.fromCodePoint((character.codePointAt(0) ?? 0xe0020) - 0xe0000)).join("")}]`)
+      .replace(INVISIBLE, (character) => `<U+${character.codePointAt(0)?.toString(16).toUpperCase()}>`);
+  }
+
+  private find(check: ConfigCheck, subject: string, facts: Subject["facts"], permissions: EffectivePermissions, servers: readonly McpServer[]): Found[] {
     switch (check.kind) {
       case "allows":
         // The first example the agent would run without asking is enough to show the rule holds.
@@ -67,9 +95,15 @@ export class StaticScanner implements StaticScannerPort {
           return server.remote && decision.action === "allow" ? [{ value: server.url ?? server.name, entry: decision.entry }] : [];
         });
       case "match":
-        return (servers.find((server) => server.name === subject)?.secretKeys ?? [])
-          .filter((key) => check.pattern.test(key.name))
-          .map((key) => ({ value: key.name, entry: key.entry }));
+        return (facts[check.fact] ?? []).flatMap((item) => {
+          const found = check.pattern.exec(item.value)?.[0];
+          if (found === undefined) {
+            return [];
+          }
+          // A name is shown whole; from a long text, only the part that matched.
+          const value = check.fact === "secret_keys" ? item.value : found;
+          return [{ value: this.visible(value), entry: item.entry }];
+        });
     }
   }
 }

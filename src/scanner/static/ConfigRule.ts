@@ -6,8 +6,11 @@ export type ConfigCheck =
   | { readonly kind: "allows"; readonly permission: string; readonly targets: readonly string[]; readonly configured: boolean }
   /** The agent may call an enabled remote MCP server's tools without asking. */
   | { readonly kind: "remote_mcp" }
-  /** One of the MCP server's secret key names matches. */
-  | { readonly kind: "match"; readonly fact: "secret_keys"; readonly pattern: RegExp };
+  /** One of the subject's fact values contains a match. */
+  | { readonly kind: "match"; readonly fact: MatchFact; readonly pattern: RegExp };
+
+/** `secret_keys` of an MCP server; `text` of a tool: its description and every description in its input schema. */
+export type MatchFact = "secret_keys" | "text";
 
 export interface ConfigAlternative {
   readonly label?: string;
