@@ -7,9 +7,9 @@
 
 **Blocked by:** 28.
 
-**Status:** done, except the subagent and resume halves of the probe (see the first box)
+**Status:** done, except the subagent half of the probe (see the first box)
 
-- [ ] Probe first: for a resumed session and a subagent, record which plugin-context field equals the session's directory, and freeze the payload. **Partly done:** a new root session was probed and frozen (`tests/fixtures/event-session-created.json`). `session.created` carries `info.directory`, while the plugin context's `worktree` is `/` outside git. Subagent and resume runs need a tool-using agent run, which Claude Code's safety check refused; see `docs/probes/phase-2-live-probes.md`
+- [ ] Probe first: for a resumed session and a subagent, record which plugin-context field equals the session's directory, and freeze the payload. **Partly done:** a new root session was probed and frozen (`tests/fixtures/event-session-created.json`). `session.created` carries `info.directory`, while the plugin context's `worktree` is `/` outside git. **Resume answered (11 Nov 2026)** from the Phase 2 exit run (`tests/fixtures/rules/phase-2-exit/trigger.json`, recorded 9 Nov): five `opencode run --continue` turns kept the same session id, emitted no new `session.created`, and so kept the `project_dir` recorded when the session was created. **Still open:** a subagent, and a session resumed from a different folder. `docs/probes/scripts/subagent-probe.sh` records both; Kevin runs it, because Claude Code's safety check refuses an unattended tool-using agent run. See `docs/probes/phase-2-live-probes.md`
 - [x] Seam B: both capture paths store the project folder on `session.start`
 - [x] A read outside the project folder is flagged; a read inside is not
 - [x] A session with no known project folder produces no scope-drift finding

@@ -15,7 +15,9 @@ Recorded on 7 November 2026 against OpenCode 1.18.32 on macOS. The probe was a p
 
 **Decision:** the live path forwards `info.directory` from `session.created`, which is per session. The plugin context is per OpenCode instance, and its `worktree` is wrong outside git. A resumed session emits no new `session.created`, so its folder stays the one recorded when it was created. The import path reads `session.directory`, which is `NOT NULL` in the store schema. The frozen fixture is `tests/fixtures/event-session-created.json`, with the path scrubbed.
 
-**Not probed:** a subagent's `session.created`, and resuming a session from a different folder. Both need a run in which the agent uses a tool. Claude Code's safety check refused a run with `--auto` (auto-approved permissions), so neither was observed. Expected: a subagent's `session.created` carries its own `info.directory`. Unproven.
+**Resume from the same folder:** answered by the Phase 2 exit run (9 Nov 2026, `tests/fixtures/rules/phase-2-exit/trigger.json`). Five `opencode run --continue` turns kept session id `ses_e3f5213bdffe2Azqaj9zXvLkXP` and emitted no new `session.created`. The session has one `session.start`, whose `project_dir` is the folder it was created in, and one `session.end` per turn.
+
+**Not probed yet:** a subagent's `session.created`, and resuming a session from a different folder. Both need a run in which the agent uses a tool. Claude Code's safety check refused a run with `--auto` (auto-approved permissions), so neither was observed. `docs/probes/scripts/subagent-probe.sh` records both for Kevin to run. Expected: a subagent's `session.created` carries its own `info.directory`. Unproven.
 
 The model reply stalled after the events above were logged, so the run was stopped. The events needed were already recorded.
 
