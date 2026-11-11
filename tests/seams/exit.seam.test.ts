@@ -37,7 +37,7 @@ function run(name: "trigger" | "clean"): ExitRun {
   return JSON.parse(readFileSync(join(EXIT, `${name}.json`), "utf8")) as ExitRun;
 }
 
-describe.each(["permission-probe.sh", "phase-2-exit-run.sh", "refusal-probe.sh", "subagent-probe.sh"])("probe output safety: %s", (script) => {
+describe.each(["permission-probe.sh", "phase-2-exit-run.sh", "refusal-probe.sh", "subagent-probe.sh", "config-probe.sh"])("probe output safety: %s", (script) => {
   let directory: string;
   let output: string;
   let bin: string;

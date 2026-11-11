@@ -3,6 +3,7 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 
 import type { InvestigationServicePort } from "../service/InvestigationServicePort.js";
 import type { ActivityView } from "./ActivityView.js";
+import { ConfigurationView } from "./ConfigurationView.js";
 import { DetailPaneView } from "./DetailPaneView.js";
 import { EventStream } from "./EventStream.js";
 import { FilterParams } from "./FilterParams.js";
@@ -13,7 +14,8 @@ import { SessionPageView } from "./SessionPageView.js";
 import { SessionParams } from "./SessionParams.js";
 import { FileRailView } from "./FileRailView.js";
 import { GraphView } from "./GraphView.js";
-import { ReplayBarView } from "./ReplayBarView.js";import { WaterfallView } from "./WaterfallView.js";
+import { ReplayBarView } from "./ReplayBarView.js";
+import { WaterfallView } from "./WaterfallView.js";
 import { SubagentPortalView } from "./SubagentPortalView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
 import type { TimelineView } from "./TimelineView.js";
@@ -21,6 +23,7 @@ import type { TimelineView } from "./TimelineView.js";
 const LOOPBACK = "127.0.0.1";
 const SESSION_PATH = /^\/sessions\/([^/]+)$/;
 const SESSION_EVENTS_PATH = /^\/sessions\/([^/]+)\/events$/;
+const SESSION_CONFIG_PATH = /^\/sessions\/([^/]+)\/config$/;
 
 export class DashboardServer {
   private server: Server | null = null;
@@ -35,6 +38,7 @@ export class DashboardServer {
     private readonly activityView: ActivityView,
     private readonly filterParams: FilterParams = new FilterParams(),
     sessionPageView?: SessionPageView,
+    private readonly configurationView: ConfigurationView = new ConfigurationView(),
   ) {
     this.eventStream = new EventStream(service, timelineView);
     this.sessionPageView = sessionPageView ?? new SessionPageView(
@@ -95,8 +99,7 @@ export class DashboardServer {
       const state = SessionParams.parse(url);
 
       if (path === "/") {
-        if (request.method !== "GET") {
-          this.send(response, 405, "method not allowed", "text/plain; charset=utf-8");
+        if (this.refuseNonGet(request, response)) {
           return;
         }
         this.send(response, 200, this.view.render(this.service.listSessions()), "text/html; charset=utf-8");
@@ -104,8 +107,7 @@ export class DashboardServer {
       }
 
       if (path === "/activity") {
-        if (request.method !== "GET") {
-          this.send(response, 405, "method not allowed", "text/plain; charset=utf-8");
+        if (this.refuseNonGet(request, response)) {
           return;
         }
         this.send(
@@ -128,18 +130,37 @@ export class DashboardServer {
 
       const eventsMatch = SESSION_EVENTS_PATH.exec(path);
       if (eventsMatch !== null) {
-        if (request.method !== "GET") {
-          this.send(response, 405, "method not allowed", "text/plain; charset=utf-8");
+        if (this.refuseNonGet(request, response)) {
           return;
         }
         this.eventStream.open(decodeURIComponent(eventsMatch[1] ?? ""), filter, request, response);
         return;
       }
 
+      const configMatch = SESSION_CONFIG_PATH.exec(path);
+      if (configMatch !== null) {
+        if (this.refuseNonGet(request, response)) {
+          return;
+        }
+        const sessionId = decodeURIComponent(configMatch[1] ?? "");
+        if (!this.service.hasSession(sessionId)) {
+          this.send(response, 404, "session not found", "text/plain; charset=utf-8");
+          return;
+        }
+        const title = this.service.listSessions().find((session) => session.sessionId === sessionId)?.title ?? "";
+        const page = this.configurationView.render(
+          sessionId,
+          title,
+          this.service.getConfiguration(sessionId),
+          this.service.getConfigFindings(sessionId),
+        );
+        this.send(response, 200, page, "text/html; charset=utf-8");
+        return;
+      }
+
       const sessionMatch = SESSION_PATH.exec(path);
       if (sessionMatch !== null) {
-        if (request.method !== "GET") {
-          this.send(response, 405, "method not allowed", "text/plain; charset=utf-8");
+        if (this.refuseNonGet(request, response)) {
           return;
         }
         const sessionId = decodeURIComponent(sessionMatch[1] ?? "");
@@ -175,6 +196,7 @@ export class DashboardServer {
           entries,
           allEntries,
           findings: this.service.getFindings(sessionId),
+          configFindingCount: this.service.getConfigFindings(sessionId).length,
           filter,
           state,
           sessions,
@@ -217,6 +239,14 @@ export class DashboardServer {
     }
 
     this.send(response, 202, JSON.stringify({ result }), "application/json; charset=utf-8");
+  }
+
+  private refuseNonGet(request: IncomingMessage, response: ServerResponse): boolean {
+    if (request.method === "GET") {
+      return false;
+    }
+    this.send(response, 405, "method not allowed", "text/plain; charset=utf-8");
+    return true;
   }
 
   private send(response: ServerResponse, status: number, body: string, contentType: string): void {

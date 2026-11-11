@@ -1,0 +1,96 @@
+{
+  "source": "recorded",
+  "note": "The configuration recorded by config-probe.sh (tests/fixtures/config-hook.json), redacted as the plugin stores it. The top level asks before any shell command but ls; the build agent overrides that with bash: allow.",
+  "config": {
+    "$schema": "https://opencode.ai/config.json",
+    "permission": {
+      "bash": {
+        "*": "ask",
+        "ls *": "allow"
+      },
+      "edit": {
+        "*": "allow",
+        "opencode.json": "deny"
+      },
+      "webfetch": "deny"
+    },
+    "provider": {
+      "tvprobe-literal": {
+        "options": {
+          "apiKey": "[redacted]"
+        }
+      },
+      "tvprobe-env": {
+        "options": {
+          "apiKey": "[redacted]"
+        }
+      },
+      "tvprobe-file": {
+        "options": {
+          "apiKey": "[redacted]"
+        }
+      }
+    },
+    "mcp": {
+      "tvprobe-local": {
+        "type": "local",
+        "command": [
+          "node",
+          "-e",
+          "process.exit(0)"
+        ],
+        "enabled": false,
+        "environment": {
+          "GITHUB_TOKEN": "[redacted]",
+          "LITERAL_TOKEN": "[redacted]"
+        }
+      },
+      "tvprobe-remote": {
+        "type": "remote",
+        "url": "http://127.0.0.1:9/mcp",
+        "enabled": false,
+        "headers": {
+          "Authorization": "[redacted]"
+        }
+      }
+    },
+    "agent": {
+      "build": {
+        "permission": {
+          "bash": "allow"
+        },
+        "options": {}
+      },
+      "tvprobe-reviewer": {
+        "name": "tvprobe-reviewer",
+        "description": "tvprobe reviewer, defined in a file",
+        "mode": "subagent",
+        "permission": {
+          "edit": "deny"
+        },
+        "prompt": "Review only.",
+        "options": {}
+      }
+    },
+    "mode": {},
+    "plugin": [
+      "file:///home/dev/probe/workspace/.opencode/plugin/probe.js"
+    ],
+    "command": {},
+    "plugin_origins": [
+      {
+        "spec": "file:///home/dev/probe/workspace/.opencode/plugin/probe.js",
+        "source": "/home/dev/probe/workspace/.opencode",
+        "scope": "local"
+      }
+    ],
+    "username": "dev"
+  },
+  "expect": [
+    {
+      "subject": "build",
+      "entry": "/agent/build/permission/bash",
+      "example": "rm -rf /"
+    }
+  ]
+}

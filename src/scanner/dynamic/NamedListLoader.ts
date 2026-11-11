@@ -1,6 +1,5 @@
-import { parse } from "yaml";
-
-import { RuleLoadError } from "./RuleLoadError.js";
+import { RuleLoadError } from "../rules/RuleLoadError.js";
+import { RuleYaml } from "../rules/RuleYaml.js";
 
 export interface NamedList {
   readonly name: string;
@@ -9,13 +8,10 @@ export interface NamedList {
 
 /** Parses one `lists/*.yaml` file: a `name` matching the file and a list of `items`. */
 export class NamedListLoader {
+  constructor(private readonly yaml: RuleYaml = new RuleYaml()) {}
+
   load(file: string, text: string, expectedName: string): NamedList {
-    let document: unknown;
-    try {
-      document = parse(text, { strict: true, uniqueKeys: true });
-    } catch (error) {
-      throw new RuleLoadError(file, "yaml", error instanceof Error ? error.message : String(error));
-    }
+    const document = this.yaml.parse(file, text);
     if (typeof document !== "object" || document === null || Array.isArray(document)) {
       throw new RuleLoadError(file, "list", "must be a mapping");
     }

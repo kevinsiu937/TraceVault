@@ -9,4 +9,5 @@ export type EventType =
   | "capture.duplicate"
   | "prompt.user"
   | "admin.grant"
-  | "guard.failure";
+  | "guard.failure"
+  | "config.snapshot";

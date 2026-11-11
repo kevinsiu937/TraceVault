@@ -69,6 +69,12 @@ Runs against the agent's configuration, before the agent runs. Rule families:
 
 Rule sources: the agent's schema and permission model, OWASP MCP Top 10, OWASP Top 10 for Agentic Applications, documented incidents and CVEs, least-privilege baseline.
 
+- **Input.** It reads the `config.snapshot` event the plugin stores in each session, never configuration files on disk. Rules ask one question of the configuration, "would this agent make this call without asking?", answered the way OpenCode resolves permissions, its built-in defaults included.
+- **Placement.** `src/scanner/static/` imports only `schema` and the shared rule primitives in `src/scanner/rules/`. The service consumes it through `StaticScannerPort`; the dashboard shows its findings on the session's Configuration view and never reaches it.
+- **Rules are data.** One YAML file per rule in `rules/config/`, each naming its source. Findings are computed at read time and never stored.
+
+Spec: `docs/spec/phase-3.md`.
+
 ### Workflow Scanner (`src/scanner/dynamic/`)
 
 Rule-based over the event stream. Six rule families, each a YAML file in `rules/`:
@@ -129,7 +135,8 @@ src/store/        EventStorePort, SqliteEventStore, CanonicalJson, HashChain, St
 src/service/      InvestigationServicePort, InvestigationService, SessionSummary,
                   TimelineBuilder, TimelineEntry
 src/dashboard/    DashboardServer, routes/, view/
-src/plugin/       PluginConfig, TraceVaultPlugin, EventForwarder, PermissionRequests, CallGuard
+src/plugin/       PluginConfig, TraceVaultPlugin, EventForwarder, PermissionRequests, CallGuard,
+                  SessionDelivery, SessionPreamble, ConfigRedactor
 src/cli/          index, RunCommand, InitCommand, AgentConfigFile
 
 tests/seams/      capture.seam.test.ts, dashboard.seam.test.ts

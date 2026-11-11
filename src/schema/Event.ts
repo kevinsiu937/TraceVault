@@ -2,6 +2,7 @@ import type { AdminGrantData } from "./AdminGrantData.js";
 import type { CaptureDuplicateData } from "./CaptureDuplicateData.js";
 import type { CaptureGapData } from "./CaptureGapData.js";
 import type { CapturePath } from "./CapturePath.js";
+import type { ConfigSnapshotData } from "./ConfigSnapshotData.js";
 import type { DocumentAccessData } from "./DocumentAccessData.js";
 import type { GuardFailureData } from "./GuardFailureData.js";
 import type { HookScriptData } from "./HookScriptData.js";
@@ -42,4 +43,5 @@ export type Event = EventEnvelope &
     | { readonly type: "prompt.user"; readonly data: UserPromptData }
     | { readonly type: "admin.grant"; readonly data: AdminGrantData }
     | { readonly type: "guard.failure"; readonly data: GuardFailureData }
+    | { readonly type: "config.snapshot"; readonly data: ConfigSnapshotData }
   );

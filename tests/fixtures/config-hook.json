@@ -1,0 +1,88 @@
+{
+  "_note": "Recorded 11 Nov 2026 from OpenCode 1.18.32 by docs/probes/scripts/config-probe.sh: the argument of a plugin config hook, in a run isolated from every real configuration. Every secret is a planted fake containing \"tvprobe\"; {env:...} and {file:...} references were already substituted. Local paths and the user name scrubbed.",
+  "config": {
+    "$schema": "https://opencode.ai/config.json",
+    "permission": {
+      "bash": {
+        "*": "ask",
+        "ls *": "allow"
+      },
+      "edit": {
+        "*": "allow",
+        "opencode.json": "deny"
+      },
+      "webfetch": "deny"
+    },
+    "provider": {
+      "tvprobe-literal": {
+        "options": {
+          "apiKey": "tvprobe-literal-FAKE-0001"
+        }
+      },
+      "tvprobe-env": {
+        "options": {
+          "apiKey": "tvprobe-env-FAKE-0002"
+        }
+      },
+      "tvprobe-file": {
+        "options": {
+          "apiKey": "tvprobe-file-FAKE-0003"
+        }
+      }
+    },
+    "mcp": {
+      "tvprobe-local": {
+        "type": "local",
+        "command": [
+          "node",
+          "-e",
+          "process.exit(0)"
+        ],
+        "enabled": false,
+        "environment": {
+          "GITHUB_TOKEN": "tvprobe-env-FAKE-0002",
+          "LITERAL_TOKEN": "tvprobe-literal-FAKE-0004"
+        }
+      },
+      "tvprobe-remote": {
+        "type": "remote",
+        "url": "http://127.0.0.1:9/mcp",
+        "enabled": false,
+        "headers": {
+          "Authorization": "tvprobe-literal-FAKE-0005"
+        }
+      }
+    },
+    "agent": {
+      "build": {
+        "permission": {
+          "bash": "allow"
+        },
+        "options": {}
+      },
+      "tvprobe-reviewer": {
+        "name": "tvprobe-reviewer",
+        "description": "tvprobe reviewer, defined in a file",
+        "mode": "subagent",
+        "permission": {
+          "edit": "deny"
+        },
+        "prompt": "Review only.",
+        "options": {}
+      }
+    },
+    "mode": {},
+    "plugin": [
+      "file:///home/dev/probe/workspace/.opencode/plugin/probe.js"
+    ],
+    "command": {},
+    "plugin_origins": [
+      {
+        "spec": "file:///home/dev/probe/workspace/.opencode/plugin/probe.js",
+        "source": "/home/dev/probe/workspace/.opencode",
+        "scope": "local"
+      }
+    ],
+    "username": "dev"
+  }
+}

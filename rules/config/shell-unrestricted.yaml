@@ -1,0 +1,17 @@
+# An agent can run arbitrary code through the shell without being asked.
+# Each target is a command only an open shell allows: deleting everything, or
+# running code passed on the command line. An allow-list of commands such as
+# `ls *` or `git status` stays silent. OpenCode's default allows every command.
+id: shell-unrestricted
+version: 1
+severity: high
+explanation: This agent can run shell commands that delete files or execute arbitrary code without asking first.
+source:
+  kind: owasp-agentic
+  id: ASI05
+  title: Unexpected Code Execution
+subject: agent
+when:
+  - allows:
+      permission: bash
+      target: ["rm -rf /", "python3 -c 'print(1)'", "sh -c id"]

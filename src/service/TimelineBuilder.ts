@@ -7,7 +7,12 @@ export class TimelineBuilder {
   constructor(private readonly distinct: DistinctEvents = new DistinctEvents()) {}
 
   build(events: readonly Event[]): TimelineEntry[] {
-    return this.distinct.of(events).map((event) => this.entry(event));
+    return this.distinct.of(events).filter((event) => this.isRow(event)).map((event) => this.entry(event));
+  }
+
+  /** A configuration snapshot belongs to the Configuration view, not to the timeline. */
+  isRow(event: Event): boolean {
+    return event.type !== "config.snapshot";
   }
 
   entry(event: Event): TimelineEntry {

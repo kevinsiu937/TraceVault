@@ -13,17 +13,17 @@ A change that works but violates either one is rejected, not merged with a note 
 
 ## 1. What we are building now
 
-**Phase 1 (backbone and investigation cockpit) is closed.** Its exit verification is ticket 10.
+**Phase 1 (backbone and investigation cockpit) and Phase 2 (workflow scanner) are closed.** Their exit verifications are tickets 10 and 33.
 
-**Phase 2 is the workflow scanner, nothing more:**
+**Phase 3 is the static scanner and tool poisoning, nothing more:**
 
 ```
-stored events → YAML rules → findings → flags on the timeline (→ opt-in blocking, last)
+recorded configuration and tool descriptions → YAML rules → static findings → the session's Configuration view
 ```
 
-Rules over each session's event sequence, flags naming the rule and the events behind it, and, as the final ticket, an opt-in guard that refuses calls matching a blockable single-step rule. The spec is `docs/spec/phase-2.md`.
+The plugin records the configuration OpenCode resolved, secrets removed, and the tools the model is offered. Static rules name their source (OWASP MCP Top 10, OWASP Agentic Top 10, a CVE, or the least-privilege baseline) and the configuration entry or tool behind each finding. The spec is `docs/spec/phase-3.md`.
 
-**Explicitly out of Phase 2:** the static configuration scanner, tool-poisoning detection, reports, the simulator, the MCP proxy, stored findings, alerting, a rule editor, ML scoring, auth, user accounts, theming. Building any of them now is a scope violation.
+**Explicitly out of Phase 3:** reading configuration files from disk, connecting to MCP servers, the MCP proxy, blocking on a static finding, reports, the simulator, stored findings, alerting, a rule editor, ML scoring, auth, user accounts, theming. Building any of them now is a scope violation.
 
 ## 2. OOD — the design rules
 
@@ -42,7 +42,7 @@ Rules over each session's event sequence, flags naming the rule and the events b
 
 1. **Every stage boundary is an interface file:** `CapturePort`, `EventStorePort`, `InvestigationServicePort`, `WorkflowScannerPort`. Nothing imports a concrete class across a boundary.
 2. **The composition root is the only place that chooses implementations** — `src/cli/`. One file shows how the system is assembled.
-3. **Dependency direction is one-way:** `cli → dashboard → service → store`, and `cli → plugin → capture → schema`. The workflow scanner (`src/scanner/dynamic/`) imports only `schema`; the service and the plugin reach it through `WorkflowScannerPort`, and the dashboard never reaches it. An upward import is a bug, not a preference.
+3. **Dependency direction is one-way:** `cli → dashboard → service → store`, and `cli → plugin → capture → schema`. The shared rule primitives (`src/scanner/rules/`) import only `schema`. The workflow scanner (`src/scanner/dynamic/`) and the static scanner (`src/scanner/static/`) each import only `schema` and `scanner/rules`; the service and the plugin reach them through `WorkflowScannerPort` and `StaticScannerPort`, and the dashboard never reaches either. An upward import is a bug, not a preference.
 4. **"Modify the display, touch only the display."** The dashboard never imports `store/` or `capture/`. If a UI change seems to need a storage change, the façade is wrong — fix the façade, not the UI's imports.
 5. **No barrel files.** They hide the dependency graph and make "which file do I change?" unanswerable — the exact problem this design exists to prevent.
 6. **Folders appear when a file needs them.** No placeholder directories for later phases.
@@ -64,7 +64,7 @@ Tests attach at exactly three points, and nothing below them:
 
 - **Seam A — HTTP request to rendered page**, wired to the real store against a temporary database. Exercises route, façade, store and timeline assembly in one assertion: if the page shows the right rows in the right order, the whole chain is behaving.
 - **Seam B — raw hook payload in, stored events out.** The only place capture correctness and ordering can be pinned, because the live hook cannot be made deterministic.
-- **Seam C — event sequence in, findings out.** A frozen sequence of stored events goes through the real rules and the real scanner, and the assertion is on rule ids and event ids. One suite iterates `rules/*.yaml` and fails for any rule missing its trigger or clean fixture. Added in Phase 2: rule correctness asserted through rendered HTML would break on every UI change.
+- **Seam C — event sequence in, findings out.** A frozen sequence of stored events goes through the real rules and the real scanner, and the assertion is on rule ids and event ids. One suite iterates `rules/*.yaml`, and another iterates `rules/config/*.yaml`; each fails for any rule missing its trigger or clean fixture. Added in Phase 2: rule correctness asserted through rendered HTML would break on every UI change.
 
 These supersede per-class tests. Do **not** also write a test per class — that is duplication with extra maintenance. A unit test for a pure value object is allowed only when the object has rules worth pinning beyond what the seams show.
 

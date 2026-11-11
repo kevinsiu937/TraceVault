@@ -5,6 +5,7 @@ import { EventId } from "./EventId.js";
 import type { CaptureDuplicateData } from "./CaptureDuplicateData.js";
 import type { CaptureGapData } from "./CaptureGapData.js";
 import type { DocumentAccessData } from "./DocumentAccessData.js";
+import type { ConfigSnapshotData } from "./ConfigSnapshotData.js";
 import type { GuardFailureData } from "./GuardFailureData.js";
 import type { HookScriptData } from "./HookScriptData.js";
 import type { McpCallData } from "./McpCallData.js";
@@ -84,6 +85,10 @@ export class EventFactory {
 
   guardFailure(meta: EventMeta, data: GuardFailureData): Event {
     return { ...this.envelope(meta), type: "guard.failure", data };
+  }
+
+  configSnapshot(meta: EventMeta, data: ConfigSnapshotData): Event {
+    return { ...this.envelope(meta), type: "config.snapshot", data };
   }
 
   private envelope(meta: EventMeta): Omit<Event, "type" | "data"> {

@@ -48,7 +48,23 @@ Spec: `docs/spec/phase-2.md`.
 | 33 | Phase 2 exit verification | 27, 28, 29, 30, 31 | done |
 | 34 | Opt-in blocking: refuse before it runs | 33 | done |
 
-**Phase 2 is complete.** Every ticket from 27 to 34 is done. Phase 3 starts only when Kevin says so.
+**Phase 2 is complete.** Every ticket from 27 to 34 is done.
+
+## Phase 3: static scanner and tool poisoning
+
+Spec: `docs/spec/phase-3.md`, approved 11 Nov 2026.
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 35 | The configuration a session ran under (probe first) | Phase 3 spec approved | done |
+| 36 | Shell without asking, flagged end to end (tracer bullet) | 35 | done |
+| 37 | Missing boundaries: the agent can edit its own configuration | 36 | open |
+| 38 | Ungoverned grants: a default question answered in advance | 36 | open |
+| 39 | Dangerous combination: read secrets and send data out | 36 | open |
+| 40 | Unscoped credentials: secrets in the configuration and in MCP servers | 36 | open |
+| 41 | The tools the model is offered (probe first) | 35 | open |
+| 42 | Tool poisoning: hidden instructions and invisible text | 36, 41 | open |
+| 43 | Phase 3 exit verification | 36, 37, 38, 39, 40, 42 | open |
 
 ## Dependency shape
 
@@ -96,6 +112,19 @@ Spec: `docs/spec/phase-2.md`.
 ```
 
 27 is the scanner's tracer bullet: one single-step rule through loader, scanner, service, page and Seam C. 28 proves multi-step matching. 32 is off the exit path because it depends on a probe. 34 adds blocking last, and only as an opt-in.
+
+### Phase 3
+
+```
+35 ─┬─► 36 ─┬─► 37 ─┐
+    │       ├─► 38 ─┤
+    │       ├─► 39 ─┤
+    │       ├─► 40 ─┼─► 43
+    │       └─► 42 ─┘
+    └─► 41 ───► 42
+```
+
+35 is the capture tracer bullet: the configuration reaches a session's Configuration view with secrets removed, before any rule exists. 36 is the scanner's tracer bullet: one rule through the shared rule primitives, effective permissions, loader, scanner, service, view and Seam C. 37 to 40 are one rule family each, on that path. 41 and 42 carry tool poisoning, which depends on a probe of what OpenCode shows plugins about MCP tools.
 
 ## Rules for whoever picks these up
 

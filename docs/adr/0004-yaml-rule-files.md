@@ -23,7 +23,7 @@ Rules live as one YAML file per rule under `rules/`. They are parsed by the `yam
 ## Consequences
 
 - **First runtime dependency.** `package.json` gains its first entry under `dependencies`. Updates are deliberate, exact-version bumps.
-- **Only the loader touches YAML.** The parser is used by `RuleLoader` alone. Everything after loading works on typed `Rule` objects, so the parser could be replaced in one file.
+- **Only the loader touches YAML.** The parser is used by `RuleYaml` alone (`RuleLoader` until Phase 3, when the static rule loader joined it). Everything after loading works on typed rule objects, so the parser could be replaced in one file.
 - **Plugin runtime unchecked.** Opt-in blocking (ticket 34) loads rules inside OpenCode's plugin runtime. Ticket 34 must check that this package loads there before relying on it.
 
 ## Alternatives rejected

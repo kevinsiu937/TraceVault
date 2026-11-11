@@ -67,6 +67,12 @@ export interface GuardFailurePayload {
   readonly reason: string;
 }
 
+export interface ConfigSnapshotPayload {
+  readonly kind: "config.snapshot";
+  readonly sessionID: string;
+  readonly config: Record<string, unknown>;
+}
+
 export type ParsedHook =
   | ToolAfterPayload
   | ToolFailedPayload
@@ -75,7 +81,8 @@ export type ParsedHook =
   | CaptureGapPayload
   | UserPromptPayload
   | PermissionGrantedPayload
-  | GuardFailurePayload;
+  | GuardFailurePayload
+  | ConfigSnapshotPayload;
 
 export class HookPayloadParser {
   parse(raw: unknown): ParsedHook {
@@ -110,6 +117,13 @@ export class HookPayloadParser {
         callID: this.asString(payload["callID"], "callID"),
         tool: this.asString(payload["tool"], "tool"),
         reason: this.asString(payload["reason"], "reason"),
+      };
+    }
+    if (hook === "config.snapshot") {
+      return {
+        kind: "config.snapshot",
+        sessionID: this.asString(payload["sessionID"], "sessionID"),
+        config: this.asRecord(payload["config"], "config"),
       };
     }
     if (hook === "session.created" || hook === "session.idle") {

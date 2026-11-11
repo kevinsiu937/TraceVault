@@ -1,5 +1,5 @@
 import type { Bindings, Condition } from "./Condition.js";
-import { PermissionPattern } from "./PermissionPattern.js";
+import { PermissionPattern } from "../rules/PermissionPattern.js";
 
 /**
  * `{ allowed_by: name }`: the fact is a command that one of the permission

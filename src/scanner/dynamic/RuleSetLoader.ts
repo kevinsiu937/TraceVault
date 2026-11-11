@@ -5,7 +5,7 @@ import { basename, join } from "node:path";
 import type { ConditionRegistry } from "./ConditionRegistry.js";
 import { NamedListLoader } from "./NamedListLoader.js";
 import { NamedLists } from "./NamedLists.js";
-import { RuleLoadError } from "./RuleLoadError.js";
+import { RuleLoadError } from "../rules/RuleLoadError.js";
 import { RuleLoader } from "./RuleLoader.js";
 import { RuleSet } from "./RuleSet.js";
 import { RuleStepLoader } from "./RuleStepLoader.js";

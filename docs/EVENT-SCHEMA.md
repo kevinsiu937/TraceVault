@@ -132,6 +132,7 @@ Recorded shape: `tests/fixtures/permission-grants.json` (10 Nov 2026, OpenCode 1
 | `capture.gap` | A path could not observe a window. Fields: `capture_path`, `from`, `to`, `reason`. **This is what "gaps shown rather than hidden" means in data.** |
 | `capture.duplicate` | Two paths saw the same action — recorded so the investigator can prove de-duplication rather than trust it |
 | `guard.failure` | Opt-in blocking only: the guard could not decide (rules would not load, or it failed internally) and let a call through unenforced. Fields: `tool`, `call_id`, `reason`. `correlation_id` stays null, so the call's own event is not taken for a duplicate |
+| `config.snapshot` | The configuration OpenCode resolved for the process that saw the session, sent once per process before the session's other events. Fields: `digest`, `config`. Every string under a secret-looking key (`apiKey`, `headers`, `environment`, `env`, or a key containing `key`, `token`, `secret`, `password`, `auth` or `credential`) is `[redacted]` before it leaves the plugin. Not a timeline row; shown on the session's Configuration view |
 | `scan.finding` | A scanner raised a flag. **Read-model shape, not a stored event** (Phase 2 decision: findings are computed at read time). Fields: `rule_id`, `rule_version`, `rule_set_digest`, `rule_source` (`static`/`workflow`), `severity`, `event_ids[]`, `explanation` |
 
 ## Open questions for Kevin

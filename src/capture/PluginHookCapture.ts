@@ -1,6 +1,7 @@
 import type { CapturePort } from "./CapturePort.js";
 import { DenialSignal } from "./DenialSignal.js";
 import type { HookPayloadParser } from "./HookPayloadParser.js";
+import { PayloadDigest } from "./PayloadDigest.js";
 import type { ToolClassifier } from "./ToolClassifier.js";
 import type { Event } from "../schema/Event.js";
 import type { EventFactory } from "../schema/EventFactory.js";
@@ -12,6 +13,7 @@ export class PluginHookCapture implements CapturePort {
     private readonly classifier: ToolClassifier,
     private readonly factory: EventFactory,
     private readonly denial: DenialSignal = new DenialSignal(),
+    private readonly digest: PayloadDigest = new PayloadDigest(),
   ) {}
 
   toEvent(raw: unknown, receivedAt: Date): Event | null {
@@ -53,6 +55,13 @@ export class PluginHookCapture implements CapturePort {
           reply: hook.reply,
           ...(hook.callID === undefined ? {} : { call_id: hook.callID }),
         },
+      );
+    }
+
+    if (hook.kind === "config.snapshot") {
+      return this.factory.configSnapshot(
+        { sessionId: hook.sessionID, correlationId: null, receivedAt },
+        { digest: this.digest.describe(hook.config).digest, config: hook.config },
       );
     }
 

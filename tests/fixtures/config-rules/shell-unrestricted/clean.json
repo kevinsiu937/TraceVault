@@ -1,0 +1,23 @@
+{
+  "source": "authored",
+  "note": "Every agent asks before a shell command, except a short allow-list of read-only commands. Explore keeps its own bash allow only until the top level overrides it.",
+  "config": {
+    "permission": {
+      "bash": {
+        "*": "ask",
+        "ls *": "allow",
+        "git status": "allow",
+        "git diff *": "allow"
+      }
+    },
+    "agent": {
+      "reviewer": {
+        "mode": "subagent",
+        "permission": {
+          "edit": "deny"
+        }
+      }
+    }
+  },
+  "expect": []
+}

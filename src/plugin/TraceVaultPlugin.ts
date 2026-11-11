@@ -2,6 +2,8 @@ import type { CallGuard } from "./CallGuard.js";
 import type { EventForwarderPort } from "./EventForwarderPort.js";
 import type { PendingGapStore } from "./PendingGapStore.js";
 import { PermissionRequests, type PermissionProperties } from "./PermissionRequests.js";
+import { SessionDelivery } from "./SessionDelivery.js";
+import { SessionPreamble } from "./SessionPreamble.js";
 
 interface ToolExecuteInput {
   tool: string;
@@ -76,6 +78,7 @@ type EventHook = (input: { event: PluginEvent }) => Promise<void>;
 type ChatMessage = (input: ChatMessageInput, output: ChatMessageOutput) => Promise<void>;
 
 export interface TraceVaultHooks {
+  config: (config: unknown) => Promise<void>;
   "tool.execute.before": ToolBefore;
   "tool.execute.after": ToolAfter;
   "chat.message": ChatMessage;
@@ -85,8 +88,8 @@ export interface TraceVaultHooks {
 const PROMPT_LIMIT = 200;
 
 export class TraceVaultPlugin {
-  private readonly forwarder: EventForwarderPort;
-  private readonly gaps: PendingGapStore;
+  private readonly delivery: SessionDelivery;
+  private readonly preamble: SessionPreamble;
   private readonly now: () => number;
   private readonly guard: CallGuard | null;
   private readonly permissions: PermissionRequests;
@@ -100,9 +103,10 @@ export class TraceVaultPlugin {
     /** Null unless the install opted in to blocking; then it may refuse a call before it runs. */
     guard: CallGuard | null = null,
     permissions: PermissionRequests = new PermissionRequests(),
+    preamble: SessionPreamble = new SessionPreamble(),
   ) {
-    this.forwarder = forwarder;
-    this.gaps = gaps;
+    this.delivery = new SessionDelivery(forwarder, gaps, preamble);
+    this.preamble = preamble;
     this.now = now;
     this.guard = guard;
     this.permissions = permissions;
@@ -110,6 +114,8 @@ export class TraceVaultPlugin {
 
   hooks(): TraceVaultHooks {
     return {
+      // OpenCode calls this once, as it loads the plugin, before any session exists.
+      config: async (config) => this.preamble.configure(config),
       "tool.execute.before": async (input, output) => {
         this.pendingArgs.set(this.key(input), output.args);
         this.pendingStarts.set(this.key(input), this.now());
@@ -251,40 +257,7 @@ export class TraceVaultPlugin {
     return started === undefined ? null : Math.max(0, Math.round(this.now() - started));
   }
 
-  private async send(payload: unknown, sessionID: string): Promise<void> {
-    try {
-      await this.forwarder.forward(payload);
-    } catch {
-      // Capture is best-effort: a failed forward must never break the agent's tool call.
-      this.gaps.record(sessionID, new Date());
-      return;
-    }
-
-    await this.flushGaps();
-  }
-
-  private async flushGaps(): Promise<void> {
-    const gaps = this.gaps.load();
-    const flushed: string[] = [];
-
-    for (const gap of gaps) {
-      try {
-        await this.forwarder.forward({
-          hook: "capture.gap",
-          sessionID: gap.sessionID,
-          from: gap.from,
-          to: gap.lastFailureAt,
-          reason: "capture endpoint unavailable",
-        });
-        flushed.push(gap.sessionID);
-      } catch {
-        // Keep this gap and the rest for the next successful forward.
-        break;
-      }
-    }
-
-    if (flushed.length > 0) {
-      this.gaps.remove(flushed);
-    }
+  private send(payload: unknown, sessionID: string): Promise<void> {
+    return this.delivery.send(payload, sessionID);
   }
 }

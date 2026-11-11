@@ -4,8 +4,11 @@ import type { EventFactory } from "../schema/EventFactory.js";
 import type { Finding } from "../schema/Finding.js";
 import type { EventStorePort } from "../store/EventStorePort.js";
 import { ActivityFilter } from "./ActivityFilter.js";
+import type { ConfigFinding } from "../schema/ConfigFinding.js";
+import type { ConfigurationSnapshot } from "./ConfigurationSnapshot.js";
 import type { InvestigationServicePort, RecordResult } from "./InvestigationServicePort.js";
 import type { SessionActivity } from "./SessionActivity.js";
+import { SessionConfiguration } from "./SessionConfiguration.js";
 import { SessionFindings } from "./SessionFindings.js";
 import type { SessionSummary } from "./SessionSummary.js";
 import type { TimelineBuilder } from "./TimelineBuilder.js";
@@ -17,6 +20,7 @@ const META_TYPES: ReadonlySet<Event["type"]> = new Set([
   "capture.gap",
   "capture.duplicate",
   "guard.failure",
+  "config.snapshot",
 ]);
 
 export class InvestigationService implements InvestigationServicePort {
@@ -28,6 +32,7 @@ export class InvestigationService implements InvestigationServicePort {
     private readonly factory: EventFactory,
     private readonly timeline: TimelineBuilder,
     private readonly findings: SessionFindings = new SessionFindings(),
+    private readonly configuration: SessionConfiguration = new SessionConfiguration(),
   ) {}
 
   recordHookPayload(raw: unknown, receivedAt: Date): RecordResult {
@@ -132,6 +137,14 @@ export class InvestigationService implements InvestigationServicePort {
 
   getFindings(sessionId: string): Finding[] {
     return this.findings.of(this.store.listBySession(sessionId));
+  }
+
+  getConfiguration(sessionId: string): ConfigurationSnapshot | null {
+    return this.configuration.latest(this.store.listBySession(sessionId));
+  }
+
+  getConfigFindings(sessionId: string): ConfigFinding[] {
+    return this.configuration.findings(this.store.listBySession(sessionId));
   }
 
   listActivity(filter: ActivityFilter = ActivityFilter.none): SessionActivity[] {

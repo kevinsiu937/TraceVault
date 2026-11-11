@@ -40,9 +40,12 @@ import { SubagentPortalView } from "../dashboard/SubagentPortalView.js";
 import { TimelineView } from "../dashboard/TimelineView.js";
 import { EventFactory } from "../schema/EventFactory.js";
 import { InvestigationService } from "../service/InvestigationService.js";
+import { SessionConfiguration } from "../service/SessionConfiguration.js";
 import { SessionFindings } from "../service/SessionFindings.js";
 import { TimelineBuilder } from "../service/TimelineBuilder.js";
 import type { WorkflowScannerPort } from "../scanner/dynamic/WorkflowScannerPort.js";
+import { ConfigRuleLoader } from "../scanner/static/ConfigRuleLoader.js";
+import { StaticScanner } from "../scanner/static/StaticScanner.js";
 import type { EventStorePort } from "../store/EventStorePort.js";
 import { SqliteEventStore } from "../store/SqliteEventStore.js";
 import { InitCommand } from "./InitCommand.js";
@@ -227,8 +230,10 @@ function errorCode(error: unknown): string | undefined {
 
 async function runService(options: RunOptions): Promise<number> {
   let scanner: WorkflowScannerPort;
+  let configuration: SessionConfiguration;
   try {
     scanner = new WorkflowScannerAssembly().fromDirectory(RULES_DIR);
+    configuration = new SessionConfiguration(new StaticScanner(new ConfigRuleLoader().loadDirectory(join(RULES_DIR, "config"))));
   } catch (error) {
     process.stderr.write(`tracevault: cannot load rules: ${errorMessage(error)}\n`);
     return 1;
@@ -247,6 +252,7 @@ async function runService(options: RunOptions): Promise<number> {
     factory,
     new TimelineBuilder(),
     new SessionFindings(scanner),
+    configuration,
   );
   const timelineView = new TimelineView();
   const server = new DashboardServer(

@@ -2,7 +2,7 @@ import { FACT_NAMES, type FactName } from "../../schema/EventFacts.js";
 import type { Condition } from "./Condition.js";
 import type { ConditionRegistry } from "./ConditionRegistry.js";
 import type { NamedLists } from "./NamedLists.js";
-import { RuleLoadError } from "./RuleLoadError.js";
+import { RuleLoadError } from "../rules/RuleLoadError.js";
 import { RuleStep, type StepAlternative } from "./RuleStep.js";
 
 type Fields = Record<string, unknown>;

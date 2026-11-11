@@ -1,9 +1,8 @@
-import { parse } from "yaml";
-
 import type { Severity } from "../../schema/Finding.js";
 import { DurationWindow } from "./DurationWindow.js";
 import { Rule } from "./Rule.js";
-import { RuleLoadError } from "./RuleLoadError.js";
+import { RuleLoadError } from "../rules/RuleLoadError.js";
+import { RuleYaml } from "../rules/RuleYaml.js";
 import type { RuleStep } from "./RuleStep.js";
 import type { RuleStepLoader } from "./RuleStepLoader.js";
 
@@ -18,15 +17,13 @@ type Fields = Record<string, unknown>;
  * never a silently ignored condition.
  */
 export class RuleLoader {
-  constructor(private readonly steps: RuleStepLoader) {}
+  constructor(
+    private readonly steps: RuleStepLoader,
+    private readonly yaml: RuleYaml = new RuleYaml(),
+  ) {}
 
   load(file: string, text: string, expectedId: string): Rule {
-    let document: unknown;
-    try {
-      document = parse(text, { strict: true, uniqueKeys: true });
-    } catch (error) {
-      throw new RuleLoadError(file, "yaml", error instanceof Error ? error.message : String(error));
-    }
+    const document = this.yaml.parse(file, text);
     const fields = this.object(document, file, "rule");
     for (const key of Object.keys(fields)) {
       if (!(RULE_KEYS as readonly string[]).includes(key)) {

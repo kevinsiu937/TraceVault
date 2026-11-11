@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { PermissionPattern } from "../../src/scanner/dynamic/PermissionPattern.js";
+import { PermissionPattern } from "../../src/scanner/rules/PermissionPattern.js";
 
 describe("PermissionPattern", () => {
   it.each([

@@ -29,6 +29,7 @@ const CALLS: Readonly<Record<EventType, boolean>> = {
   "prompt.user": false,
   "admin.grant": false,
   "guard.failure": false,
+  "config.snapshot": false,
 };
 
 /**
@@ -129,6 +130,8 @@ export class EventFacts {
         return event.data.patterns.join("\n");
       case "guard.failure":
         return event.data.reason;
+      case "config.snapshot":
+        return event.data.digest;
       case "session.start":
       case "session.end":
         return "session";
@@ -152,6 +155,8 @@ export class EventFacts {
         return event.data.reply;
       case "guard.failure":
         return "unguarded";
+      case "config.snapshot":
+        return "snapshot";
       case "session.start":
       case "session.end":
         return "boundary";

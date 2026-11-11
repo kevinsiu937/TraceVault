@@ -15,6 +15,8 @@ export interface SessionRenderContext {
   readonly entries: readonly TimelineEntry[];
   readonly allEntries: readonly TimelineEntry[];
   readonly findings: readonly Finding[];
+  /** Static findings on the configuration the session ran under. */
+  readonly configFindingCount: number;
   readonly filter: ActivityFilter;
   readonly state: SessionParams;
   readonly sessions: readonly SessionSummary[];

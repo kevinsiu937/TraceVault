@@ -80,7 +80,7 @@ An argument written `{ list: <name> }` is replaced by that list's items before t
 |---|---|
 | `type` | The event type. |
 | `target` | What the timeline shows as the target: a path, a command, a URL, a prompt's text, or a grant's patterns, one per line. |
-| `outcome` | `ok`, `error`, `denied` or `timeout` for a call. Other events: `once` or `always` for a grant, `unguarded` for a call the guard could not check, `prompt`, `gap`, `duplicate`, or `boundary` for a session start or end. |
+| `outcome` | `ok`, `error`, `denied` or `timeout` for a call. Other events: `once` or `always` for a grant, `unguarded` for a call the guard could not check, `snapshot` for a recorded configuration, `prompt`, `gap`, `duplicate`, or `boundary` for a session start or end. |
 | `operation` | A document access's `read`, `write`, `delete` or `rename`. |
 | `path` | A document access's path. |
 | `tool` | A hook script's tool, an MCP call's tool name, a grant's permission, or the tool of a call the guard could not check. |
