@@ -159,6 +159,22 @@ describe("seam B: install writes the plugin, uninstall restores the project", ()
     }
   });
 
+  it.each([
+    [["run", "--port", "70000"], "--port expects an integer between 0 and 65535, got '70000'"],
+    [["run", "--db"], "--db expects a file path"],
+    [["import", "--port", "4319"], "unknown option '--port'"],
+    [["init", "--dir"], "--dir expects a directory path"],
+  ])("refuses %j before touching anything", async (argv, message) => {
+    const stderr = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+    try {
+      await expect(main(argv)).resolves.toBe(1);
+      expect(stderr).toHaveBeenCalledWith(expect.stringContaining(message));
+    } finally {
+      stderr.mockRestore();
+    }
+  });
+
   it("runs init and uninstall through the CLI with --dir", async () => {
     const stdout = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 

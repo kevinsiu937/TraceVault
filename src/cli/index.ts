@@ -13,44 +13,15 @@
  * component modules so it can be tested without spawning a process.
  */
 
-import { existsSync, mkdirSync } from "node:fs";
-import { homedir } from "node:os";
-import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-import { DenialSignal } from "../capture/DenialSignal.js";
-import { HistoryImport } from "../capture/HistoryImport.js";
-import { HookPayloadParser } from "../capture/HookPayloadParser.js";
-import { ImportedPartMapper } from "../capture/ImportedPartMapper.js";
-import { OpenCodeStoreSource } from "../capture/OpenCodeStoreSource.js";
-import { PayloadDigest } from "../capture/PayloadDigest.js";
-import { ToolClassifier } from "../capture/ToolClassifier.js";
-import { PluginHookCapture } from "../capture/PluginHookCapture.js";
-import { ActivityView } from "../dashboard/ActivityView.js";
-import { DashboardServer } from "../dashboard/DashboardServer.js";
-import { DetailPaneView } from "../dashboard/DetailPaneView.js";
-import { SessionHeaderView } from "../dashboard/SessionHeaderView.js";
-import { SessionListView } from "../dashboard/SessionListView.js";
-import { SessionPageView } from "../dashboard/SessionPageView.js";
-import { FileRailView } from "../dashboard/FileRailView.js";
-import { GraphView } from "../dashboard/GraphView.js";
-import { FindingsPanelView } from "../dashboard/FindingsPanelView.js";
-import { ReplayBarView } from "../dashboard/ReplayBarView.js";
-import { WaterfallView } from "../dashboard/WaterfallView.js";
-import { SubagentPortalView } from "../dashboard/SubagentPortalView.js";
-import { TimelineView } from "../dashboard/TimelineView.js";
-import { EventFactory } from "../schema/EventFactory.js";
-import { InvestigationService } from "../service/InvestigationService.js";
-import { SessionConfiguration } from "../service/SessionConfiguration.js";
-import { SessionFindings } from "../service/SessionFindings.js";
-import { TimelineBuilder } from "../service/TimelineBuilder.js";
-import type { WorkflowScannerPort } from "../scanner/dynamic/WorkflowScannerPort.js";
-import { ConfigRuleLoader } from "../scanner/static/ConfigRuleLoader.js";
-import { StaticScanner } from "../scanner/static/StaticScanner.js";
-import type { EventStorePort } from "../store/EventStorePort.js";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+import { pathToFileURL } from "node:url";
 import { SqliteEventStore } from "../store/SqliteEventStore.js";
+import { CommandOptions } from "./CommandOptions.js";
+import { HistoryImportCommand } from "./HistoryImportCommand.js";
 import { InitCommand } from "./InitCommand.js";
+import { RunCommand } from "./RunCommand.js";
 import { UninstallCommand } from "./UninstallCommand.js";
-import { WorkflowScannerAssembly } from "./WorkflowScannerAssembly.js";
 
 export const VERSION = "0.1.0";
 
@@ -69,230 +40,21 @@ Usage:
 
 const DEFAULT_PORT = 4319;
 const DEFAULT_DB = "data/tracevault.db";
-const RULES_DIR = fileURLToPath(new URL("../../rules", import.meta.url));
-const OPENCODE_STORE = join(".local", "share", "opencode", "opencode.db");
 
 type Command = "init" | "uninstall" | "import" | "run" | "report";
 
 const COMMANDS: readonly Command[] = ["init", "uninstall", "import", "run", "report"];
 
-interface RunOptions {
-  port: number;
-  dbPath: string;
-}
-
-interface ImportOptions {
-  dbPath: string;
-}
-
 function isCommand(value: string): value is Command {
   return (COMMANDS as readonly string[]).includes(value);
-}
-
-function parseRunOptions(args: readonly string[]): RunOptions {
-  let port = DEFAULT_PORT;
-  let dbPath = DEFAULT_DB;
-  const pending = [...args];
-
-  while (pending.length > 0) {
-    const flag = pending.shift();
-    if (flag === undefined) {
-      break;
-    }
-
-    if (flag === "--port") {
-      const value = pending.shift();
-      const parsed = value === undefined ? Number.NaN : Number(value);
-      if (!Number.isInteger(parsed) || parsed < 0 || parsed > 65535) {
-        throw new TypeError(`--port expects an integer between 0 and 65535, got '${value ?? ""}'`);
-      }
-      port = parsed;
-      continue;
-    }
-
-    if (flag === "--db") {
-      const value = pending.shift();
-      if (value === undefined || value === "") {
-        throw new TypeError("--db expects a file path");
-      }
-      dbPath = value;
-      continue;
-    }
-
-    throw new TypeError(`unknown option '${flag}'`);
-  }
-
-  return { port, dbPath };
-}
-
-function parseImportOptions(args: readonly string[]): ImportOptions {
-  let dbPath = DEFAULT_DB;
-  const pending = [...args];
-
-  while (pending.length > 0) {
-    const flag = pending.shift();
-    if (flag === undefined) {
-      break;
-    }
-
-    if (flag === "--db") {
-      const value = pending.shift();
-      if (value === undefined || value === "") {
-        throw new TypeError("--db expects a file path");
-      }
-      dbPath = value;
-      continue;
-    }
-
-    throw new TypeError(`unknown option '${flag}'`);
-  }
-
-  return { dbPath };
-}
-
-function agentStorePath(): string {
-  const explicit = process.env["TRACEVAULT_OPENCODE_DB"];
-  if (explicit !== undefined && explicit !== "") {
-    return explicit;
-  }
-
-  const home = process.env["USERPROFILE"] ?? homedir();
-  const candidates = [join(home, OPENCODE_STORE)];
-  const localAppData = process.env["LOCALAPPDATA"];
-  if (localAppData !== undefined && localAppData !== "") {
-    candidates.push(join(localAppData, "opencode", "opencode.db"));
-  }
-
-  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0] ?? OPENCODE_STORE;
-}
-
-function importAgentHistory(store: EventStorePort): string {
-  const source = new OpenCodeStoreSource(agentStorePath());
-  try {
-    if (!source.isAvailable()) {
-      return "no agent store found";
-    }
-    const summary = new HistoryImport(
-      source,
-      store,
-      new EventFactory("session_store"),
-      new ImportedPartMapper(new ToolClassifier(new PayloadDigest()), new DenialSignal()),
-    ).run();
-    if (summary === null) {
-      return "no agent store found";
-    }
-    return `history import: ${summary.events} events from ${summary.sessions} sessions (${summary.skipped} already present)`;
-  } finally {
-    source.close();
-  }
-}
-
-function parseDirOption(args: readonly string[], allowBlock: boolean): { directory: string; block: boolean } {
-  let directory = process.cwd();
-  let block = false;
-  const pending = [...args];
-
-  while (pending.length > 0) {
-    const flag = pending.shift();
-    if (flag === undefined) {
-      break;
-    }
-
-    if (flag === "--dir") {
-      const value = pending.shift();
-      if (value === undefined || value === "") {
-        throw new TypeError("--dir expects a directory path");
-      }
-      directory = value;
-      continue;
-    }
-
-    if (flag === "--block" && allowBlock) {
-      block = true;
-      continue;
-    }
-
-    throw new TypeError(`unknown option '${flag}'`);
-  }
-
-  return { directory, block };
 }
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function errorCode(error: unknown): string | undefined {
-  return typeof error === "object" && error !== null && "code" in error && typeof error.code === "string"
-    ? error.code
-    : undefined;
-}
-
-async function runService(options: RunOptions): Promise<number> {
-  let scanner: WorkflowScannerPort;
-  let configuration: SessionConfiguration;
-  try {
-    scanner = new WorkflowScannerAssembly().fromDirectory(RULES_DIR);
-    configuration = new SessionConfiguration(new StaticScanner(new ConfigRuleLoader().loadDirectory(join(RULES_DIR, "config"))));
-  } catch (error) {
-    process.stderr.write(`tracevault: cannot load rules: ${errorMessage(error)}\n`);
-    return 1;
-  }
-  mkdirSync(dirname(options.dbPath), { recursive: true });
-  const store = new SqliteEventStore(options.dbPath);
-  const factory = new EventFactory();
-  const capture = new PluginHookCapture(
-    new HookPayloadParser(),
-    new ToolClassifier(new PayloadDigest()),
-    factory,
-  );
-  const service = new InvestigationService(
-    capture,
-    store,
-    factory,
-    new TimelineBuilder(),
-    new SessionFindings(scanner),
-    configuration,
-  );
-  const timelineView = new TimelineView();
-  const server = new DashboardServer(
-    service,
-    new SessionListView(),
-    timelineView,
-    new ActivityView(),
-    undefined,
-    new SessionPageView(
-      new SessionHeaderView(),
-      [new FindingsPanelView(), new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView(), new ReplayBarView()],
-      new DetailPaneView(),
-    ),
-  );
-
-  let importLine: string;
-  try {
-    importLine = importAgentHistory(store);
-  } catch (error) {
-    importLine = `history import skipped: ${errorMessage(error)}`;
-  }
-
-  try {
-    const port = await server.listen(options.port);
-    process.stdout.write(
-      `${importLine}\ntracevault listening on http://127.0.0.1:${port}\nevents db: ${options.dbPath}\n`,
-    );
-    return 0;
-  } catch (error) {
-    store.close();
-    if (errorCode(error) === "EADDRINUSE") {
-      process.stderr.write(`tracevault: port ${options.port} is already in use\n`);
-      return 1;
-    }
-    process.stderr.write(`tracevault: failed to start: ${errorMessage(error)}\n`);
-    return 1;
-  }
-}
-
 export async function main(argv: readonly string[]): Promise<number> {
+  const options = new CommandOptions({ port: DEFAULT_PORT, dbPath: DEFAULT_DB, directory: process.cwd(), block: false });
   const first = argv[0];
 
   if (first === "--version" || first === "-v") {
@@ -312,11 +74,11 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   if (first === "import") {
     try {
-      const options = parseImportOptions(argv.slice(1));
-      mkdirSync(dirname(options.dbPath), { recursive: true });
-      const store = new SqliteEventStore(options.dbPath);
+      const { dbPath } = options.parse(argv.slice(1), ["--db"]);
+      mkdirSync(dirname(dbPath), { recursive: true });
+      const store = new SqliteEventStore(dbPath);
       try {
-        process.stdout.write(`${importAgentHistory(store)}\n`);
+        process.stdout.write(`${new HistoryImportCommand().run(store)}\n`);
       } finally {
         store.close();
       }
@@ -329,7 +91,8 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   if (first === "run") {
     try {
-      return await runService(parseRunOptions(argv.slice(1)));
+      const { port, dbPath } = options.parse(argv.slice(1), ["--port", "--db"]);
+      return await new RunCommand().run(port, dbPath);
     } catch (error) {
       process.stderr.write(`tracevault: ${errorMessage(error)}\n\n${USAGE}`);
       return 1;
@@ -338,7 +101,7 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   if (first === "init" || first === "uninstall") {
     try {
-      const { directory, block } = parseDirOption(argv.slice(1), first === "init");
+      const { directory, block } = options.parse(argv.slice(1), first === "init" ? ["--dir", "--block"] : ["--dir"]);
       const summary =
         first === "init"
           ? new InitCommand(directory, block).install()
