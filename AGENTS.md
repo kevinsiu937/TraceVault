@@ -13,17 +13,17 @@ A change that works but violates either one is rejected, not merged with a note 
 
 ## 1. What we are building now
 
-**Phase 1 (backbone and investigation cockpit) and Phase 2 (workflow scanner) are closed.** Their exit verifications are tickets 10 and 33.
+**Phases 1, 2, 3 and 4 are closed.** Their exit verifications are tickets 10, 33, 43 and 51. Phase 5 (the simulator) starts only when Kevin says so; until then, work is limited to fixes and follow-ups he asks for.
 
-**Phase 3 is the static scanner and tool poisoning, nothing more:**
+**Phase 4, the last phase built, is the report generator:**
 
 ```
-recorded configuration and tool descriptions → YAML rules → static findings → the session's Configuration view
+stored events + workflow findings + configuration findings → one self-contained HTML report per session
 ```
 
-The plugin records the configuration OpenCode resolved, secrets removed, and the tools the model is offered. Static rules name their source (OWASP MCP Top 10, OWASP Agentic Top 10, a CVE, or the least-privilege baseline) and the configuration entry or tool behind each finding. The spec is `docs/spec/phase-3.md`.
+Every rule file carries a `recommendation` next to its explanation. The session page and the report list the calls the opt-in guard skipped. The report is rendered by one view, reached from `tracevault report` and from the session page, with identical bytes. The spec is `docs/spec/phase-4.md`; the format is ADR 0005.
 
-**Explicitly out of Phase 3:** reading configuration files from disk, connecting to MCP servers, the MCP proxy, blocking on a static finding, reports, the simulator, stored findings, alerting, a rule editor, ML scoring, auth, user accounts, theming. Building any of them now is a scope violation.
+**Explicitly out of Phase 4:** PDF, Markdown or JSON exports, multi-session reports, redaction of command text, emailing or uploading reports, stored findings, new rules, guarding shell commands, the simulator, auth, user accounts, theming. Building any of them now is a scope violation.
 
 ## 2. OOD — the design rules
 

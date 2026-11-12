@@ -118,6 +118,7 @@ describe("seam A: findings on the session page", () => {
 
     expect(panel).toContain("self-modification");
     expect(panel).toContain("changed its own configuration");
+    expect(panel).toContain('<span class="finding-recommendation">What to do: Review the change');
     expect(panel).toContain(`href="/sessions/${SESSION}?event=${idOf(CONFIG)}"`);
   });
 

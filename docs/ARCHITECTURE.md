@@ -137,7 +137,7 @@ src/service/      InvestigationServicePort, InvestigationService, SessionSummary
 src/dashboard/    DashboardServer, routes/, view/
 src/plugin/       PluginConfig, TraceVaultPlugin, EventForwarder, PermissionRequests, CallGuard,
                   SessionDelivery, SessionPreamble, ConfigRedactor, McpToolRelay
-src/cli/          index, mcp-relay (the relay's entry), RunCommand, InitCommand, AgentConfigFile
+src/cli/          index, mcp-relay (the relay's entry), ServiceAssembly (the service over one database, for run and report), RunCommand, ReportCommand, InitCommand, AgentConfigFile
 
 tests/seams/      capture.seam.test.ts, dashboard.seam.test.ts
 tests/fixtures/   frozen recorded payloads

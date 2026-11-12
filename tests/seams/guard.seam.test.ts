@@ -16,6 +16,7 @@ import { FindingsPanelView } from "../../src/dashboard/FindingsPanelView.js";
 import { SessionHeaderView } from "../../src/dashboard/SessionHeaderView.js";
 import { SessionListView } from "../../src/dashboard/SessionListView.js";
 import { SessionPageView } from "../../src/dashboard/SessionPageView.js";
+import { SkippedCallsView } from "../../src/dashboard/SkippedCallsView.js";
 import { TimelineView } from "../../src/dashboard/TimelineView.js";
 import { CallGuard } from "../../src/plugin/CallGuard.js";
 import { PendingGapStore } from "../../src/plugin/PendingGapStore.js";
@@ -113,22 +114,49 @@ describe("seam B: the opt-in guard refuses a call before it runs", () => {
       data: { path: REFUSED.output.args["filePath"], operation: "write", outcome: "denied", blocked_by: "self-modification" },
     });
 
+    const body = await sessionPage();
+    const row = body.match(new RegExp(`<li class="event" data-event-id="${stored?.id}"[\\s\\S]*?</a>`))?.[0] ?? "";
+    expect(row).toContain('data-outcome="denied"');
+    expect(row).toContain('<span class="flag" data-rule="self-modification"');
+  });
+
+  /** The session page as the dashboard serves it, with the panes that matter here. */
+  async function sessionPage(): Promise<string> {
     const server = new DashboardServer(
       service,
       new SessionListView(),
       new TimelineView(),
       new ActivityView(),
       undefined,
-      new SessionPageView(new SessionHeaderView(), [new FindingsPanelView(), new TimelineView()], new DetailPaneView()),
+      new SessionPageView(new SessionHeaderView(), [new SkippedCallsView(), new FindingsPanelView(), new TimelineView()], new DetailPaneView()),
     );
     try {
-      const body = await (await fetch(`http://127.0.0.1:${await server.listen(0)}/sessions/${SESSION}`)).text();
-      const row = body.match(new RegExp(`<li class="event" data-event-id="${stored?.id}"[\\s\\S]*?</a>`))?.[0] ?? "";
-      expect(row).toContain('data-outcome="denied"');
-      expect(row).toContain('<span class="flag" data-rule="self-modification"');
+      return await (await fetch(`http://127.0.0.1:${await server.listen(0)}/sessions/${SESSION}`)).text();
     } finally {
       await server.close();
     }
+  }
+
+  it("lists the skipped call above the findings, with its rule, what to do, and a link to the event", async () => {
+    await refuse(hooks(), REFUSED.input, REFUSED.output.args);
+    const [stored] = store.listBySession(SESSION);
+
+    const body = await sessionPage();
+    const skipped = body.match(/<section class="skipped"[\s\S]*?<\/section>/)?.[0] ?? "";
+
+    expect(skipped).toContain("1 skipped call");
+    expect(skipped).toContain('data-rule="self-modification"');
+    expect(skipped).toContain(String(REFUSED.output.args["filePath"]));
+    expect(skipped).toContain("What to do: Review the change");
+    expect(skipped).toContain(`href="/sessions/${SESSION}?event=${stored?.id}"`);
+    expect(body.indexOf('<section class="skipped"')).toBeLessThan(body.indexOf('<section class="findings"'));
+  });
+
+  it("lists no skipped calls when a call was refused by OpenCode, not by the guard", async () => {
+    service.recordHookPayload({ hook: "tool.failed", input: { ...REFUSED.input, args: REFUSED.output.args }, error: "permission denied" }, RECEIVED_AT);
+    expect(store.listBySession(SESSION)[0]?.data).toMatchObject({ outcome: "denied" });
+
+    expect(await sessionPage()).not.toContain('<section class="skipped"');
   });
 
   it("refuses a read of a sensitive file", async () => {

@@ -1,10 +1,12 @@
-export type Flag = "--port" | "--db" | "--dir" | "--block";
+export type Flag = "--port" | "--db" | "--dir" | "--block" | "--out";
 
 export interface ParsedOptions {
   readonly port: number;
   readonly dbPath: string;
   readonly directory: string;
   readonly block: boolean;
+  /** Where a report is written; null when not given. */
+  readonly out: string | null;
 }
 
 /** Reads the flags one command accepts; any other flag is an error naming it. */
@@ -12,7 +14,7 @@ export class CommandOptions {
   constructor(private readonly defaults: ParsedOptions) {}
 
   parse(args: readonly string[], accepted: readonly Flag[]): ParsedOptions {
-    let { port, dbPath, directory, block } = this.defaults;
+    let { port, dbPath, directory, block, out } = this.defaults;
     const pending = [...args];
 
     for (let flag = pending.shift(); flag !== undefined; flag = pending.shift()) {
@@ -31,14 +33,16 @@ export class CommandOptions {
         }
         port = parsed;
       } else if (value === undefined || value === "") {
-        throw new TypeError(flag === "--db" ? "--db expects a file path" : "--dir expects a directory path");
+        throw new TypeError(flag === "--dir" ? "--dir expects a directory path" : `${flag} expects a file path`);
       } else if (flag === "--db") {
         dbPath = value;
+      } else if (flag === "--out") {
+        out = value;
       } else {
         directory = value;
       }
     }
 
-    return { port, dbPath, directory, block };
+    return { port, dbPath, directory, block, out };
   }
 }

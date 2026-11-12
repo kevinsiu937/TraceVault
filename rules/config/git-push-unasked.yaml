@@ -6,7 +6,9 @@
 id: git-push-unasked
 version: 1
 severity: medium
-explanation: This agent can push to a remote repository without asking first, so a secret it has read could be published before anyone reviews the commit.
+title: Can publish code online without asking
+explanation: "The agent can publish code to an online repository without asking, so a password it has read could be published before anyone checks."
+recommendation: "Make the agent ask before it publishes code, so a person reviews it first. (For the developer: set bash for git push to ask.)"
 source:
   kind: owasp-agentic
   id: ASI02

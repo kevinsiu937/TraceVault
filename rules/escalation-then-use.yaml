@@ -11,7 +11,9 @@
 id: escalation-then-use
 version: 1
 severity: medium
-explanation: The user approved a command pattern for the rest of the session, and the agent then ran a different command under that approval without being asked.
+title: Used an approval for more than was approved
+explanation: "The person approved one kind of action for the rest of the session, and the agent then used that approval for a different action nobody was asked about."
+recommendation: "Approve one exact action at a time instead of a whole kind of action. (For the developer: approve exact commands rather than patterns, or answer once instead of always.)"
 window: session
 steps:
   - match:

@@ -43,7 +43,9 @@ The last ticket adds an opt-in guard. It refuses a call before it runs when a si
 | `id` | The rule id. It must equal the file name. |
 | `version` | A positive whole number, reported on each finding. |
 | `severity` | `low`, `medium` or `high`. |
-| `explanation` | The sentence a finding shows. |
+| `title` | A few plain words naming the risk for a reader with no IT background. Required (Phase 4, ticket 52). |
+| `explanation` | The sentence a finding shows, in plain words. |
+| `recommendation` | What to do about a finding, shown under the explanation. Required (Phase 4, ticket 45). |
 | `window` | `{ seconds: n }`: the last step must match within n seconds of the match's first event. `session`: no limit inside the session. Required when a rule spans more than one event, through two or more steps or a step that repeats. |
 | `steps` | One or more steps, matched in order. |
 | `blockable` | Optional, `false` by default. `true` lets the opt-in guard refuse a pending call that matches. Allowed only on a rule that matches one event (one step, no repeat) and does not test `outcome`. |

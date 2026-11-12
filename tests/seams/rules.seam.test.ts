@@ -65,6 +65,14 @@ describe("seam C: rule fixtures in, findings out", () => {
         });
       });
 
+      it("says what to do about each finding it raises", () => {
+        const found = scanner.scan(fixture(ruleId, "trigger").events).filter((finding) => finding.ruleId === ruleId);
+
+        expect(found.length).toBeGreaterThan(0);
+        expect(found.every((finding) => finding.recommendation.trim().length > 0)).toBe(true);
+        expect(found.every((finding) => finding.title.trim().length > 0)).toBe(true);
+      });
+
       it("stays silent on its clean fixture", () => {
         const clean = fixture(ruleId, "clean");
 
@@ -112,7 +120,9 @@ describe("seam C: loading rule files", () => {
   const VALID = `id: probe
 version: 1
 severity: low
+title: Probe.
 explanation: A probe rule.
+recommendation: Check the probe.
 steps:
   - match:
       type: { equals: document.access }
@@ -150,6 +160,18 @@ steps:
     write("probe.yaml", VALID.replace("severity: low\n", ""));
 
     expect(load()).toThrow(/probe\.yaml: severity: required/);
+  });
+
+  it("refuses a rule without a plain title", () => {
+    write("probe.yaml", VALID.replace("title: Probe.\n", ""));
+
+    expect(load()).toThrow(/probe\.yaml: title: required/);
+  });
+
+  it.each(["", "recommendation: \"  \"\n"])("refuses a rule without a recommendation", (replacement) => {
+    write("probe.yaml", VALID.replace("recommendation: Check the probe.\n", replacement));
+
+    expect(load()).toThrow(/probe\.yaml: recommendation: /);
   });
 
   it("names the file and the field when a pattern is not usable", () => {
@@ -289,7 +311,7 @@ describe("seam C: matching inside a window", () => {
   function scan(steps: string, events: readonly Event[]): string[][] {
     writeFileSync(
       join(directory, "probe.yaml"),
-      `id: probe\nversion: 1\nseverity: low\nexplanation: A probe rule.\nwindow: { seconds: 60 }\nsteps:\n${steps}`,
+      `id: probe\nversion: 1\nseverity: low\ntitle: Probe.\nexplanation: A probe rule.\nrecommendation: Check the probe.\nwindow: { seconds: 60 }\nsteps:\n${steps}`,
       "utf8",
     );
     return new WorkflowScannerAssembly()

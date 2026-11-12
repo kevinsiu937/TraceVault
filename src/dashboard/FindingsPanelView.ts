@@ -37,7 +37,8 @@ export class FindingsPanelView implements SessionPaneView {
         return `<li class="finding" data-rule="${this.escape(finding.ruleId)}" data-severity="${this.escape(finding.severity)}">
 <span class="severity ${this.escape(finding.severity)}">${this.escape(finding.severity)}</span>
 <span class="flag" data-rule="${this.escape(finding.ruleId)}">⚑ ${this.escape(finding.ruleId)}</span>
-<span class="finding-explanation">${this.escape(finding.explanation)}</span>${finding.matched.length === 0 ? "" : `\n<span class="finding-matched">via ${this.escape(finding.matched.join(", "))}</span>`}
+<span class="finding-explanation">${this.escape(finding.explanation)}</span>
+<span class="finding-recommendation">What to do: ${this.escape(finding.recommendation)}</span>${finding.matched.length === 0 ? "" : `\n<span class="finding-matched">via ${this.escape(finding.matched.join(", "))}</span>`}
 <span class="finding-events">${links}</span>
 </li>`;
       })
@@ -60,6 +61,7 @@ ${items}
 .finding .severity{font:600 11px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;text-transform:uppercase;color:var(--muted)}
 .finding .severity.high{color:var(--err)}
 .finding-explanation{color:var(--text)}
+.finding-recommendation{flex-basis:100%;color:var(--text)}
 .finding-matched{color:var(--muted);font-size:12px}
 .finding-events{display:flex;flex-wrap:wrap;gap:8px;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}`;
   }

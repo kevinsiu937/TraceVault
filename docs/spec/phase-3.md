@@ -80,7 +80,9 @@ A unit table pins this resolution. A new OpenCode version means checking these d
 | `id` | The rule id. It must equal the file name. |
 | `version` | A positive whole number, reported on each finding. |
 | `severity` | `low`, `medium` or `high`. |
-| `explanation` | The sentence a finding shows. |
+| `title` | A few plain words naming the risk for a reader with no IT background. Required (Phase 4, ticket 52). |
+| `explanation` | The sentence a finding shows, in plain words. |
+| `recommendation` | What to do about a finding, shown under the explanation. Required (Phase 4, ticket 45). |
 | `source` | `{ kind, id, title }`. `kind` is `owasp-mcp`, `owasp-agentic`, `cve` or `baseline`. `id` is the published identifier, such as `MCP03:2025`, `ASI05` or `CVE-2025-53773`. `baseline` has no id. |
 | `subject` | What each finding is about: `agent`, `mcp-server` or `tool`. The rule runs once per subject of that kind. |
 | `when` | One or more checks, all of which must hold for the subject. |

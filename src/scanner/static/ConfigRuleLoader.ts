@@ -9,7 +9,7 @@ import { RuleYaml } from "../rules/RuleYaml.js";
 import { type ConfigAlternative, type ConfigCheck, ConfigRule, type MatchFact } from "./ConfigRule.js";
 import type { ConfigRuleSet } from "./StaticScanner.js";
 
-const RULE_KEYS = ["id", "version", "severity", "explanation", "source", "subject", "when"];
+const RULE_KEYS = ["id", "version", "severity", "title", "explanation", "recommendation", "source", "subject", "when"];
 const SEVERITIES: readonly Severity[] = ["low", "medium", "high"];
 const SOURCE_KINDS: readonly RuleSourceKind[] = ["owasp-mcp", "owasp-agentic", "cve", "baseline"];
 const SUBJECTS: readonly ConfigSubjectKind[] = ["agent", "mcp-server", "tool"];
@@ -57,9 +57,11 @@ export class ConfigRuleLoader {
       throw new RuleLoadError(file, "version", "must be a positive integer");
     }
     const severity = this.oneOf(fields, "severity", SEVERITIES, file) as Severity;
+    const title = this.string(fields, "title", file);
     const explanation = this.string(fields, "explanation", file);
+    const recommendation = this.string(fields, "recommendation", file);
     const subject = this.oneOf(fields, "subject", SUBJECTS, file) as ConfigSubjectKind;
-    return new ConfigRule(id, version, severity, explanation, this.source(fields, file), subject, this.when(fields, file, subject));
+    return new ConfigRule(id, version, severity, title, explanation, recommendation, this.source(fields, file), subject, this.when(fields, file, subject));
   }
 
   private source(fields: Fields, file: string): RuleSource {

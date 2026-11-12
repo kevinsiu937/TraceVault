@@ -15,4 +15,6 @@ export interface TimelineEntry {
   readonly detail: string;
   /** Rule ids of the findings that name this event, scanned over the whole session. */
   readonly flags: readonly string[];
+  /** The rule the opt-in guard refused this call under, or null when the guard did not skip it. */
+  readonly blockedBy: string | null;
 }

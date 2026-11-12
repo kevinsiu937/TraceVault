@@ -19,7 +19,9 @@
 id: destructive-action
 version: 1
 severity: high
-explanation: The user said not to delete anything, and the agent deleted something later in the session.
+title: Deleted something after being told not to
+explanation: "The person said not to delete anything, and the agent deleted something later in the same session."
+recommendation: "Check what was deleted and get it back from a backup. (For the developer: restore it from version control, and set bash for rm and similar commands to ask.)"
 window: session
 steps:
   - match:

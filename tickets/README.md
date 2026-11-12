@@ -69,6 +69,23 @@ Spec: `docs/spec/phase-3.md`, approved 11 Nov 2026.
 | 42 | Tool poisoning: hidden instructions and invisible text | 36, 41 | done |
 | 43 | Phase 3 exit verification | 36, 37, 38, 39, 40, 42 | done |
 
+## Phase 4: report generator
+
+Spec: `docs/spec/phase-4.md`, approved 12 Nov 2026.
+
+**Phase 4 is complete.** Every ticket from 45 to 52 is done. Phase 5 starts only when Kevin says so. Format: `docs/adr/0005-report-format.md`.
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 45 | Every finding says what to do about it | Phase 4 spec approved | done |
+| 46 | Skipped calls at the top of the session page | 45 | done |
+| 47 | Report tracer bullet: one session, one HTML file | Phase 4 spec approved | done |
+| 48 | Report: skipped calls and workflow findings | 45, 46, 47 | done |
+| 49 | Report: configuration findings | 45, 47 | done |
+| 50 | "Export report" on the session page | 47 | done |
+| 51 | Phase 4 exit verification | 46, 48, 49, 50, 52 | done |
+| 52 | A report anyone can read (found by the exit run) | 48, 49 | done |
+
 ## Dependency shape
 
 ### Phase 1
@@ -128,6 +145,19 @@ Spec: `docs/spec/phase-3.md`, approved 11 Nov 2026.
 ```
 
 35 is the capture tracer bullet: the configuration reaches a session's Configuration view with secrets removed, before any rule exists. 36 is the scanner's tracer bullet: one rule through the shared rule primitives, effective permissions, loader, scanner, service, view and Seam C. 37 to 40 are one rule family each, on that path. 41 and 42 carry tool poisoning, which depends on a probe of what OpenCode shows plugins about MCP tools.
+
+### Phase 4
+
+```
+45 ─┬─► 46 ─────────┐
+    ├─────────► 48 ─┤
+    └─────────► 49 ─┼─► 51
+47 ─┬─────────► 48  │
+    ├─────────► 49  │
+    └─► 50 ─────────┘
+```
+
+45 and 47 are the two starting points: the recommendation reaches the dashboard, and an empty report reaches a file. 48 and 49 fill the report. 50 adds the link, sharing the renderer with the CLI.
 
 ## Rules for whoever picks these up
 

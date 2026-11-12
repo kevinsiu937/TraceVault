@@ -5,7 +5,9 @@
 id: shell-unrestricted
 version: 1
 severity: high
-explanation: This agent can run shell commands that delete files or execute arbitrary code without asking first.
+title: Can run any command without asking
+explanation: "The agent can run commands on the computer without asking, including commands that delete files or start other programs."
+recommendation: "Make the agent ask before it runs commands on the computer. (For the developer: set bash to ask, and allow only the commands this agent needs.)"
 source:
   kind: owasp-agentic
   id: ASI05

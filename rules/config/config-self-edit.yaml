@@ -6,7 +6,9 @@
 id: config-self-edit
 version: 1
 severity: high
-explanation: This agent can change its own configuration or standing instructions without asking, so injected text could widen its own permissions.
+title: Can change its own settings without asking
+explanation: "The agent can change its own settings or standing instructions without asking. Hidden text in a web page or file could then trick it into giving itself more freedom."
+recommendation: "Make the agent ask before it changes its own settings or instructions. (For the developer: set edit to ask for opencode.json, the .opencode folder and AGENTS.md.)"
 source:
   kind: cve
   id: CVE-2025-53773

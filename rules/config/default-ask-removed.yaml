@@ -7,7 +7,9 @@
 id: default-ask-removed
 version: 1
 severity: medium
-explanation: The configuration switched off a question OpenCode asks by default, so the agent no longer stops for it.
+title: A built-in safety question was switched off
+explanation: "OpenCode normally asks a person before this kind of action. The settings switched that question off, so the agent no longer stops to ask."
+recommendation: "Switch the safety question back on unless the agent truly needs it off. (For the developer: remove the allow entry so OpenCode asks again.)"
 source:
   kind: baseline
   title: Least-privilege baseline

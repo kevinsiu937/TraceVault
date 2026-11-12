@@ -7,7 +7,7 @@
  *   uninstall   remove TraceVault and restore the previous configuration
  *   import      import every session already in the agent's own store
  *   run         start the local service (capture + scanners + dashboard on 127.0.0.1)
- *   report      produce a report from stored events
+ *   report      write one session as a self-contained HTML report
  *
  * Only argument parsing and exit codes belong here. Behaviour lives in the
  * component modules so it can be tested without spawning a process.
@@ -20,6 +20,7 @@ import { SqliteEventStore } from "../store/SqliteEventStore.js";
 import { CommandOptions } from "./CommandOptions.js";
 import { HistoryImportCommand } from "./HistoryImportCommand.js";
 import { InitCommand } from "./InitCommand.js";
+import { ReportCommand } from "./ReportCommand.js";
 import { RunCommand } from "./RunCommand.js";
 import { UninstallCommand } from "./UninstallCommand.js";
 
@@ -33,7 +34,8 @@ Usage:
   tracevault uninstall [--dir <path>]     remove TraceVault and restore the configuration
   tracevault import [--db <path>]         import the agent's existing session history
   tracevault run [--port <n>] [--db <path>]   start the local service
-  tracevault report [--session <id>]   generate a report
+  tracevault report <session-id> [--db <path>] --out <file>
+                                          write one session as a self-contained HTML report
   tracevault --version
   tracevault --help
 `;
@@ -54,7 +56,7 @@ function errorMessage(error: unknown): string {
 }
 
 export async function main(argv: readonly string[]): Promise<number> {
-  const options = new CommandOptions({ port: DEFAULT_PORT, dbPath: DEFAULT_DB, directory: process.cwd(), block: false });
+  const options = new CommandOptions({ port: DEFAULT_PORT, dbPath: DEFAULT_DB, directory: process.cwd(), block: false, out: null });
   const first = argv[0];
 
   if (first === "--version" || first === "-v") {
@@ -114,11 +116,21 @@ export async function main(argv: readonly string[]): Promise<number> {
     }
   }
 
-  // report belongs to a later ticket. Fail loudly rather than pretend.
-  process.stderr.write(
-    `tracevault: '${first}' is not implemented yet — the event schema must be approved first (docs/EVENT-SCHEMA.md)\n`,
-  );
-  return 2;
+  try {
+    const sessionId = argv[1];
+    if (sessionId === undefined || sessionId.startsWith("-")) {
+      throw new TypeError("report expects a session id");
+    }
+    const { dbPath, out } = options.parse(argv.slice(2), ["--db", "--out"]);
+    if (out === null) {
+      throw new TypeError("report expects --out <file>");
+    }
+    process.stdout.write(`${new ReportCommand().run(sessionId, dbPath, out)}\n`);
+    return 0;
+  } catch (error) {
+    process.stderr.write(`tracevault: ${errorMessage(error)}\n\n${USAGE}`);
+    return 1;
+  }
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {

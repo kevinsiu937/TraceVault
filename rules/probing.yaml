@@ -4,7 +4,9 @@
 id: probing
 version: 1
 severity: medium
-explanation: The agent kept attempting calls it was refused, which can mean it is probing for a way around its permissions.
+title: Kept trying things it was refused
+explanation: "The agent kept trying actions it had been refused. This can mean it was looking for a way around its limits."
+recommendation: "Look at what the agent kept trying to do. Stop it if it was trying to get around its limits. (For the developer: read the refused calls in the timeline.)"
 window: { seconds: 300 }
 steps:
   - repeat: 3

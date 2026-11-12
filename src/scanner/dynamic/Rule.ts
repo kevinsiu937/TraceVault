@@ -8,7 +8,11 @@ export class Rule {
     readonly id: string,
     readonly version: number,
     readonly severity: Severity,
+    /** A few plain words a reader with no IT background understands. */
+    readonly title: string,
     readonly explanation: string,
+    /** What the reader should do about a finding, written next to the explanation. */
+    readonly recommendation: string,
     readonly steps: readonly [RuleStep, ...RuleStep[]],
     /** Null only for a rule that matches one event, where a window means nothing. */
     readonly window: DurationWindow | null,

@@ -6,7 +6,7 @@ import { RuleYaml } from "../rules/RuleYaml.js";
 import type { RuleStep } from "./RuleStep.js";
 import type { RuleStepLoader } from "./RuleStepLoader.js";
 
-const RULE_KEYS = ["id", "version", "severity", "explanation", "window", "steps", "blockable"] as const;
+const RULE_KEYS = ["id", "version", "severity", "title", "explanation", "recommendation", "window", "steps", "blockable"] as const;
 const SEVERITIES: readonly Severity[] = ["low", "medium", "high"];
 
 type Fields = Record<string, unknown>;
@@ -43,13 +43,15 @@ export class RuleLoader {
     if (!(SEVERITIES as readonly string[]).includes(severity)) {
       throw new RuleLoadError(file, "severity", `must be one of ${SEVERITIES.join(", ")}`);
     }
+    const title = this.string(fields, "title", file);
     const explanation = this.string(fields, "explanation", file);
+    const recommendation = this.string(fields, "recommendation", file);
     const steps = this.stepList(fields, file);
     const spansEvents = steps.length > 1 || steps.some((step) => step.repeat > 1);
     const window = this.window(fields, file, spansEvents);
     const blockable = this.blockable(fields, file, spansEvents || steps.some((step) => step.tests("outcome")));
 
-    return new Rule(id, version, severity as Severity, explanation, steps, window, blockable);
+    return new Rule(id, version, severity as Severity, title, explanation, recommendation, steps, window, blockable);
   }
 
   private stepList(fields: Fields, file: string): readonly [RuleStep, ...RuleStep[]] {

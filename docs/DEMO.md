@@ -1,6 +1,6 @@
 # TraceVault demo
 
-Three parts, one per phase: capture and the timeline (Phase 1), workflow findings (Phase 2), configuration findings (Phase 3). Node 24+, from a clean clone. Nothing leaves the machine except the prompts sent to the model provider in parts 2 and 3.
+Four parts, one per phase: capture and the timeline (Phase 1), workflow findings (Phase 2), configuration findings (Phase 3), the session report (Phase 4). Node 24+, from a clean clone. Nothing leaves the machine except the prompts sent to the model provider in parts 2 and 3.
 
 # Phase 1 — capture, store, list, timeline
 
@@ -76,7 +76,7 @@ npm run build
 npm test
 ```
 
-31 test files, 464 tests (12 Nov 2026).
+32 test files, 518 tests (12 Nov 2026).
 
 ## Phase 1 exit checklist (recorded 25 Oct 2026)
 
@@ -240,3 +240,44 @@ These are listed in `docs/spec/phase-3.md` under Known Blind Spots:
 - Tool text is checked for local MCP servers only, not for remote servers, built-in tools or plugin tools.
 - Tool-poisoning patterns are easy to evade.
 - OpenCode's defaults were read from version 1.18.32. A later version can change them.
+
+# Phase 4 — the session report
+
+**What it shows:** one session as one HTML file that someone with no IT background can read without TraceVault. It opens with "In short", then lists the actions the safety check skipped, what the agent did that needs a look, what its settings allow without asking, everything that happened grouped by kind, any gap in the record, and a glossary. Each risk has a plain title, says what to do, and links to the recorded actions behind it.
+
+Run the Phase 1 demo above first, so the database holds a real session. Then find its id on the session list, or with `sqlite3 data/demo.db "SELECT DISTINCT session_id FROM events"`.
+
+**From the CLI:**
+
+```bash
+node dist/cli/index.js report <session-id> --db data/demo.db --out /tmp/tv-report.html
+open /tmp/tv-report.html
+```
+
+The command never overwrites a file and never creates a database. It fails with a message for an unknown session.
+
+**From the dashboard:** open the session and click "Export report" in the header. The download is byte-for-byte the file the CLI writes.
+
+**Check:**
+- The header names the session, agent, start, end and event count.
+- "In short" says in a few sentences what happened.
+- Every risk has a plain title and "What to do", or the section says plainly that nothing matched. A session without recorded settings says they are not known, never that they were safe.
+- Each event link jumps to its row in "Events by type".
+- The file opens with the network off, and the browser's print saves it as PDF.
+
+**Last run (12 Nov 2026):**
+- OpenCode 1.18.32 and `deepseek/deepseek-flash`, the Phase 1 prompt above, in a workspace installed with `init --block`.
+- The session holds the shell call, the read and write of `demo.txt` and the fetch, all done. No workflow rule matched; the report says so.
+- The workspace has no `permission` block, so OpenCode's permissive defaults apply. The report lists 3 risks in its settings (`shell-unrestricted`, `read-and-egress`, `config-self-edit`), each naming the built-in agents it applies to.
+- After reading the first version, Kevin asked for a report someone with no IT background can follow, then for a shorter one with details behind "Explain more", then for a cleaner layout (ticket 52). He confirmed the final version is easy to follow.
+- The CLI file and the "Export report" download were byte-for-byte identical, with no script, stylesheet link or external URL.
+- An earlier session in the same workspace had an edit of `opencode.json` skipped by the guard; its report lists that call first, under "1 skipped call".
+
+**Titles and recommendations** live in each rule file as `title:` and `recommendation:`, beside `explanation:`. The session page shows them too, and lists skipped calls above the findings when `init --block` is on.
+
+## Phase 4 known limitations
+
+These are listed in `docs/spec/phase-4.md` under Known Blind Spots:
+- The report holds command text and paths as recorded. Sharing it shares them.
+- A recommendation is general advice per rule, not advice about this session.
+- The header names the rule-set digest only when some rule matched.

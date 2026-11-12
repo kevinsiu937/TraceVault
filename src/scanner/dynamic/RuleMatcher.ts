@@ -122,7 +122,9 @@ export class RuleMatcher {
       ruleVersion: this.rule.version,
       ruleSetDigest: this.ruleSetDigest,
       severity: this.rule.severity,
+      title: this.rule.title,
       explanation: this.rule.explanation,
+      recommendation: this.rule.recommendation,
       eventIds: match.events.map((event) => event.id),
       matched,
     };

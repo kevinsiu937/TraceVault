@@ -82,6 +82,15 @@ describe("seam C: a configuration in, static findings out", () => {
         expect(found).toEqual(trigger.expect);
       });
 
+      it("says what to do about each finding it raises", () => {
+        const trigger = fixture(ruleId, "trigger");
+        const found = scanner.scan(snapshot(trigger.config), toolLists(trigger)).filter((finding) => finding.ruleId === ruleId);
+
+        expect(found.length).toBeGreaterThan(0);
+        expect(found.every((finding) => finding.recommendation.trim().length > 0)).toBe(true);
+        expect(found.every((finding) => finding.title.trim().length > 0)).toBe(true);
+      });
+
       it("stays silent on its clean fixture", () => {
         const clean = fixture(ruleId, "clean");
 
@@ -100,7 +109,9 @@ describe("seam C: a configuration in, static findings out", () => {
       ruleVersion: 1,
       ruleSetDigest: expect.stringMatching(/^sha256:[0-9a-f]{64}$/),
       severity: "high",
+      title: "Can run any command without asking",
       explanation: expect.any(String),
+      recommendation: expect.stringContaining("set bash to ask"),
       source: { kind: "owasp-agentic", id: "ASI05", title: "Unexpected Code Execution" },
       subjectKind: "agent",
       subject: "build",
@@ -185,7 +196,9 @@ describe("seam C: the static rule loader", () => {
   const VALID = `id: probe
 version: 1
 severity: low
+title: Probe.
 explanation: A probe rule.
+recommendation: Check the probe.
 source: { kind: baseline, title: Least privilege }
 subject: agent
 when:
@@ -217,6 +230,9 @@ when:
   it.each([
     ["an unknown key", `${VALID}owner: someone\n`, /probe\.yaml: owner: unknown key/],
     ["a missing field", VALID.replace("severity: low\n", ""), /probe\.yaml: severity: required/],
+    ["a missing title", VALID.replace("title: Probe.\n", ""), /probe\.yaml: title: required/],
+    ["a missing recommendation", VALID.replace("recommendation: Check the probe.\n", ""), /probe\.yaml: recommendation: required/],
+    ["an empty recommendation", VALID.replace("recommendation: Check the probe.", 'recommendation: "  "'), /probe\.yaml: recommendation: /],
     ["an id that is not the file name", VALID.replace("id: probe", "id: other"), /probe\.yaml: id: must match the file name/],
     ["an unknown source kind", VALID.replace("kind: baseline", "kind: blog"), /probe\.yaml: source\.kind: /],
     ["a published source without its id", VALID.replace("kind: baseline", "kind: cve"), /probe\.yaml: source\.id: required/],

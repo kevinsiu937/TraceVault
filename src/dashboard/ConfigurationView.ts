@@ -73,7 +73,8 @@ ${body}
           .map((item) => `<li>${item.label === undefined ? "" : `${this.escape(item.label)}: `}<code>${this.escape(item.value)}</code>, from <code>${this.escape(item.entry)}</code></li>`)
           .join("");
         return `<li class="config-finding" data-rule="${this.escape(finding.ruleId)}" data-severity="${finding.severity}"><span class="pill">${finding.severity}</span> <strong>${this.escape(finding.ruleId)}</strong> · ${this.escape(source)}
-<p>${subject} <code>${this.escape(finding.subject)}</code>. ${this.escape(finding.explanation)}</p><ul>${evidence}</ul></li>`;
+<p>${subject} <code>${this.escape(finding.subject)}</code>. ${this.escape(finding.explanation)}</p>
+<p class="config-recommendation">What to do: ${this.escape(finding.recommendation)}</p><ul>${evidence}</ul></li>`;
       })
       .join("\n")}</ol>`;
   }

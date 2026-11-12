@@ -29,7 +29,9 @@ export interface ConfigFinding {
   readonly ruleVersion: number;
   readonly ruleSetDigest: string;
   readonly severity: Severity;
+  readonly title: string;
   readonly explanation: string;
+  readonly recommendation: string;
   readonly source: RuleSource;
   readonly subjectKind: ConfigSubjectKind;
   /** The agent, the MCP server, or the tool as `<server>/<tool>`, the finding is about. */

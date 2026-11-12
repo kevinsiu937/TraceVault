@@ -1,7 +1,9 @@
 id: shell-sensitive-read
 version: 1
 severity: low
-explanation: A shell command named a file that holds secrets or credentials, such as cat .env. The file tools are checked by sensitive-read; this catches the same files reached through the shell. It reads the command's words, so it can be evaded and can name a file the command never opened.
+title: Named a password or key file in a command
+explanation: "A command the agent ran named a file that holds passwords or keys, for example to show it on screen. TraceVault reads the words of the command, so the command may not really have opened the file."
+recommendation: "Check whether the command really opened the file and where its output went. (For the developer: set bash to ask for commands that name secret files.)"
 steps:
   - match:
       type: { equals: hook.script }

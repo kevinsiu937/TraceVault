@@ -5,7 +5,9 @@
 id: read-and-egress
 version: 1
 severity: high
-explanation: This agent can read a secret file and send data off the machine without asking, which is all an exfiltration chain needs.
+title: Can read secrets and send data out without asking
+explanation: "The agent can both read password or key files and send data off the computer without asking. That is all it takes to leak a secret."
+recommendation: "Make the agent ask before it reads password or key files, or before it sends data out. (For the developer: set read for secret files, or the egress tools, to ask or deny.)"
 source:
   kind: owasp-agentic
   id: ASI02

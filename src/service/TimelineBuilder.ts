@@ -31,6 +31,7 @@ export class TimelineBuilder {
       gapTo: event.type === "capture.gap" ? event.data.to : null,
       detail: JSON.stringify(event, null, 2),
       flags: [],
+      blockedBy: "blocked_by" in event.data && typeof event.data.blocked_by === "string" ? event.data.blocked_by : null,
     };
   }
 }

@@ -9,7 +9,9 @@
 id: exfiltration-chain
 version: 1
 severity: high
-explanation: A sensitive file was read and then data could have left the machine. Treat it as possible exfiltration and check what was sent.
+title: Read a secret, then sent data out
+explanation: "The agent read a file holding passwords or keys, then did something that can send data off the computer. The secret may have left the computer, so check what was sent."
+recommendation: "Find out what was sent and where. If a password or key may have left the computer, change it now. (For the developer: check the egress call, and rotate the secret.)"
 window: { seconds: 1800 }
 steps:
   - any:

@@ -31,7 +31,7 @@ export class SessionHeaderView implements SessionHeaderRenderer {
 
     return `<header class="cockpit-head">
 <div class="head-main">
-<a class="back" href="/">← All sessions</a>${parent}<a class="config-link" href="/sessions/${encodeURIComponent(context.sessionId)}/config">${configLabel}</a>
+<a class="back" href="/">← All sessions</a>${parent}<a class="config-link" href="/sessions/${encodeURIComponent(context.sessionId)}/config">${configLabel}</a><a class="report-link" href="/sessions/${encodeURIComponent(context.sessionId)}/report">Export report</a>
 <h1>${this.escape(title)}</h1>
 <p class="head-sub"><code>${this.escape(context.sessionId)}</code> · ${this.escape(context.summary.agentName)} · started <time datetime="${this.escape(started)}">${this.escape(this.wallClock(started))}</time> · ${this.totalDuration(context.allEntries)}</p>
 <ul class="stats">
@@ -52,8 +52,8 @@ ${this.step("Next", "next", context.nextSessionId, "Next →")}
 .cockpit-head .back{margin:0 0 10px}
 .cockpit-head .parent-link{display:inline-block;margin:0 0 10px 12px;font-size:13px;color:var(--accent)}
 .cockpit-head .parent-link:hover{text-decoration:underline}
-.cockpit-head .config-link{display:inline-block;margin:0 0 10px 12px;font-size:13px;color:var(--accent)}
-.cockpit-head .config-link:hover{text-decoration:underline}
+.cockpit-head .config-link,.cockpit-head .report-link{display:inline-block;margin:0 0 10px 12px;font-size:13px;color:var(--accent)}
+.cockpit-head .config-link:hover,.cockpit-head .report-link:hover{text-decoration:underline}
 .cockpit-head h1{font-size:26px;line-height:1.2;letter-spacing:-.02em;font-weight:600;margin:0 0 6px}
 .head-sub{color:var(--muted);font-size:13px;margin:0}
 .head-sub code{font-size:12px}

@@ -4,6 +4,7 @@ import type { IncomingMessage, Server, ServerResponse } from "node:http";
 import type { InvestigationServicePort } from "../service/InvestigationServicePort.js";
 import type { ActivityView } from "./ActivityView.js";
 import { ConfigurationView } from "./ConfigurationView.js";
+import { ReportView } from "./ReportView.js";
 import { DetailPaneView } from "./DetailPaneView.js";
 import { EventStream } from "./EventStream.js";
 import { FilterParams } from "./FilterParams.js";
@@ -24,6 +25,7 @@ const LOOPBACK = "127.0.0.1";
 const SESSION_PATH = /^\/sessions\/([^/]+)$/;
 const SESSION_EVENTS_PATH = /^\/sessions\/([^/]+)\/events$/;
 const SESSION_CONFIG_PATH = /^\/sessions\/([^/]+)\/config$/;
+const SESSION_REPORT_PATH = /^\/sessions\/([^/]+)\/report$/;
 
 export class DashboardServer {
   private server: Server | null = null;
@@ -39,6 +41,7 @@ export class DashboardServer {
     private readonly filterParams: FilterParams = new FilterParams(),
     sessionPageView?: SessionPageView,
     private readonly configurationView: ConfigurationView = new ConfigurationView(),
+    private readonly reportView: ReportView = new ReportView(),
   ) {
     this.eventStream = new EventStream(service, timelineView);
     this.sessionPageView = sessionPageView ?? new SessionPageView(
@@ -158,6 +161,22 @@ export class DashboardServer {
         return;
       }
 
+      const reportMatch = SESSION_REPORT_PATH.exec(path);
+      if (reportMatch !== null) {
+        if (this.refuseNonGet(request, response)) {
+          return;
+        }
+        const sessionId = decodeURIComponent(reportMatch[1] ?? "");
+        if (!this.service.hasSession(sessionId)) {
+          this.send(response, 404, "session not found", "text/plain; charset=utf-8");
+          return;
+        }
+        // The id goes into a header, so only safe characters reach the file name.
+        const file = `tracevault-report-${sessionId.replace(/[^A-Za-z0-9_-]/g, "_")}.html`;
+        this.send(response, 200, this.reportView.render(this.service, sessionId), "text/html; charset=utf-8", { "content-disposition": `attachment; filename="${file}"` });
+        return;
+      }
+
       const sessionMatch = SESSION_PATH.exec(path);
       if (sessionMatch !== null) {
         if (this.refuseNonGet(request, response)) {
@@ -249,8 +268,9 @@ export class DashboardServer {
     return true;
   }
 
-  private send(response: ServerResponse, status: number, body: string, contentType: string): void {
+  private send(response: ServerResponse, status: number, body: string, contentType: string, headers: Record<string, string> = {}): void {
     response.writeHead(status, {
+      ...headers,
       "content-type": contentType,
       "content-length": Buffer.byteLength(body),
       "cache-control": "no-store",

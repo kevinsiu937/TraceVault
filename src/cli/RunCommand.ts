@@ -1,15 +1,11 @@
 import { mkdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { HookPayloadParser } from "../capture/HookPayloadParser.js";
-import { PayloadDigest } from "../capture/PayloadDigest.js";
-import { PluginHookCapture } from "../capture/PluginHookCapture.js";
-import { ToolClassifier } from "../capture/ToolClassifier.js";
+import { dirname } from "node:path";
 import { ActivityView } from "../dashboard/ActivityView.js";
 import { DashboardServer } from "../dashboard/DashboardServer.js";
 import { DetailPaneView } from "../dashboard/DetailPaneView.js";
 import { FileRailView } from "../dashboard/FileRailView.js";
 import { FindingsPanelView } from "../dashboard/FindingsPanelView.js";
+import { SkippedCallsView } from "../dashboard/SkippedCallsView.js";
 import { GraphView } from "../dashboard/GraphView.js";
 import { ReplayBarView } from "../dashboard/ReplayBarView.js";
 import { SessionHeaderView } from "../dashboard/SessionHeaderView.js";
@@ -18,37 +14,21 @@ import { SessionPageView } from "../dashboard/SessionPageView.js";
 import { SubagentPortalView } from "../dashboard/SubagentPortalView.js";
 import { TimelineView } from "../dashboard/TimelineView.js";
 import { WaterfallView } from "../dashboard/WaterfallView.js";
-import type { WorkflowScannerPort } from "../scanner/dynamic/WorkflowScannerPort.js";
-import { ConfigRuleLoader } from "../scanner/static/ConfigRuleLoader.js";
-import { StaticScanner } from "../scanner/static/StaticScanner.js";
-import { EventFactory } from "../schema/EventFactory.js";
-import { InvestigationService } from "../service/InvestigationService.js";
-import { SessionConfiguration } from "../service/SessionConfiguration.js";
-import { SessionFindings } from "../service/SessionFindings.js";
-import { TimelineBuilder } from "../service/TimelineBuilder.js";
-import { SqliteEventStore } from "../store/SqliteEventStore.js";
 import { HistoryImportCommand } from "./HistoryImportCommand.js";
-import { WorkflowScannerAssembly } from "./WorkflowScannerAssembly.js";
-
-const RULES_DIR = fileURLToPath(new URL("../../rules", import.meta.url));
+import { ServiceAssembly } from "./ServiceAssembly.js";
 
 /** Assembles the local service (capture, scanners, dashboard) and starts it on 127.0.0.1. */
 export class RunCommand {
   async run(port: number, dbPath: string): Promise<number> {
-    let scanner: WorkflowScannerPort;
-    let configuration: SessionConfiguration;
+    let assembly: ServiceAssembly;
     try {
-      scanner = new WorkflowScannerAssembly().fromDirectory(RULES_DIR);
-      configuration = new SessionConfiguration(new StaticScanner(new ConfigRuleLoader().loadDirectory(join(RULES_DIR, "config"))));
+      assembly = new ServiceAssembly();
     } catch (error) {
       process.stderr.write(`tracevault: cannot load rules: ${this.message(error)}\n`);
       return 1;
     }
     mkdirSync(dirname(dbPath), { recursive: true });
-    const store = new SqliteEventStore(dbPath);
-    const factory = new EventFactory();
-    const capture = new PluginHookCapture(new HookPayloadParser(), new ToolClassifier(new PayloadDigest()), factory);
-    const service = new InvestigationService(capture, store, factory, new TimelineBuilder(), new SessionFindings(scanner), configuration);
+    const { service, store } = assembly.open(dbPath);
     const timelineView = new TimelineView();
     const server = new DashboardServer(
       service,
@@ -58,7 +38,7 @@ export class RunCommand {
       undefined,
       new SessionPageView(
         new SessionHeaderView(),
-        [new FindingsPanelView(), new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView(), new ReplayBarView()],
+        [new SkippedCallsView(), new FindingsPanelView(), new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView(), new ReplayBarView()],
         new DetailPaneView(),
       ),
     );

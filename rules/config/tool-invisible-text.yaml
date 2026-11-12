@@ -4,7 +4,9 @@
 id: tool-invisible-text
 version: 1
 severity: high
-explanation: Possible tool poisoning. The text this tool shows the model contains characters that are invisible on screen.
+title: An add-on tool contains invisible text
+explanation: "This add-on's tool may be poisoned. Its description, which the AI reads, contains characters that do not show on screen."
+recommendation: "Stop using this add-on and have someone check its text for hidden characters. (For the developer: disable the MCP server and inspect the description.)"
 source:
   kind: owasp-mcp
   id: "MCP03:2025"

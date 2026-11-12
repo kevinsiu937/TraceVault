@@ -300,6 +300,7 @@ describe("seam A: the Configuration view", () => {
     expect(finding).toContain("<code>build</code>");
     expect(finding).toContain("<code>/agent/build/permission/bash</code>");
     expect(finding).toContain("<code>rm -rf /</code>");
+    expect(finding).toContain('<p class="config-recommendation">What to do: Make the agent ask before it runs commands');
   });
 
   it("says when a finding comes from OpenCode's defaults rather than the configuration", async () => {

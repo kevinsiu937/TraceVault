@@ -6,7 +6,9 @@
 id: tool-hidden-instructions
 version: 1
 severity: high
-explanation: Possible tool poisoning. The text this tool shows the model contains an instruction aimed at the model.
+title: An add-on tool may carry hidden instructions
+explanation: "This add-on's tool may be poisoned. Its description, which the AI reads, contains instructions aimed at the AI."
+recommendation: "Stop using this add-on until someone has checked where its text came from. (For the developer: read the tool's full description, and disable the MCP server until you trust it.)"
 source:
   kind: owasp-mcp
   id: "MCP03:2025"

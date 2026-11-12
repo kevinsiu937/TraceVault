@@ -31,6 +31,8 @@ Each later phase starts only when the previous phase's exit criteria are met.
 
 ## Phase 4 — Report Generator
 
+**Status:** closed 12 Nov 2026 (`docs/spec/phase-4.md`, ADR 0005); tickets 45 to 52, exit verification ticket 51.
+
 **Goal:** one exported document per session, readable without the dashboard.
 
 - Sectioned by event type, findings linked to the events behind them, gaps rendered explicitly.

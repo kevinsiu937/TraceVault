@@ -6,7 +6,9 @@
 id: sensitive-read
 version: 1
 severity: low
-explanation: The agent read a file that holds secrets or credentials.
+title: Read a file holding passwords or keys
+explanation: "The agent read a file that holds passwords or keys."
+recommendation: "Check whether the agent needed this file. Keep passwords and keys out of the agent's reach. (For the developer: move secrets out of the project, or set read for this path to ask or deny.)"
 blockable: true
 steps:
   - match:
