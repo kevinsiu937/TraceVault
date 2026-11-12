@@ -18,7 +18,7 @@ PORT=4329
 MODEL=${TRACEVAULT_PROBE_MODEL:-opencode/big-pickle}
 OPENCODE=${OPENCODE:-opencode}
 mkdir -p "$OUT"
-OUT=$(cd "$OUT" && pwd)
+OUT=$(cd "$OUT" && pwd -P)
 for ENTRY in "$OUT"/* "$OUT"/.[!.]* "$OUT"/..?*; do
   if [ -e "$ENTRY" ] || [ -L "$ENTRY" ]; then
     echo "Refusing to run: output must be a new or empty directory." >&2
@@ -44,6 +44,7 @@ cat > "$W/opencode.json" <<JSON
     "bash": {
       "*": "ask",
       "ls": "allow",
+      "ls *": "allow",
       "curl -s http://127.0.0.1:$PORT/": "allow",
       "rm -f planted.txt": "allow"
     }

@@ -21,7 +21,7 @@ PORT=4339
 MODEL=${TRACEVAULT_PROBE_MODEL:-opencode/big-pickle}
 OPENCODE=${OPENCODE:-opencode}
 mkdir -p "$OUT"
-OUT=$(cd "$OUT" && pwd)
+OUT=$(cd "$OUT" && pwd -P)
 for ENTRY in "$OUT"/* "$OUT"/.[!.]* "$OUT"/..?*; do
   if [ -e "$ENTRY" ] || [ -L "$ENTRY" ]; then
     echo "Refusing to run: output must be a new or empty directory." >&2
