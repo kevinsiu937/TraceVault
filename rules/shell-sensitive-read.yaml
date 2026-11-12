@@ -1,0 +1,9 @@
+id: shell-sensitive-read
+version: 1
+severity: low
+explanation: A shell command named a file that holds secrets or credentials, such as cat .env. The file tools are checked by sensitive-read; this catches the same files reached through the shell. It reads the command's words, so it can be evaded and can name a file the command never opened.
+steps:
+  - match:
+      type: { equals: hook.script }
+      tool: { equals: bash }
+      target: { names: { list: sensitive-paths } }

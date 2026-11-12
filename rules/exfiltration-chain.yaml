@@ -12,10 +12,18 @@ severity: high
 explanation: A sensitive file was read and then data could have left the machine. Treat it as possible exfiltration and check what was sent.
 window: { seconds: 1800 }
 steps:
-  - match:
-      type: { equals: document.access }
-      operation: { equals: read }
-      path: { glob: { list: sensitive-paths } }
+  - any:
+      - label: sensitive read
+        match:
+          type: { equals: document.access }
+          operation: { equals: read }
+          path: { glob: { list: sensitive-paths } }
+      - label: sensitive file named in the shell
+        match:
+          type: { equals: hook.script }
+          tool: { equals: bash }
+          target: { names: { list: sensitive-paths } }
+          outcome: { in: [ok, error, timeout] }
   - each: true
     any:
       - label: webfetch
@@ -28,6 +36,12 @@ steps:
           type: { equals: hook.script }
           tool: { equals: bash }
           target: { regex: '\b(curl|wget|nc|ncat|netcat|scp|sftp|rsync|ftp|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b' }
+          outcome: { in: [ok, error, timeout] }
+      - label: git push
+        match:
+          type: { equals: hook.script }
+          tool: { equals: bash }
+          target: { regex: '(^|[;&|]\s*)git\s+(-C\s+\S+\s+)?push\b' }
           outcome: { in: [ok, error, timeout] }
       - label: MCP call
         match:

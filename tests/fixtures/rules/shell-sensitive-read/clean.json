@@ -1,0 +1,170 @@
+{
+  "source": "authored",
+  "note": "Shell commands that only look like secrets (.envrc, env.js, envelope), and a .env read through the read tool, which sensitive-read reports, not this rule.",
+  "events": [
+    {
+      "id": "evt_clean_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_shell_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-12T10:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_clean_readme",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_shell_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-12T10:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_clean_readme",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cat README.md",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_clean_ls",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_shell_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-12T10:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_clean_ls",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "ls -la",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_clean_envrc",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_shell_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-12T10:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_clean_envrc",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cat .envrc",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_clean_node",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_shell_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-12T10:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_clean_node",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "node scripts/env.js",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_clean_echo",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_shell_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-12T10:00:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_clean_echo",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "echo envelope",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_clean_read_env",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_shell_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-12T10:00:06.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_read_env",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/.env",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": []
+}

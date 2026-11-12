@@ -1,0 +1,10 @@
+{
+  "source": "authored",
+  "note": "Nothing in the configuration mentions the shell, so OpenCode's default allows a push; shell-unrestricted reports that, and this rule, which looks only at what the configuration writes, stays silent.",
+  "config": {
+    "permission": {
+      "edit": "ask"
+    }
+  },
+  "expect": []
+}

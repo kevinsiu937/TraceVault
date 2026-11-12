@@ -1,0 +1,19 @@
+# An agent can push to a remote repository without being asked. A secret it
+# read or wrote can then reach GitHub before anyone looks; Phase 2's
+# exfiltration-chain flags it afterwards, this rule shows beforehand that it
+# could. Only an allowance the configuration writes counts: OpenCode's default
+# allows every command, and shell-unrestricted already reports that.
+id: git-push-unasked
+version: 1
+severity: medium
+explanation: This agent can push to a remote repository without asking first, so a secret it has read could be published before anyone reviews the commit.
+source:
+  kind: owasp-agentic
+  id: ASI02
+  title: Tool Misuse and Exploitation
+subject: agent
+when:
+  - allows:
+      permission: bash
+      target: ["git push", "git push origin main", "git push --force origin main"]
+      configured: true

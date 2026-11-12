@@ -47,8 +47,9 @@ Spec: `docs/spec/phase-2.md`.
 | 32 | Escalation then use (probe first) | 28 | done |
 | 33 | Phase 2 exit verification | 27, 28, 29, 30, 31 | done |
 | 34 | Opt-in blocking: refuse before it runs | 33 | done |
+| 44 | Sensitive files read through the shell, and pushes (follow-up; also adds the static rule git-push-unasked) | 34 | done |
 
-**Phase 2 is complete.** Every ticket from 27 to 34 is done.
+**Phase 2 is complete.** Every ticket from 27 to 34 is done. Ticket 44 is a follow-up Kevin asked for on 12 Nov 2026.
 
 ## Phase 3: static scanner and tool poisoning
 

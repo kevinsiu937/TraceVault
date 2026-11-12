@@ -64,6 +64,7 @@ The operators:
 | `in` | a list of strings | is one of them |
 | `glob` | a list of path globs | is a path that matches one. `**` spans folders; `*` and `?` stay inside one. Paths and patterns are normalised first |
 | `regex` | a regular expression | contains a match, ignoring case |
+| `names` | a list of path globs | is a command line in which one word is a path matching a glob, as `glob` matches it. Spaces, quotes, shell operators, `=` and `@` separate words |
 | `outside` | a binding name | is a path outside the bound folder. A relative path is resolved against that folder |
 | `allowed_by` | a binding name | is a command that one of the bound permission patterns allows, matched as OpenCode matches them |
 | `other_than` | a binding name | differs from the bound value |
@@ -132,6 +133,8 @@ An argument written `{ list: <name> }` is replaced by that list's items before t
 ## Known Blind Spots
 
 - User prompts are stored truncated at 200 characters, so a freeze phrase past that limit is invisible to the destructive-action rule.
+- Sensitive files reached through the shell (ticket 44) are found by the words of the command, not by what it does. `cat $F`, `cat .e*` or a script that opens the file are missed, and a command that only mentions a file, such as `echo x > .env`, counts. One command that both reads and sends, such as `curl -d @.env`, raises `shell-sensitive-read` but cannot complete `exfiltration-chain` on its own, which needs a later egress. `shell-sensitive-read` is not blockable, so the guard still lets shell reads through.
+- `git push` counts as egress (ticket 44) only as a command of its own or after `;`, `&&` or `|`, optionally with `-C <dir>`. A push through an alias, a script or `gh` is missed.
 - Outbound requests made from shell commands are matched by pattern and are easy to evade. A finding names the pattern that matched and claims nothing more.
 - Escalation-then-use checks shell approvals only, and matches the whole command line against the approved pattern. A compound command whose first part is covered counts, even when OpenCode asked about a later part.
 - Rules rerun over the whole session on every page load and every live event; nothing is cached. Measured 11 Nov 2026 on a synthetic 10,000-event session: a page takes about 0.6 s, of which the two rule scans are about 0.18 s and most of the rest is rendering 18.5 MB of HTML; each live event costs about 0.14 s, so one open page keeps up with about 7 events a second. A per-session cache would save one of the two scans on a page and nothing on a live event, which always changes the session, so it was not added. If sessions grow past this, scan once per request first, then match incrementally for the live stream.

@@ -161,7 +161,7 @@ describe("seam A: findings on the session page", () => {
 
     const panel = findingsPanel(await (await fetch(`${baseUrl}/sessions/${SESSION}`)).text());
 
-    expect(panel).toContain('<span class="finding-matched">via shell egress</span>');
+    expect(panel).toContain('<span class="finding-matched">via sensitive read, shell egress</span>');
   });
 
   it("counts a denied call seen twice as one denial", async () => {

@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "A sensitive read with no egress, egress before the read, denied egress of each kind (it never ran), and egress outside the 30-minute window.",
+  "note": "A sensitive read with no egress, egress before the read, denied egress of each kind (it never ran), and egress outside the 30-minute window. A local commit after the read whose message mentions push is not a push.",
   "events": [
     {
       "id": "evt_exfil_start",
@@ -87,6 +87,30 @@
         "hook": "tool.execute.after",
         "target_tool": "bash",
         "target": "ls -la",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_commit_only",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T10:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_commit_only",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "git commit -m \"push later\"",
         "exit_code": 0,
         "outcome": "ok"
       },

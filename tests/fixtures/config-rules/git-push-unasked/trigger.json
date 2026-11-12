@@ -1,0 +1,50 @@
+{
+  "source": "authored",
+  "note": "Shell commands ask, except git, which the configuration allows outright, so every agent can push without asking. build asks before a push in its own block, so it stays silent.",
+  "config": {
+    "permission": {
+      "bash": {
+        "*": "ask",
+        "git *": "allow"
+      }
+    },
+    "agent": {
+      "build": {
+        "permission": {
+          "bash": {
+            "git push*": "ask"
+          }
+        }
+      }
+    }
+  },
+  "expect": [
+    {
+      "subject": "plan",
+      "evidence": [
+        {
+          "value": "git push",
+          "entry": "/permission/bash/git *"
+        }
+      ]
+    },
+    {
+      "subject": "general",
+      "evidence": [
+        {
+          "value": "git push",
+          "entry": "/permission/bash/git *"
+        }
+      ]
+    },
+    {
+      "subject": "explore",
+      "evidence": [
+        {
+          "value": "git push",
+          "entry": "/permission/bash/git *"
+        }
+      ]
+    }
+  ]
+}
