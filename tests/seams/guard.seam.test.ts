@@ -102,7 +102,10 @@ describe("seam B: the opt-in guard refuses a call before it runs", () => {
   it("refuses a write to opencode.json, and the timeline shows it denied and flagged by the rule that refused it", async () => {
     const message = await refuse(hooks(), REFUSED.input, REFUSED.output.args);
 
-    expect(message).toMatch(/TraceVault blocked this call: .*'self-modification'/);
+    expect(message).toMatch(/TraceVault skipped this call .*'self-modification'/);
+    expect(message).toMatch(/do not retry it or reach the same result another way/i);
+    expect(message).toMatch(/continue with the rest of the task/i);
+    expect(message).toMatch(/reported to the user/i);
     const [stored] = store.listBySession(SESSION);
     expect(stored).toMatchObject({
       type: "document.access",

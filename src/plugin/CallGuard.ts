@@ -41,7 +41,13 @@ export class CallGuard {
         return { kind: "allow" };
       }
       this.refusals.set(`${call.sessionID}:${call.callID}`, ruleId);
-      return { kind: "refuse", message: `TraceVault blocked this call: it matches the blockable rule '${ruleId}'.` };
+      return {
+        kind: "refuse",
+        message:
+          `TraceVault skipped this call because it matches the rule '${ruleId}', which marks it as dangerous. ` +
+          "It did not run. Do not retry it or reach the same result another way, such as through the shell. " +
+          "Continue with the rest of the task. The skipped call has been recorded and will be reported to the user.",
+      };
     } catch (error) {
       return { kind: "failed", reason: error instanceof Error ? error.message : String(error) };
     }

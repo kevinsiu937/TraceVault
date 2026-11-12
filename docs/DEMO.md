@@ -76,7 +76,7 @@ npm run build
 npm test
 ```
 
-31 test files, 457 tests (12 Nov 2026).
+31 test files, 464 tests (12 Nov 2026).
 
 ## Phase 1 exit checklist (recorded 25 Oct 2026)
 
@@ -142,9 +142,11 @@ The Findings panel at the top lists each flag with its rule, its explanation and
 
 **The script re-records the frozen fixtures.** It overwrites `tests/fixtures/rules/phase-2-exit/`. Run `git restore tests/fixtures` afterwards unless you mean to replace the recorded run.
 
-## Opt-in blocking
+## Opt-in blocking (experimental)
 
-`init --block` installs a guard that refuses a call before it runs when a blockable rule matches. The blockable rules are `self-modification` and `sensitive-read`. A plain `init` never blocks.
+TraceVault records and flags; it does not prevent. This option is the one exception, kept as an experiment (decided 12 Nov 2026). It skips a dangerous call instead of stopping the agent: the call does not run, the agent is told to carry on without it, and the skipped call is recorded for the user.
+
+`init --block` installs a guard that refuses a call before it runs when a blockable rule matches. The blockable rules are `self-modification` and `sensitive-read`. A plain `init` never blocks. A secret file read through the shell, such as `cat .env`, is flagged by `shell-sensitive-read` but never blocked.
 
 ```bash
 mkdir /tmp/tv-block && cd /tmp/tv-block
@@ -160,11 +162,15 @@ opencode run -m deepseek/deepseek-flash "Use the edit tool to add \"share\": \"d
 ```
 
 **Expected:**
-- The agent reports "TraceVault blocked this call: it matches the blockable rule 'self-modification'".
+- The agent is told "TraceVault skipped this call because it matches the rule 'self-modification' …", asked not to retry or work around it, and asked to continue with the rest of the task.
 - `opencode.json` is unchanged.
 - The timeline shows the edit as `denied`, with the rule id.
 
-**Not yet seen live.** The refusal was proven by the seam tests and by calling the generated loader directly in Node. This step has not been run inside a real OpenCode session.
+**Last run (12 Nov 2026):**
+- OpenCode 1.18.32 and `deepseek/deepseek-flash`.
+- The agent's edit of `opencode.json` failed with the message above, and the file stayed as written.
+- The store holds the edit as `document.access`, outcome `denied`, `blocked_by: self-modification`, and the session page shows one `self-modification` flag.
+- Reads, `ls` and a glob in the same session went through.
 
 **Limit:** only the file tools are guarded. A shell command that writes `opencode.json` passes.
 
@@ -195,6 +201,7 @@ TRACEVAULT_PROBE_MODEL=deepseek/deepseek-flash sh docs/probes/scripts/phase-3-ex
 misconfigured session ses_…, static findings by rule:
    N <li class="config-finding" data-rule="config-self-edit"
    N <li class="config-finding" data-rule="default-ask-removed"
+   N <li class="config-finding" data-rule="git-push-unasked"
    N <li class="config-finding" data-rule="mcp-holds-credentials"
    N <li class="config-finding" data-rule="read-and-egress"
    N <li class="config-finding" data-rule="shell-unrestricted"
@@ -208,7 +215,10 @@ clean session ses_…, static findings by rule:
 
 **Last run (12 Nov 2026):**
 - OpenCode 1.18.32 and `deepseek/deepseek-flash`.
-- All seven rules flagged once each. The clean session showed none. The pass is all seven rule ids on the misconfigured session and none on the clean one.
+- All seven rules that existed then flagged once each. The clean session showed none.
+- `git-push-unasked` was added after this run (ticket 44). The gate reruns the scanner over the recorded run and it flags the `risky` subagent there.
+
+The pass is every rule id on the misconfigured session and none on the clean one.
 
 To browse the result, start the service on the run's database:
 

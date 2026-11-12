@@ -36,6 +36,8 @@ Each later phase starts only when the previous phase's exit criteria are met.
 - Sectioned by event type, findings linked to the events behind them, gaps rendered explicitly.
 - Deterministic output: no judgement that cannot be traced to a rule.
 - Export format settled in an ADR before implementation.
+- Each finding carries a recommendation: what to do about it, written in its rule file next to the explanation, so advice is as traceable as the finding (decided 12 Nov 2026).
+- A list of the calls the experimental guard skipped, at the top of the report and of the session page, so the user sees what the agent did not do and why.
 
 **Exit:** the Phase 1 demo session exports a report a stranger can follow.
 
