@@ -1,4 +1,4 @@
-export type Flag = "--port" | "--db" | "--dir" | "--block" | "--out";
+export type Flag = "--port" | "--db" | "--dir" | "--block" | "--out" | "--undo";
 
 export interface ParsedOptions {
   readonly port: number;
@@ -7,6 +7,7 @@ export interface ParsedOptions {
   readonly block: boolean;
   /** Where a report is written; null when not given. */
   readonly out: string | null;
+  readonly undo: boolean;
 }
 
 /** Reads the flags one command accepts; any other flag is an error naming it. */
@@ -14,15 +15,16 @@ export class CommandOptions {
   constructor(private readonly defaults: ParsedOptions) {}
 
   parse(args: readonly string[], accepted: readonly Flag[]): ParsedOptions {
-    let { port, dbPath, directory, block, out } = this.defaults;
+    let { port, dbPath, directory, block, out, undo } = this.defaults;
     const pending = [...args];
 
     for (let flag = pending.shift(); flag !== undefined; flag = pending.shift()) {
       if (!(accepted as readonly string[]).includes(flag)) {
         throw new TypeError(`unknown option '${flag}'`);
       }
-      if (flag === "--block") {
-        block = true;
+      if (flag === "--block" || flag === "--undo") {
+        block ||= flag === "--block";
+        undo ||= flag === "--undo";
         continue;
       }
       const value = pending.shift();
@@ -43,6 +45,6 @@ export class CommandOptions {
       }
     }
 
-    return { port, dbPath, directory, block, out };
+    return { port, dbPath, directory, block, out, undo };
   }
 }

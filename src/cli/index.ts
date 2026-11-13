@@ -5,6 +5,7 @@
  * Semester 1 commands:
  *   init        attach TraceVault to the local project (plugin hook)
  *   uninstall   remove TraceVault and restore the previous configuration
+ *   harden      make the project's opencode.json ask before risky calls
  *   import      import every session already in the agent's own store
  *   run         start the local service (capture + scanners + dashboard on 127.0.0.1)
  *   report      write one session as a self-contained HTML report
@@ -18,6 +19,7 @@ import { dirname } from "node:path";
 import { pathToFileURL } from "node:url";
 import { SqliteEventStore } from "../store/SqliteEventStore.js";
 import { CommandOptions } from "./CommandOptions.js";
+import { HardenCommand } from "./HardenCommand.js";
 import { HistoryImportCommand } from "./HistoryImportCommand.js";
 import { InitCommand } from "./InitCommand.js";
 import { ReportCommand } from "./ReportCommand.js";
@@ -32,6 +34,8 @@ Usage:
   tracevault init [--dir <path>] [--block]   attach TraceVault to a project;
                                           --block refuses calls a blockable rule matches
   tracevault uninstall [--dir <path>]     remove TraceVault and restore the configuration
+  tracevault harden [--dir <path>] [--undo]   make the project's opencode.json ask before
+                                          risky calls; --undo puts the original back
   tracevault import [--db <path>]         import the agent's existing session history
   tracevault run [--port <n>] [--db <path>]   start the local service
   tracevault report <session-id> [--db <path>] --out <file>
@@ -43,9 +47,9 @@ Usage:
 const DEFAULT_PORT = 4319;
 const DEFAULT_DB = "data/tracevault.db";
 
-type Command = "init" | "uninstall" | "import" | "run" | "report";
+type Command = "init" | "uninstall" | "harden" | "import" | "run" | "report";
 
-const COMMANDS: readonly Command[] = ["init", "uninstall", "import", "run", "report"];
+const COMMANDS: readonly Command[] = ["init", "uninstall", "harden", "import", "run", "report"];
 
 function isCommand(value: string): value is Command {
   return (COMMANDS as readonly string[]).includes(value);
@@ -56,7 +60,7 @@ function errorMessage(error: unknown): string {
 }
 
 export async function main(argv: readonly string[]): Promise<number> {
-  const options = new CommandOptions({ port: DEFAULT_PORT, dbPath: DEFAULT_DB, directory: process.cwd(), block: false, out: null });
+  const options = new CommandOptions({ port: DEFAULT_PORT, dbPath: DEFAULT_DB, directory: process.cwd(), block: false, out: null, undo: false });
   const first = argv[0];
 
   if (first === "--version" || first === "-v") {
@@ -97,6 +101,18 @@ export async function main(argv: readonly string[]): Promise<number> {
       return await new RunCommand().run(port, dbPath);
     } catch (error) {
       process.stderr.write(`tracevault: ${errorMessage(error)}\n\n${USAGE}`);
+      return 1;
+    }
+  }
+
+  if (first === "harden") {
+    try {
+      const { directory, undo } = options.parse(argv.slice(1), ["--dir", "--undo"]);
+      const command = new HardenCommand(directory);
+      process.stdout.write(`${undo ? command.undo() : command.harden()}\n`);
+      return 0;
+    } catch (error) {
+      process.stderr.write(`tracevault: ${errorMessage(error)}\n`);
       return 1;
     }
   }

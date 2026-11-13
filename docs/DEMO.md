@@ -76,7 +76,7 @@ npm run build
 npm test
 ```
 
-32 test files, 518 tests (12 Nov 2026).
+34 test files, 559 tests (13 Nov 2026).
 
 ## Phase 1 exit checklist (recorded 25 Oct 2026)
 
@@ -232,6 +232,20 @@ Open the misconfigured session and follow "Configuration · N findings" in the h
 - The hidden characters in the poisoned tool are shown as `[hidden text: …]`.
 
 **The script re-records the frozen fixtures.** It overwrites `tests/fixtures/phase-3-exit/`. Run `git restore tests/fixtures` afterwards unless you mean to replace the recorded run.
+
+## Harden (ticket 54)
+
+TraceVault does not block. `harden` makes OpenCode's own settings ask before risky calls instead.
+
+```bash
+node dist/cli/index.js harden --dir <project>
+node dist/cli/index.js harden --dir <project> --undo
+```
+
+**Expected:**
+- The output lists each permission it changed, such as `bash: allow → ask`.
+- It ends with "the static rules find nothing risky in the hardened file", or names what is still risky. Anything still risky is set in an agent's own block, which harden leaves for you to change.
+- `--undo` puts the original `opencode.json` back byte for byte.
 
 ## Phase 3 known limitations
 

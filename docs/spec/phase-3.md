@@ -167,6 +167,19 @@ Each ticket checks its source identifiers against the published list before the 
 - Two payloads of one session sent at the same moment can both carry the preamble, so a session may hold the same snapshot twice. The view reads the latest, so nothing changes on screen.
 - Tool descriptions are recorded for local (stdio) MCP servers only. A remote server, a built-in tool or a tool another plugin defines is never scanned for poisoning.
 
+## Follow-up: harden (ticket 54)
+
+Kevin asked on 13 Nov 2026 for a way to act on these findings without TraceVault blocking anything itself. `tracevault harden [--dir <path>]` tightens the project's own `opencode.json`, so OpenCode's permissions do the blocking.
+
+- **Scope.** Only the project's `opencode.json`, and in it only the top-level `permission` block. A missing file is created. A project with `opencode.jsonc`, or a file with comments or that is not a JSON object, is refused and left unchanged, because rewriting it would drop the comments.
+- **Policy, which never loosens.** A value the user set to "deny" always stays.
+  - `bash`, `webfetch`, `external_directory` and `doom_loop` become "ask", keeping only the user's own "deny" patterns.
+  - `edit` keeps the user's rules and appends "ask" for `*opencode.json`, `*opencode.jsonc`, `*.opencode/*` and `*AGENTS.md`. It never adds `"*": "allow"`, which would let the native `plan` agent edit.
+  - `read` keeps the user's rules, appends "ask" for the files on `rules/lists/sensitive-paths.yaml` written as permission patterns, and ends with `*.env.example` allowed, as OpenCode's default does.
+  - The keys it manages are written last, because OpenCode lets the last matching rule decide.
+- **Check.** The written file is scanned by the same static rules as a recorded snapshot. Findings that remain come from agents' own permission blocks, which harden does not change. The output names each one with its configuration entry so the user can fix it by hand.
+- **Undo.** The first run saves the original bytes in `.opencode/.tracevault-harden.json`. A second run keeps that copy. `--undo` restores the bytes, or removes a file harden created.
+
 ## Further Notes
 
 - Sessions imported from OpenCode's history have no snapshot, because the session store does not keep the configuration. They show "No configuration recorded".

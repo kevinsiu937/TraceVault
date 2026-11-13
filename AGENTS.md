@@ -13,7 +13,7 @@ A change that works but violates either one is rejected, not merged with a note 
 
 ## 1. What we are building now
 
-**Phases 1, 2, 3 and 4 are closed.** Their exit verifications are tickets 10, 33, 43 and 51. Phase 5 (the simulator) starts only when Kevin says so; until then, work is limited to fixes and follow-ups he asks for.
+**Phases 1, 2, 3 and 4 are closed.** Their exit verifications are tickets 10, 33, 43 and 51. Phase 5 (the simulator) starts only when Kevin says so; until then, work is limited to fixes and follow-ups he asks for. Tickets 53 (opaque commands) and 54 (`tracevault harden`) are the hardening follow-up he asked for before Phase 5.
 
 **Phase 4, the last phase built, is the report generator:**
 

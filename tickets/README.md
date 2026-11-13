@@ -86,6 +86,15 @@ Spec: `docs/spec/phase-4.md`, approved 12 Nov 2026.
 | 51 | Phase 4 exit verification | 46, 48, 49, 50, 52 | done |
 | 52 | A report anyone can read (found by the exit run) | 48, 49 | done |
 
+## Hardening before Phase 5 (requested by Kevin, 13 Nov 2026)
+
+Text rules can be evaded, and TraceVault does not prevent. These two make evasion visible and let OpenCode's own permissions do the blocking.
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 53 | Commands whose effect cannot be read from them | 44 | done |
+| 54 | Harden: let OpenCode's own permissions do the blocking | 43 | done |
+
 ## Dependency shape
 
 ### Phase 1
