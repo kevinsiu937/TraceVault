@@ -1,0 +1,22 @@
+# The agent wrote a file and then ran it. What ran is in the file, not in the
+# command, so the command alone says nothing; the file's contents are only in
+# the agent's edit, which TraceVault records as a path, not as text.
+# Not blockable: it spans two events.
+id: runs-written-file
+version: 1
+severity: medium
+title: Wrote a file, then ran it
+explanation: "The agent wrote a file and then ran it as a program. What ran is whatever the agent put in that file, so the command on its own does not show it."
+recommendation: "Open the file and check what it does. (For the developer: read the file the agent wrote before trusting the result, and set bash to ask.)"
+window: session
+steps:
+  - match:
+      type: { equals: document.access }
+      operation: { equals: write }
+      outcome: { equals: ok }
+    bind: { path: written }
+  - match:
+      type: { equals: hook.script }
+      tool: { equals: bash }
+      outcome: { in: [ok, error, timeout] }
+      target: { runs: written }

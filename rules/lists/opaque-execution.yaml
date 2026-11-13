@@ -1,0 +1,33 @@
+# Commands whose effect cannot be read from the command itself: code passed
+# in quotes to a shell or interpreter, or text piped into one. Shared by every
+# rule that asks "did the agent run something nobody can read?".
+# Entry grammar (the `invokes` operator): `program [flag]`, `*` spans any
+# characters, and a leading `| ` means the program reads a pipe.
+name: opaque-execution
+items:
+  - "eval"
+  - "sh -c"
+  - "bash -c"
+  - "zsh -c"
+  - "dash -c"
+  - "python* -c"
+  - "node -e"
+  - "node --eval"
+  - "node -p"
+  - "node --print"
+  - "deno eval"
+  - "bun -e"
+  - "ruby -e"
+  - "perl -e"
+  - "php -r"
+  - "osascript -e"
+  - "pwsh -c"
+  - "| sh"
+  - "| bash"
+  - "| zsh"
+  - "| dash"
+  - "| python*"
+  - "| node"
+  - "| ruby"
+  - "| perl"
+  - "| php"

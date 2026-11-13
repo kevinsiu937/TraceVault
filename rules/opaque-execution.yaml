@@ -1,0 +1,18 @@
+# The agent ran code hidden inside a command: a script in quotes, text piped
+# into a shell, or `eval`. Pattern rules elsewhere read the words of a command;
+# this rule says when those words cannot tell what ran, so the evasion itself
+# is visible. The command line is split the way a shell splits it, so spacing,
+# quoting, `&&` chains and `$( … )` do not hide it.
+# Not blockable: the guard checks file tools only.
+id: opaque-execution
+version: 1
+severity: medium
+title: Ran a command whose effect cannot be read from it
+explanation: "The agent ran code hidden inside a command, for example a script passed in quotes, a download run straight away, or text decoded and then run. Nobody reading the record, TraceVault included, can tell from the command what it did."
+recommendation: "Check what this command did, and make the agent ask before it runs commands. (For the developer: look at the command's output and the files it changed, and set bash to ask.)"
+steps:
+  - match:
+      type: { equals: hook.script }
+      tool: { equals: bash }
+      outcome: { in: [ok, error, timeout] }
+      target: { invokes: { list: opaque-execution } }

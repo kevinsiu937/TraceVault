@@ -1,0 +1,243 @@
+{
+  "source": "authored",
+  "note": "Commands that only mention sh -c or eval in quoted text, run a named script, or pipe into a non-interpreter.",
+  "events": [
+    {
+      "id": "evt_ses_opaque_clean_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_0",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_0",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "python3 script.py",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_1",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_1",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "node build.js",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_2",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_2",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "echo \"sh -c is dangerous\"",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_3",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_3",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "grep -r \"eval\" src",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_4",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_4",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "git commit -m \"use bash -c\"",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_5",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:06.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_5",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "npm test 2>&1 | tee log.txt",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_6",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:07.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_6",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cat a | sort",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_7",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:08.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_7",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "bash build.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_8",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:09.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_8",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "which python3",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ]
+}

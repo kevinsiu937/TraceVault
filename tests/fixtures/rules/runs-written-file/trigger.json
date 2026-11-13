@@ -1,0 +1,188 @@
+{
+  "source": "authored",
+  "note": "The agent writes a script and then runs it: through bash, through python3 with a relative path, and directly after chmod.",
+  "expect": [
+    {
+      "rule": "runs-written-file",
+      "events": [
+        "evt_runs_w_build",
+        "evt_runs_r_build"
+      ]
+    },
+    {
+      "rule": "runs-written-file",
+      "events": [
+        "evt_runs_w_clean",
+        "evt_runs_r_clean"
+      ]
+    },
+    {
+      "rule": "runs-written-file",
+      "events": [
+        "evt_runs_w_deploy",
+        "evt_runs_r_deploy"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "evt_ses_runs_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_w_build",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_w_build",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/build.sh",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_r_build",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_r_build",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "bash build.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_w_clean",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_w_clean",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/tools/clean.py",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_r_clean",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_r_clean",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "python3 tools/clean.py",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_w_deploy",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_w_deploy",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/deploy.sh",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_r_deploy",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:06.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_r_deploy",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "chmod +x deploy.sh && ./deploy.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ]
+}

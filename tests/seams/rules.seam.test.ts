@@ -186,6 +186,22 @@ steps:
     expect(load()).toThrow(/probe\.yaml: steps\[0\]\.match\.colour: unknown fact/);
   });
 
+  it.each([
+    ["a single string", '"python* -c"'],
+    ["an entry with too many words", '["a b c"]'],
+    ["an empty list", "[]"],
+  ])("rejects invokes given %s", (_, argument) => {
+    write("probe.yaml", VALID.replace("type: { equals: document.access }", `target: { invokes: ${argument} }`));
+
+    expect(load()).toThrow(/probe\.yaml: steps\[0\]\.match\.target\.invokes: /);
+  });
+
+  it("rejects runs without the name of an earlier binding", () => {
+    write("probe.yaml", VALID.replace("type: { equals: document.access }", 'target: { runs: "" }'));
+
+    expect(load()).toThrow(/probe\.yaml: steps\[0\]\.match\.target\.runs: expects the name/);
+  });
+
   it.each(["allowed_by", "other_than"])("rejects %s without the name of an earlier binding", (operator) => {
     write("probe.yaml", VALID.replace("type: { equals: document.access }", `call: { ${operator}: [approved] }`));
 
