@@ -6,5 +6,6 @@ export type McpToolsEvent = Extract<Event, { type: "mcp.tools" }>;
 
 /** Checks one recorded configuration, and the latest tool list of each local MCP server, against the static rules. */
 export interface StaticScannerPort {
-  scan(snapshot: ConfigSnapshotEvent, toolLists?: readonly McpToolsEvent[]): ConfigFinding[];
+  /** `firstSeen` holds each server's first recorded tool list, in any session; each tool is compared with it. */
+  scan(snapshot: ConfigSnapshotEvent, toolLists?: readonly McpToolsEvent[], firstSeen?: readonly McpToolsEvent[]): ConfigFinding[];
 }

@@ -23,7 +23,8 @@ export class SessionConfiguration {
     return { eventId: event.id, recordedAt: event.timestamp, digest: event.data.digest, config: event.data.config, mcpTools: [...lists.values()] };
   }
 
-  findings(session: readonly Event[]): ConfigFinding[] {
+  /** `known` holds tool lists recorded in any session, so each tool can be compared with its server's first list. */
+  findings(session: readonly Event[], known: readonly McpToolsEvent[] = []): ConfigFinding[] {
     const event = this.snapshot(session);
     if (event === null) {
       return [];
@@ -34,7 +35,18 @@ export class SessionConfiguration {
         lists.set(candidate.data.server, candidate);
       }
     }
-    return this.scanner.scan(event, [...lists.values()]);
+    return this.scanner.scan(event, [...lists.values()], this.firstSeen([...known, ...lists.values()]));
+  }
+
+  /** Each server's first recorded tool list. A first sighting compares equal to itself, so it is trusted. */
+  private firstSeen(lists: readonly McpToolsEvent[]): McpToolsEvent[] {
+    const first = new Map<string, McpToolsEvent>();
+    for (const list of [...lists].sort((a, b) => a.timestamp.localeCompare(b.timestamp) || a.id.localeCompare(b.id))) {
+      if (!first.has(list.data.server)) {
+        first.set(list.data.server, list);
+      }
+    }
+    return [...first.values()];
   }
 
   private snapshot(session: readonly Event[]): ConfigSnapshotEvent | null {

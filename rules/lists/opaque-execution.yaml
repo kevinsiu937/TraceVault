@@ -2,9 +2,13 @@
 # in quotes to a shell or interpreter, or text piped into one. Shared by every
 # rule that asks "did the agent run something nobody can read?".
 # Entry grammar (the `invokes` operator): `program [flag]`, `*` spans any
-# characters, and a leading `| ` means the program reads a pipe.
+# characters, a leading `| ` means the program reads its input from the line
+# (a pipe, a here-document or a here-string), and `$` alone means a computed
+# program name.
 name: opaque-execution
 items:
+  # "$" is a command whose program is a variable or $( … ): the line does not say what runs.
+  - "$"
   - "eval"
   - "sh -c"
   - "bash -c"

@@ -1,12 +1,13 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { ReportView } from "../dashboard/ReportView.js";
+import type { RuleChoice } from "../service/RuleHistoryPort.js";
 import { ServiceAssembly } from "./ServiceAssembly.js";
 
 /** Writes one session's report to a new file. It never creates a database or overwrites a file. */
 export class ReportCommand {
   constructor(private readonly view: ReportView = new ReportView()) {}
 
-  run(sessionId: string, dbPath: string, out: string): string {
+  run(sessionId: string, dbPath: string, out: string, rules: RuleChoice = "now"): string {
     if (!existsSync(dbPath)) {
       throw new Error(`no database at ${dbPath}`);
     }
@@ -18,7 +19,7 @@ export class ReportCommand {
       if (!service.hasSession(sessionId)) {
         throw new Error(`no session '${sessionId}' in ${dbPath}`);
       }
-      writeFileSync(out, this.view.render(service, sessionId), { encoding: "utf8", flag: "wx" });
+      writeFileSync(out, this.view.render(service, sessionId, rules), { encoding: "utf8", flag: "wx" });
       return `report for ${sessionId} written to ${out}`;
     } finally {
       store.close();

@@ -1,0 +1,17 @@
+# One command writes a file and then runs it: `echo … > x.sh && bash x.sh`.
+# The two-step rule runs-written-file cannot see this, because one event
+# satisfies one step. Both files are resolved from where the line started, so
+# no project folder is needed.
+# Not blockable: the guard checks file tools only.
+id: runs-own-write
+version: 1
+severity: medium
+title: Wrote a file, then ran it
+explanation: "In one command the agent wrote a file and then ran it as a program. What ran is whatever the command put in that file, which the record does not show in full."
+recommendation: "Open the file and check what it does. (For the developer: read the file the command wrote before trusting the result, and set bash to ask.)"
+steps:
+  - match:
+      type: { equals: hook.script }
+      tool: { equals: bash }
+      outcome: { in: [ok, error, timeout] }
+      target: { runs_own_write: true }

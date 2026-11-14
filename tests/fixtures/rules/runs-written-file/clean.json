@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "Runs that do not follow a successful write of the same file: a run before any write, cat of a written file, a different script, a failed write, and a read.",
+  "note": "Runs that do not follow a successful write of the same file: a run before any write, cat of a written file, a different script, a failed write, a read, a script of the same name in another folder (sub/task.sh written, task.sh run from the project folder), and a text file written by the shell and only read.",
   "events": [
     {
       "id": "evt_ses_runs_clean_start",
@@ -226,6 +226,100 @@
         "hook": "tool.execute.after",
         "target_tool": "bash",
         "target": "bash script.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_c_sub",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_runs_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:10.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_c_sub",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/sub/task.sh",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_c_task",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:11.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_c_task",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "bash task.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_c_log",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:12.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_c_log",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "echo hi > out.txt",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_c_catlog",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:13.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_c_catlog",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cat out.txt",
         "exit_code": 0,
         "outcome": "ok"
       },

@@ -13,8 +13,8 @@ const RULE_KEYS = ["id", "version", "severity", "title", "explanation", "recomme
 const SEVERITIES: readonly Severity[] = ["low", "medium", "high"];
 const SOURCE_KINDS: readonly RuleSourceKind[] = ["owasp-mcp", "owasp-agentic", "cve", "baseline"];
 const SUBJECTS: readonly ConfigSubjectKind[] = ["agent", "mcp-server", "tool"];
-const CHECKS = ["allows", "remote_mcp", "match"];
-// allows and remote_mcp ask about an agent; match tests the facts of a server or a tool.
+const CHECKS = ["allows", "remote_mcp", "match", "changed_since_first_seen"];
+// allows and remote_mcp ask about an agent; match tests the facts of a server or a tool; changed_since_first_seen, a tool.
 const AGENT_CHECKS = ["allows", "remote_mcp"];
 const FACTS: Readonly<Record<ConfigSubjectKind, readonly MatchFact[]>> = { agent: [], "mcp-server": ["secret_keys"], tool: ["text"] };
 
@@ -110,14 +110,15 @@ export class ConfigRuleLoader {
     if (kind === undefined || extra.length > 0 || !CHECKS.includes(kind)) {
       throw new RuleLoadError(file, field, `must be one check: ${CHECKS.join(", ")}, or any`);
     }
-    if (AGENT_CHECKS.includes(kind) !== (subject === "agent")) {
-      throw new RuleLoadError(file, field, kind === "match" ? "match needs subject mcp-server or tool" : `${kind} needs subject agent`);
+    const needs = kind === "changed_since_first_seen" ? "tool" : AGENT_CHECKS.includes(kind) ? "agent" : "mcp-server or tool";
+    if (!needs.split(" or ").includes(subject)) {
+      throw new RuleLoadError(file, field, `${kind} needs subject ${needs}`);
     }
-    if (kind === "remote_mcp") {
+    if (kind === "remote_mcp" || kind === "changed_since_first_seen") {
       if (fields[kind] !== true) {
-        throw new RuleLoadError(file, `${field}.remote_mcp`, "must be true");
+        throw new RuleLoadError(file, `${field}.${kind}`, "must be true");
       }
-      return { kind: "remote_mcp" };
+      return { kind };
     }
     if (kind === "match") {
       return this.match(this.object(fields[kind], file, `${field}.match`), file, `${field}.match`, FACTS[subject]);

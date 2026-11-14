@@ -1,0 +1,66 @@
+{
+  "source": "authored",
+  "note": "The docs server lists the same tools as the first time, with its schema's keys in another order and one tool removed; a second server, fresh, is seen for the first time, which is trusted.",
+  "config": {},
+  "firstSeen": [
+    {
+      "server": "docs",
+      "tools": [
+        {
+          "name": "search",
+          "description": "Search the project docs.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "q": {
+                "type": "string",
+                "description": "What to look for."
+              }
+            },
+            "required": [
+              "q"
+            ]
+          }
+        },
+        {
+          "name": "gone",
+          "description": "Removed later.",
+          "inputSchema": null
+        }
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "server": "docs",
+      "tools": [
+        {
+          "name": "search",
+          "description": "Search the project docs.",
+          "inputSchema": {
+            "required": [
+              "q"
+            ],
+            "properties": {
+              "q": {
+                "description": "What to look for.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        }
+      ]
+    },
+    {
+      "server": "fresh",
+      "tools": [
+        {
+          "name": "ping",
+          "description": "Reply pong.",
+          "inputSchema": null
+        }
+      ]
+    }
+  ]
+}

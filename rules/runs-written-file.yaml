@@ -1,22 +1,45 @@
 # The agent wrote a file and then ran it. What ran is in the file, not in the
 # command, so the command alone says nothing; the file's contents are only in
 # the agent's edit, which TraceVault records as a path, not as text.
+# Version 2 (tickets 61, 62): the write may also come from the shell
+# (`>`, `tee`, `curl -o`, `wget -O`, `cp`, `mv`, `install`), and paths are
+# compared in full, resolved against the session's project folder and any
+# `cd` in the line. When a full path cannot be worked out, the names are
+# compared instead and the finding says "probable".
+# A write and a run in one command are the rule runs-own-write.
 # Not blockable: it spans two events.
 id: runs-written-file
-version: 1
+version: 2
 severity: medium
 title: Wrote a file, then ran it
 explanation: "The agent wrote a file and then ran it as a program. What ran is whatever the agent put in that file, so the command on its own does not show it."
 recommendation: "Open the file and check what it does. (For the developer: read the file the agent wrote before trusting the result, and set bash to ask.)"
 window: session
 steps:
-  - match:
-      type: { equals: document.access }
-      operation: { equals: write }
-      outcome: { equals: ok }
-    bind: { path: written }
-  - match:
-      type: { equals: hook.script }
-      tool: { equals: bash }
-      outcome: { in: [ok, error, timeout] }
-      target: { runs: written }
+  - any:
+      - label: written with the edit tool
+        match:
+          type: { equals: document.access }
+          operation: { equals: write }
+          outcome: { equals: ok }
+      - label: written by a shell command
+        match:
+          type: { equals: hook.script }
+          tool: { equals: bash }
+          outcome: { in: [ok, error, timeout] }
+          target: { writes: ["**/*"] }
+    # For an edit the target is the file's path; for a shell command it is the command line, whose written files `runs` reads.
+    bind: { target: written }
+  - any:
+      - label: run
+        match:
+          type: { equals: hook.script }
+          tool: { equals: bash }
+          outcome: { in: [ok, error, timeout] }
+          target: { runs: written }
+      - label: probable, by file name
+        match:
+          type: { equals: hook.script }
+          tool: { equals: bash }
+          outcome: { in: [ok, error, timeout] }
+          target: { runs_by_name: written }

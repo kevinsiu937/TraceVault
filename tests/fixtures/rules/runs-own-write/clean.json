@@ -1,0 +1,147 @@
+{
+  "source": "authored",
+  "note": "Lines that write one file and run another, run a script and log its output, write a.sh in x/ and run ./a.sh from the folder above, run a file before writing it, or only write a note.",
+  "events": [
+    {
+      "id": "evt_ses_own_clean_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_own_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_own_clean_0",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_own_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_own_clean_0",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "echo x > a.sh && bash b.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_own_clean_1",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_own_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_own_clean_1",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "bash a.sh > a.log",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_own_clean_2",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_own_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_own_clean_2",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cd x && echo y > a.sh; cd .. && bash a.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_own_clean_3",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_own_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_own_clean_3",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "bash run.sh && echo done > run.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_own_clean_4",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_own_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_own_clean_4",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cat > notes.md <<'EOF'\nhi\nEOF",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ]
+}

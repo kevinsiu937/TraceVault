@@ -1,0 +1,21 @@
+# A local MCP server's tool differs from the server's first recorded tool
+# list: its description or input schema changed, or the server now offers a
+# tool its first list did not have. A server that was harmless when it was
+# first approved can change what it tells the model later (a "rug pull"); this
+# check does not depend on the wording, so it catches what the text patterns
+# of tool-hidden-instructions miss. The first sighting is trusted: a server
+# whose first list is already poisoned is left to the text-pattern rules.
+# A removed tool is not reported.
+id: tool-changed
+version: 1
+severity: medium
+title: An add-on tool changed since it was first seen
+explanation: "The text this add-on's tool shows the AI is different from when the add-on was first used, or the tool is new. An add-on that was safe at first can later change what it tells the AI."
+recommendation: "Find out why the add-on changed before using it again. (For the developer: compare the tool's description and input schema with the first recorded version on the Configuration page, and pin the server's version.)"
+source:
+  kind: owasp-mcp
+  id: "MCP03:2025"
+  title: Tool Poisoning
+subject: tool
+when:
+  - changed_since_first_seen: true

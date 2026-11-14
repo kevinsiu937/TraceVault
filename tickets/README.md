@@ -95,6 +95,32 @@ Text rules can be evaded, and TraceVault does not prevent. These two make evasio
 | 53 | Commands whose effect cannot be read from them | 44 | done |
 | 54 | Harden: let OpenCode's own permissions do the blocking | 43 | done |
 
+## Scale and architecture before Phase 5 (requested by Kevin, 13 Nov 2026)
+
+Spec: `docs/spec/scale-before-phase-5.md`. Local single-user is a design decision; numbers decide the optimisations.
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 55 | Old databases keep working after an upgrade | — | done |
+| 56 | How slow and how big: measure first | 55 | done |
+| 57 | A session under the rules then and now | 55, 56 | done |
+| 58 | Store repeated configurations and tool lists once | 55, 56 | not needed (56) |
+| 59 | Archive old sessions automatically | 55, 56 | waiting on a real database's numbers |
+
+## Rule evasion before Phase 5 (requested by Kevin, 13 Nov 2026)
+
+Spec: `docs/spec/evasion-before-phase-5.md`. Kevin runs the probes and the live checks.
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 60 | Computed programs and wrappers that take a value | 53 | done |
+| 61 | Files written by the shell | 53, 60 | done |
+| 62 | Compare the full path of the file that ran | 61 | done; probe waiting on Kevin |
+| 63 | Validate the evasion rules live, and audit them for false positives | 60, 61, 62 | scripts done; runs waiting on Kevin |
+| 64 | Egress by program, and can the shell be routed through a proxy? | 60 | done; probe waiting on Kevin |
+| 65 | A local proxy that records where the shell connects | 64 | waiting on 64's probe |
+| 66 | Trust an MCP tool when first seen, flag a later change | 41, 55 | done |
+
 ## Dependency shape
 
 ### Phase 1

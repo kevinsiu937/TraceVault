@@ -2,10 +2,12 @@
 # into a shell, or `eval`. Pattern rules elsewhere read the words of a command;
 # this rule says when those words cannot tell what ran, so the evasion itself
 # is visible. The command line is split the way a shell splits it, so spacing,
-# quoting, `&&` chains and `$( … )` do not hide it.
+# quoting, `&&` chains, `$( … )`, wrappers such as `sudo -u root` and
+# here-documents do not hide it. Version 2 (ticket 60) adds computed program
+# names (`$RUN x`) and code fed to an interpreter through a here-document.
 # Not blockable: the guard checks file tools only.
 id: opaque-execution
-version: 1
+version: 2
 severity: medium
 title: Ran a command whose effect cannot be read from it
 explanation: "The agent ran code hidden inside a command, for example a script passed in quotes, a download run straight away, or text decoded and then run. Nobody reading the record, TraceVault included, can tell from the command what it did."

@@ -1,0 +1,149 @@
+{
+  "source": "authored",
+  "note": "One command writes a file and later in the same line runs it: echo >, curl -o, a here-document after a cd, and tee then ./.",
+  "expect": [
+    {
+      "rule": "runs-own-write",
+      "events": [
+        "evt_own_echo"
+      ]
+    },
+    {
+      "rule": "runs-own-write",
+      "events": [
+        "evt_own_curl"
+      ]
+    },
+    {
+      "rule": "runs-own-write",
+      "events": [
+        "evt_own_heredoc"
+      ]
+    },
+    {
+      "rule": "runs-own-write",
+      "events": [
+        "evt_own_tee"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "evt_ses_own_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_own",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_own_echo",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_own",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_own_echo",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "echo 'rm -rf x' > t.sh && bash t.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_own_curl",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_own",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_own_curl",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "curl -s -o i.sh http://127.0.0.1:9/i && sh i.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_own_heredoc",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_own",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_own_heredoc",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cd tmp && cat > r.py <<'EOF'\nprint(1)\nEOF\npython3 r.py",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_own_tee",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_own",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_own_tee",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "echo x | tee run.sh; chmod +x run.sh; ./run.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ]
+}

@@ -1,13 +1,15 @@
 # A sensitive file is read, then something that can carry data off the machine
-# runs. Shell egress is matched by command text, which is easy to evade, so the
-# finding says "possible" and names the pattern that matched, nothing more.
+# runs. Version 2 (ticket 64): shell egress is a program from the list
+# network-programs, found the way the shell splits the command line, so quoting,
+# sudo and && no longer hide it; a program not on the list still does, so the
+# finding still says "possible" and names what matched.
 #
 # Every egress inside the window is its own finding, so a harmless MCP call
 # does not hide a later curl. A denied egress never ran and is not one. When
 # several sensitive reads are open, a finding names the earliest still inside
 # the window.
 id: exfiltration-chain
-version: 1
+version: 2
 severity: high
 title: Read a secret, then sent data out
 explanation: "The agent read a file holding passwords or keys, then did something that can send data off the computer. The secret may have left the computer, so check what was sent."
@@ -37,7 +39,7 @@ steps:
         match:
           type: { equals: hook.script }
           tool: { equals: bash }
-          target: { regex: '\b(curl|wget|nc|ncat|netcat|scp|sftp|rsync|ftp|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b' }
+          target: { invokes: { list: network-programs } }
           outcome: { in: [ok, error, timeout] }
       - label: git push
         match:

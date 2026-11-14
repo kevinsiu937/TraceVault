@@ -6,8 +6,10 @@ import type { Event } from "../schema/Event.js";
 import { CanonicalJson } from "./CanonicalJson.js";
 import type { EventQuery } from "./EventQuery.js";
 import { EventQuerySql } from "./EventQuerySql.js";
+import { EventUpcaster } from "./EventUpcaster.js";
 import type { EventStorePort } from "./EventStorePort.js";
 import { HashChain } from "./HashChain.js";
+import { SchemaMigrations } from "./SchemaMigrations.js";
 import type { StoredSession } from "./StoredSession.js";
 
 // shortcut: Vitest's bundled Vite predates node:sqlite; Node's resolver loads it.
@@ -23,26 +25,20 @@ export class SqliteEventStore implements EventStorePort {
   private readonly chain: HashChain;
   private readonly querySql = new EventQuerySql();
 
-  constructor(dbPath: string, chain: HashChain = new HashChain(new CanonicalJson())) {
+  constructor(
+    dbPath: string,
+    chain: HashChain = new HashChain(new CanonicalJson()),
+    migrations: SchemaMigrations = new SchemaMigrations(),
+    private readonly upcaster: EventUpcaster = new EventUpcaster(),
+  ) {
     this.database = new DatabaseSync(dbPath);
     this.chain = chain;
-    this.database.exec(`
-      CREATE TABLE IF NOT EXISTS events (
-        id             TEXT PRIMARY KEY,
-        session_id     TEXT NOT NULL,
-        agent_name     TEXT NOT NULL,
-        type           TEXT NOT NULL,
-        timestamp      TEXT NOT NULL,
-        seq            INTEGER,
-        capture_path   TEXT NOT NULL,
-        correlation_id TEXT,
-        body           TEXT NOT NULL,
-        prev_hash      TEXT NOT NULL,
-        hash           TEXT NOT NULL
-      );
-      CREATE INDEX IF NOT EXISTS idx_events_session_ts ON events (session_id, timestamp);
-      CREATE INDEX IF NOT EXISTS idx_events_correlation ON events (correlation_id);
-    `);
+    try {
+      migrations.apply(this.database, dbPath);
+    } catch (error) {
+      this.database.close();
+      throw error;
+    }
   }
 
   append(event: Event): void {
@@ -183,7 +179,7 @@ export class SqliteEventStore implements EventStorePort {
     });
   }
 
-  listAllOrdered(): { rowId: number; event: Event; hash: string }[] {
+  listAllOrdered(): { rowId: number; event: Event; stored: Event; hash: string }[] {
     const rows = this.database
       .prepare("SELECT rowid AS row_id, body, hash FROM events ORDER BY rowid ASC")
       .all();
@@ -196,6 +192,7 @@ export class SqliteEventStore implements EventStorePort {
       return {
         rowId,
         event: this.parseBody(row["body"]),
+        stored: this.parseStored(row["body"]),
         hash: this.asString(row["hash"], "hash"),
       };
     });
@@ -216,9 +213,15 @@ export class SqliteEventStore implements EventStorePort {
     if (typeof value !== "string") {
       throw new TypeError("stored event body is not a string");
     }
-    const event = JSON.parse(value) as Event;
-    // Rows written before duration_ms existed must read back as null, never undefined.
-    return event.duration_ms === undefined ? { ...event, duration_ms: null } : event;
+    return this.upcaster.upcast(this.parseStored(value));
+  }
+
+  /** The body exactly as stored, which is what its hash covers. */
+  private parseStored(value: unknown): Event {
+    if (typeof value !== "string") {
+      throw new TypeError("stored event body is not a string");
+    }
+    return JSON.parse(value) as Event;
   }
 
   private asString(value: unknown, field: string): string {

@@ -10,6 +10,7 @@ export interface EventStorePort {
   hasSession(sessionId: string): boolean;
   hasEventOfType(sessionId: string, type: Event["type"], capturePath: CapturePath): boolean;
   listSessions(): StoredSession[];
-  listAllOrdered(): { rowId: number; event: Event; hash: string }[];
+  /** Every row in chain order: the event as read today, and as stored, which its hash covers. */
+  listAllOrdered(): { rowId: number; event: Event; stored: Event; hash: string }[];
   findByCorrelation(correlationId: string): Event | null;
 }

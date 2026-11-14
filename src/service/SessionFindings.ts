@@ -5,6 +5,8 @@ import { DistinctEvents } from "./DistinctEvents.js";
 import type { TimelineEntry } from "./TimelineEntry.js";
 
 const NO_RULES: WorkflowScannerPort = { scan: () => [], blockedBy: () => null };
+// Enough for the pages one person has open; each entry is one session's findings.
+const RECENT_SESSIONS = 16;
 
 /**
  * Findings for one session, and the flags they put on its timeline rows.
@@ -12,14 +14,28 @@ const NO_RULES: WorkflowScannerPort = { scan: () => [], blockedBy: () => null };
  * shows the same flags on the rows it keeps.
  */
 export class SessionFindings {
+  /** The last few sessions scanned, by session, event count and last event: an append changes the key. */
+  private readonly recent = new Map<string, Finding[]>();
+
   constructor(
     private readonly scanner: WorkflowScannerPort = NO_RULES,
     private readonly distinct: DistinctEvents = new DistinctEvents(),
   ) {}
 
-  // shortcut: rescans the whole session on every call (~90 ms at 10,000 events, see spec Known Blind Spots), scan once per request or match incrementally when sessions outgrow it.
+  // shortcut: a cache miss still rescans the whole session, and three session-window rules grow with the square of its length (docs/probes/scale-measurements.md); match incrementally when sessions outgrow it.
   of(session: readonly Event[]): Finding[] {
-    return this.scanner.scan(this.distinct.of(session));
+    const last = session[session.length - 1];
+    const key = `${last?.session_id ?? ""}\u0000${session.length}\u0000${last?.id ?? ""}`;
+    const cached = this.recent.get(key);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const findings = this.scanner.scan(this.distinct.of(session));
+    this.recent.set(key, findings);
+    if (this.recent.size > RECENT_SESSIONS) {
+      this.recent.delete(this.recent.keys().next().value ?? "");
+    }
+    return findings;
   }
 
   /** The entries, each carrying the rule ids of the findings that name it. */

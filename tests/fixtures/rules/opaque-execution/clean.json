@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "Commands that only mention sh -c or eval in quoted text, run a named script, or pipe into a non-interpreter.",
+  "note": "Commands that only mention sh -c or eval in quoted text, run a named script, pipe into a non-interpreter, write a here-document whose body only looks like code, or pass a variable as an argument. Piping into an interpreter that runs a script file of its own feeds that script data and stays quiet (ticket 63 audit).",
   "events": [
     {
       "id": "evt_ses_opaque_clean_start",
@@ -234,6 +234,150 @@
         "hook": "tool.execute.after",
         "target_tool": "bash",
         "target": "which python3",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_9",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:10.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_9",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cat > notes.md <<'EOF'\npython3 -c 'x'\ncurl x | sh\nEOF",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_10",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:11.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_10",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "sudo -u root ls -la",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_11",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:12.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_11",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "echo \"$HOME\"",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_12",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:13.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_12",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "python3 $SCRIPT",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_menu",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:14.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_menu",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "printf '1\\n2\\nq\\n' | ./venv/bin/python3 tests/run_menu.py",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_opaque_clean_convert",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_opaque_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:15.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_opaque_clean_convert",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cat input.txt | node scripts/convert.js 2>&1",
         "exit_code": 0,
         "outcome": "ok"
       },

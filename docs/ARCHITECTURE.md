@@ -131,13 +131,13 @@ Local HTTP API + WebSocket push. Three tabs: Sessions, Report, Simulations (disa
 ```
 src/schema/       Event, EventType, EventFactory, EventValidator, payloads/
 src/capture/      CapturePort, HookPayloadParser, PluginHookCapture, McpRelay
-src/store/        EventStorePort, SqliteEventStore, CanonicalJson, HashChain, StoreVerifier
+src/store/        EventStorePort, SqliteEventStore, SchemaMigrations (versioned upgrades, never rewriting events), EventUpcaster, SqliteRuleSetStore, CanonicalJson, HashChain, StoreVerifier
 src/service/      InvestigationServicePort, InvestigationService, SessionSummary,
                   TimelineBuilder, TimelineEntry
 src/dashboard/    DashboardServer, routes/, view/
 src/plugin/       PluginConfig, TraceVaultPlugin, EventForwarder, PermissionRequests, CallGuard,
                   SessionDelivery, SessionPreamble, ConfigRedactor, McpToolRelay
-src/cli/          index, mcp-relay (the relay's entry), ServiceAssembly (the service over one database, for run and report), RunCommand, ReportCommand, InitCommand, AgentConfigFile
+src/cli/          index, mcp-relay (the relay's entry), ServiceAssembly (the service over one database, for run and report), StoredRuleHistory (rule sets kept by digest), RunCommand, ReportCommand, InitCommand, AgentConfigFile
 
 tests/seams/      capture.seam.test.ts, dashboard.seam.test.ts
 tests/fixtures/   frozen recorded payloads

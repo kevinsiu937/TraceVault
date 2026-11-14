@@ -41,7 +41,7 @@ function run(name: "trigger" | "clean"): ExitRun {
   return JSON.parse(readFileSync(join(EXIT, `${name}.json`), "utf8")) as ExitRun;
 }
 
-describe.each(["permission-probe.sh", "phase-2-exit-run.sh", "refusal-probe.sh", "subagent-probe.sh", "config-probe.sh", "tool-probe.sh", "phase-3-exit-run.sh"])("probe output safety: %s", (script) => {
+describe.each(["permission-probe.sh", "phase-2-exit-run.sh", "refusal-probe.sh", "subagent-probe.sh", "config-probe.sh", "tool-probe.sh", "phase-3-exit-run.sh", "bash-cwd-probe.sh", "proxy-env-probe.sh", "evasion-exit-run.sh"])("probe output safety: %s", (script) => {
   let directory: string;
   let output: string;
   let bin: string;
@@ -211,10 +211,34 @@ describe("Phase 2 exit: the scripted session on the page", () => {
   });
 });
 
+// Recorded by Kevin with docs/probes/scripts/evasion-exit-run.sh (ticket 63); until then this block is skipped.
+const EVASION = join(FIXTURES, "rules/evasion-exit/trigger.json");
+
+describe.skipIf(!existsSync(EVASION))("Evasion exit: the live session, frozen", () => {
+  const scanner = new WorkflowScannerAssembly().fromDirectory(RULES);
+  const recorded = (): ExitRun => JSON.parse(readFileSync(EVASION, "utf8")) as ExitRun;
+
+  it("is a recorded session", () => {
+    expect(recorded().source).toBe("recorded");
+    expect(recorded().events.length).toBeGreaterThan(0);
+  });
+
+  it("raises the evasion rules on what the agent really ran", () => {
+    const ruleIds = new Set(scanner.scan(recorded().events).map((finding) => finding.ruleId));
+
+    expect([...ruleIds]).toEqual(expect.arrayContaining(["opaque-execution", "runs-written-file", "runs-own-write"]));
+  });
+});
+
 describe("Phase 3 exit: the misconfigured and clean runs, frozen", () => {
   const CONFIG_RULES = join(RULES, "config");
   const scanner = new StaticScanner(new ConfigRuleLoader().loadDirectory(CONFIG_RULES));
-  const ruleIds = readdirSync(CONFIG_RULES).filter((file) => file.endsWith(".yaml")).map((file) => file.replace(/\.yaml$/, "")).sort();
+  // tool-changed needs an earlier session's tool list, which one recorded run cannot have; tool-trust.seam proves it.
+  const ruleIds = readdirSync(CONFIG_RULES)
+    .filter((file) => file.endsWith(".yaml"))
+    .map((file) => file.replace(/\.yaml$/, ""))
+    .filter((id) => id !== "tool-changed")
+    .sort();
 
   function exit(name: "misconfigured" | "clean"): { source: string; events: Event[]; text: string } {
     const text = readFileSync(join(FIXTURES, "phase-3-exit", `${name}.json`), "utf8");

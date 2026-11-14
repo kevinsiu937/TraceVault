@@ -10,6 +10,8 @@ import type { InvestigationServicePort, RecordResult } from "./InvestigationServ
 import type { SessionActivity } from "./SessionActivity.js";
 import { SessionConfiguration } from "./SessionConfiguration.js";
 import { SessionFindings } from "./SessionFindings.js";
+import type { RuleChoice, RuleHistoryPort, RuleVersions } from "./RuleHistoryPort.js";
+import { SessionRules } from "./SessionRules.js";
 import type { SessionSummary } from "./SessionSummary.js";
 import type { TimelineBuilder } from "./TimelineBuilder.js";
 import type { TimelineEntry } from "./TimelineEntry.js";
@@ -34,7 +36,12 @@ export class InvestigationService implements InvestigationServicePort {
     private readonly timeline: TimelineBuilder,
     private readonly findings: SessionFindings = new SessionFindings(),
     private readonly configuration: SessionConfiguration = new SessionConfiguration(),
-  ) {}
+    history: RuleHistoryPort | null = null,
+  ) {
+    this.rules = new SessionRules({ findings, configuration }, history);
+  }
+
+  private readonly rules: SessionRules;
 
   recordHookPayload(raw: unknown, receivedAt: Date): RecordResult {
     let event: Event | null;
@@ -62,7 +69,11 @@ export class InvestigationService implements InvestigationServicePort {
       }
     }
 
+    const first = !this.store.hasSession(event.session_id);
     this.store.append(event);
+    if (first) {
+      this.rules.remember(event.session_id);
+    }
     if (event.type !== "capture.duplicate") {
       this.publish(event);
     }
@@ -130,22 +141,30 @@ export class InvestigationService implements InvestigationServicePort {
     return this.store.hasSession(sessionId);
   }
 
-  getTimeline(sessionId: string, filter: ActivityFilter = ActivityFilter.none): TimelineEntry[] {
+  getTimeline(sessionId: string, filter: ActivityFilter = ActivityFilter.none, rules: RuleChoice = "now"): TimelineEntry[] {
     const session = this.store.listBySession(sessionId);
     const events = filter.active ? this.store.listMatching(filter.toQuery(sessionId)) : session;
-    return this.findings.flag(this.timeline.build(events), session);
+    return this.rules.for(sessionId, rules).findings.flag(this.timeline.build(events), session);
   }
 
-  getFindings(sessionId: string): Finding[] {
-    return this.findings.of(this.store.listBySession(sessionId));
+  getFindings(sessionId: string, rules: RuleChoice = "now"): Finding[] {
+    return this.rules.for(sessionId, rules).findings.of(this.store.listBySession(sessionId));
+  }
+
+  getRuleVersions(sessionId: string): RuleVersions {
+    return this.rules.versions(sessionId, this.store.listBySession(sessionId));
   }
 
   getConfiguration(sessionId: string): ConfigurationSnapshot | null {
     return this.configuration.latest(this.store.listBySession(sessionId));
   }
 
-  getConfigFindings(sessionId: string): ConfigFinding[] {
-    return this.configuration.findings(this.store.listBySession(sessionId));
+  getConfigFindings(sessionId: string, rules: RuleChoice = "now"): ConfigFinding[] {
+    const known = this.store.listMatching({ sessionId: null, kinds: ["mcp.tools"], outcomes: [], operations: [], text: "" });
+    return this.rules.for(sessionId, rules).configuration.findings(
+      this.store.listBySession(sessionId),
+      known.filter((event) => event.type === "mcp.tools"),
+    );
   }
 
   listActivity(filter: ActivityFilter = ActivityFilter.none): SessionActivity[] {

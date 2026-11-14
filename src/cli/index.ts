@@ -38,8 +38,9 @@ Usage:
                                           risky calls; --undo puts the original back
   tracevault import [--db <path>]         import the agent's existing session history
   tracevault run [--port <n>] [--db <path>]   start the local service
-  tracevault report <session-id> [--db <path>] --out <file>
-                                          write one session as a self-contained HTML report
+  tracevault report <session-id> [--db <path>] --out <file> [--rules now|then]
+                                          write one session as a self-contained HTML report,
+                                          under today's rules or those from when it was recorded
   tracevault --version
   tracevault --help
 `;
@@ -60,7 +61,7 @@ function errorMessage(error: unknown): string {
 }
 
 export async function main(argv: readonly string[]): Promise<number> {
-  const options = new CommandOptions({ port: DEFAULT_PORT, dbPath: DEFAULT_DB, directory: process.cwd(), block: false, out: null, undo: false });
+  const options = new CommandOptions({ port: DEFAULT_PORT, dbPath: DEFAULT_DB, directory: process.cwd(), block: false, out: null, undo: false, rules: "now" });
   const first = argv[0];
 
   if (first === "--version" || first === "-v") {
@@ -137,11 +138,11 @@ export async function main(argv: readonly string[]): Promise<number> {
     if (sessionId === undefined || sessionId.startsWith("-")) {
       throw new TypeError("report expects a session id");
     }
-    const { dbPath, out } = options.parse(argv.slice(2), ["--db", "--out"]);
+    const { dbPath, out, rules } = options.parse(argv.slice(2), ["--db", "--out", "--rules"]);
     if (out === null) {
       throw new TypeError("report expects --out <file>");
     }
-    process.stdout.write(`${new ReportCommand().run(sessionId, dbPath, out)}\n`);
+    process.stdout.write(`${new ReportCommand().run(sessionId, dbPath, out, rules)}\n`);
     return 0;
   } catch (error) {
     process.stderr.write(`tracevault: ${errorMessage(error)}\n\n${USAGE}`);

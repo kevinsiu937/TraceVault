@@ -98,6 +98,7 @@ export class DashboardServer {
     try {
       const url = new URL(request.url ?? "/", `http://${LOOPBACK}`);
       const path = url.pathname;
+      const rules = url.searchParams.get("rules") === "then" ? "then" : "now";
       const filter = this.filterParams.parse(url);
       const state = SessionParams.parse(url);
 
@@ -173,7 +174,7 @@ export class DashboardServer {
         }
         // The id goes into a header, so only safe characters reach the file name.
         const file = `tracevault-report-${sessionId.replace(/[^A-Za-z0-9_-]/g, "_")}.html`;
-        this.send(response, 200, this.reportView.render(this.service, sessionId), "text/html; charset=utf-8", { "content-disposition": `attachment; filename="${file}"` });
+        this.send(response, 200, this.reportView.render(this.service, sessionId, rules), "text/html; charset=utf-8", { "content-disposition": `attachment; filename="${file}"` });
         return;
       }
 
@@ -187,8 +188,8 @@ export class DashboardServer {
           this.send(response, 404, "session not found", "text/plain; charset=utf-8");
           return;
         }
-        const allEntries = this.service.getTimeline(sessionId);
-        const entries = filter.active ? this.service.getTimeline(sessionId, filter) : allEntries;
+        const allEntries = this.service.getTimeline(sessionId, undefined, rules);
+        const entries = filter.active ? this.service.getTimeline(sessionId, filter, rules) : allEntries;
         const sessions = this.service.listSessions();
         const index = sessions.findIndex((session) => session.sessionId === sessionId);
         const summary = sessions[index] ?? {
@@ -214,8 +215,9 @@ export class DashboardServer {
           summary,
           entries,
           allEntries,
-          findings: this.service.getFindings(sessionId),
-          configFindingCount: this.service.getConfigFindings(sessionId).length,
+          findings: this.service.getFindings(sessionId, rules),
+          configFindingCount: this.service.getConfigFindings(sessionId, rules).length,
+          rules: { viewing: rules, versions: this.service.getRuleVersions(sessionId) },
           filter,
           state,
           sessions,

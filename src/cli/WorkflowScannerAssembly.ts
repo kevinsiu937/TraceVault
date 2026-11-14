@@ -9,6 +9,8 @@ import { OtherThanCondition } from "../scanner/dynamic/OtherThanCondition.js";
 import { OutsideCondition } from "../scanner/dynamic/OutsideCondition.js";
 import { RegexCondition } from "../scanner/dynamic/RegexCondition.js";
 import { RunsCondition } from "../scanner/dynamic/RunsCondition.js";
+import { RunsOwnWriteCondition } from "../scanner/dynamic/RunsOwnWriteCondition.js";
+import { WritesCondition } from "../scanner/dynamic/WritesCondition.js";
 import { RuleSetLoader } from "../scanner/dynamic/RuleSetLoader.js";
 import { WorkflowScanner } from "../scanner/dynamic/WorkflowScanner.js";
 import type { WorkflowScannerPort } from "../scanner/dynamic/WorkflowScannerPort.js";
@@ -30,6 +32,9 @@ export class WorkflowScannerAssembly {
       other_than: OtherThanCondition.parse,
       invokes: InvokesCondition.parse,
       runs: RunsCondition.parse,
+      runs_by_name: RunsCondition.parseByName,
+      runs_own_write: RunsOwnWriteCondition.parse,
+      writes: WritesCondition.parse,
     });
     return new WorkflowScanner(new RuleSetLoader(conditions).load(directory));
   }

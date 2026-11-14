@@ -30,7 +30,11 @@ const SESSION = TRIGGER[0]?.session_id ?? "";
 const CLEAN = events("rules/phase-2-exit/clean.json");
 const MISCONFIGURED = events("phase-3-exit/misconfigured.json");
 const WELL_CONFIGURED = events("phase-3-exit/clean.json");
-const CONFIG_RULES = readdirSync(join(import.meta.dirname, "../../rules/config")).map((file) => file.replace(/\.yaml$/, "")).sort();
+// tool-changed needs an earlier session's tool list, which the one recorded run cannot have; tool-trust.seam proves it.
+const CONFIG_RULES = readdirSync(join(import.meta.dirname, "../../rules/config"))
+  .map((file) => file.replace(/\.yaml$/, ""))
+  .filter((id) => id !== "tool-changed")
+  .sort();
 // Recorded 10 Nov 2026 (refusal-probe.sh run 2): the call the guard refused.
 const REFUSED = (JSON.parse(readFileSync(join(FIXTURES, "tool-refused-by-hook.json"), "utf8")) as {
   "tool.execute.before": { input: { sessionID: string; callID: string; tool: string }; output: { args: Record<string, unknown> } };

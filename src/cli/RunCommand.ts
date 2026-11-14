@@ -5,6 +5,7 @@ import { DashboardServer } from "../dashboard/DashboardServer.js";
 import { DetailPaneView } from "../dashboard/DetailPaneView.js";
 import { FileRailView } from "../dashboard/FileRailView.js";
 import { FindingsPanelView } from "../dashboard/FindingsPanelView.js";
+import { RulesNoticeView } from "../dashboard/RulesNoticeView.js";
 import { SkippedCallsView } from "../dashboard/SkippedCallsView.js";
 import { GraphView } from "../dashboard/GraphView.js";
 import { ReplayBarView } from "../dashboard/ReplayBarView.js";
@@ -38,7 +39,7 @@ export class RunCommand {
       undefined,
       new SessionPageView(
         new SessionHeaderView(),
-        [new SkippedCallsView(), new FindingsPanelView(), new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView(), new ReplayBarView()],
+        [new RulesNoticeView(), new SkippedCallsView(), new FindingsPanelView(), new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView(), new ReplayBarView()],
         new DetailPaneView(),
       ),
     );

@@ -93,6 +93,9 @@ describe("seam C: rule fixtures in, findings out", () => {
       ["sensitive read", "shell egress"],
       ["sensitive file named in the shell", "shell egress"],
       ["sensitive read", "git push"],
+      ["sensitive read", "shell egress"],
+      ["sensitive read", "shell egress"],
+      ["sensitive read", "shell egress"],
     ]);
   });
 
@@ -102,6 +105,23 @@ describe("seam C: rule fixtures in, findings out", () => {
     );
 
     expect(scanner.scan(events).filter((finding) => finding.ruleId === "scope-drift")).toEqual([]);
+  });
+
+  it("falls back to a probable match by file name when the session's project folder is unknown", () => {
+    const events = fixture("runs-written-file", "trigger").events.map((event) =>
+      event.type === "session.start" ? { ...event, data: { title: "fixture" } } : event,
+    );
+    const found = scanner.scan(events).filter((finding) => finding.ruleId === "runs-written-file");
+
+    expect(found.map((finding) => finding.eventIds)).toEqual(fixture("runs-written-file", "trigger").expect.map((finding) => finding.events));
+    expect(found.find((finding) => finding.eventIds.includes("evt_runs_r_build"))?.matched).toEqual(["written with the edit tool", "probable, by file name"]);
+    expect(found.find((finding) => finding.eventIds.includes("evt_runs_r_curl"))?.matched).toEqual(["written by a shell command", "probable, by file name"]);
+  });
+
+  it("names a full-path match as a run, not a probable one", () => {
+    const [finding] = scanner.scan(fixture("runs-written-file", "trigger").events).filter((candidate) => candidate.ruleId === "runs-written-file");
+
+    expect(finding?.matched).toEqual(["written with the edit tool", "run"]);
   });
 
   it("reports the rule's version, severity and explanation with a digest of the rule set", () => {
@@ -196,10 +216,18 @@ steps:
     expect(load()).toThrow(/probe\.yaml: steps\[0\]\.match\.target\.invokes: /);
   });
 
-  it("rejects runs without the name of an earlier binding", () => {
-    write("probe.yaml", VALID.replace("type: { equals: document.access }", 'target: { runs: "" }'));
+  it.each(["runs", "runs_by_name"])("rejects %s without the name of an earlier binding", (operator) => {
+    write("probe.yaml", VALID.replace("type: { equals: document.access }", `target: { ${operator}: "" }`));
 
-    expect(load()).toThrow(/probe\.yaml: steps\[0\]\.match\.target\.runs: expects the name/);
+    expect(load()).toThrow(new RegExp(`probe\\.yaml: steps\\[0\\]\\.match\\.target\\.${operator}: expects the name`));
+  });
+
+  it("rejects writes without globs, and runs_own_write with anything but true", () => {
+    write("probe.yaml", VALID.replace("type: { equals: document.access }", "target: { writes: [] }"));
+    expect(load()).toThrow(/probe\.yaml: steps\[0\]\.match\.target\.writes: /);
+
+    write("probe.yaml", VALID.replace("type: { equals: document.access }", "target: { runs_own_write: yes }"));
+    expect(load()).toThrow(/probe\.yaml: steps\[0\]\.match\.target\.runs_own_write: expects true/);
   });
 
   it.each(["allowed_by", "other_than"])("rejects %s without the name of an earlier binding", (operator) => {

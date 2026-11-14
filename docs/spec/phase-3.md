@@ -93,9 +93,10 @@ A check is one of:
   `configured: true` counts only an allowance the configuration made, never one that OpenCode's defaults make.
 - `remote_mcp: true`. The subject agent may call the tools of an enabled remote MCP server without asking. OpenCode names those tools `<server>_<tool>`, so the check asks about `<server>_*`.
 - `match: { <fact>: { regex: <pattern> } }`. One of the subject's fact values contains a match, ignoring case. `regex` is the one operator configuration facts support so far. Patterns are matched with Unicode on, so a rule can name characters beyond U+FFFF. For a name, the evidence is the whole name; for tool text, it is the part that matched, with invisible characters spelled out and Unicode tag characters decoded into the sentence they hide.
+- `changed_since_first_seen: true` (ticket 66). The subject tool differs from its server's first recorded tool list, in any session: its description or input schema changed (keys compared in sorted order), or that first list did not have it. A first sighting compares equal to itself, so it is trusted; a removed tool is not reported. Evidence names what changed and when the server was first seen.
 - `any: [{ label, <check> }, ...]`. This holds when any alternative holds. Every alternative that holds adds its evidence, labelled.
 
-A check suits one subject: `allows` and `remote_mcp` need `agent`, and `match` needs `mcp-server` or `tool`. The loader rejects a check on the wrong subject.
+A check suits one subject: `allows` and `remote_mcp` need `agent`, `match` needs `mcp-server` or `tool`, and `changed_since_first_seen` needs `tool`. The loader rejects a check on the wrong subject.
 
 Subject facts:
 

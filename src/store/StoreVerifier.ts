@@ -31,11 +31,11 @@ export class StoreVerifier {
       const position = positions.get(sessionId) ?? 0;
       positions.set(sessionId, position + 1);
 
-      if (row.event.prev_hash !== prevHash) {
+      if (row.stored.prev_hash !== prevHash) {
         return { ok: false, sessionId, position, rowId: row.rowId, reason: "broken-link" };
       }
 
-      if (this.chain.compute(prevHash, row.event) !== row.hash) {
+      if (this.chain.compute(prevHash, row.stored) !== row.hash) {
         return { ok: false, sessionId, position, rowId: row.rowId, reason: "hash-mismatch" };
       }
 

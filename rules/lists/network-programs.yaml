@@ -1,0 +1,28 @@
+# Programs that can send data off the machine. The `invokes` operator matches
+# them as the shell runs them (behind sudo, after &&, inside $( … )), not as
+# text, so `echo "use curl"` does not count and `/usr/bin/curl` does.
+# DNS tools are listed because a name lookup can carry data out (DNS exfiltration).
+# Code passed to an interpreter (`python3 -c`) is opaque-execution's business,
+# and `git push` has its own alternative in exfiltration-chain.
+name: network-programs
+items:
+  - "curl"
+  - "wget"
+  - "nc"
+  - "ncat"
+  - "netcat"
+  - "socat"
+  - "ssh"
+  - "scp"
+  - "sftp"
+  - "rsync"
+  - "ftp"
+  - "tftp"
+  - "telnet"
+  - "nslookup"
+  - "dig"
+  - "host"
+  - "Invoke-WebRequest"
+  - "Invoke-RestMethod"
+  - "iwr"
+  - "irm"

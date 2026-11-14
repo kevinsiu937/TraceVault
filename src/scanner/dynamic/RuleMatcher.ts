@@ -35,7 +35,8 @@ export class RuleMatcher {
     private readonly ruleSetDigest: string,
   ) {}
 
-  observe(eventId: string, at: number, facts: EventFacts): Finding[] {
+  /** `session` holds what a new match starts out knowing about the session, such as its project folder. */
+  observe(eventId: string, at: number, facts: EventFacts, session: Bindings = new Map()): Finding[] {
     const findings: Finding[] = [];
     const stillOpen: PartialMatch[] = [];
     let consumed = false;
@@ -63,7 +64,7 @@ export class RuleMatcher {
 
     const started = consumed
       ? null
-      : this.advance({ events: [], next: 0, count: 0, bound: new Map() }, eventId, at, facts);
+      : this.advance({ events: [], next: 0, count: 0, bound: new Map(session) }, eventId, at, facts);
     if (started !== null) {
       if (started.next === this.rule.steps.length) {
         findings.push(this.finding(started));

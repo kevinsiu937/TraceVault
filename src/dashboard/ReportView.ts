@@ -1,6 +1,7 @@
 import type { ConfigFinding } from "../schema/ConfigFinding.js";
 import type { Finding } from "../schema/Finding.js";
 import type { InvestigationServicePort } from "../service/InvestigationServicePort.js";
+import type { RuleChoice, RuleVersions } from "../service/RuleHistoryPort.js";
 import type { SessionSummary } from "../service/SessionSummary.js";
 import type { TimelineEntry } from "../service/TimelineEntry.js";
 import { PlainWords } from "./PlainWords.js";
@@ -44,14 +45,14 @@ export class ReportView {
     private readonly words: PlainWords = new PlainWords(),
   ) {}
 
-  render(service: InvestigationServicePort, sessionId: string): string {
+  render(service: InvestigationServicePort, sessionId: string, rules: RuleChoice = "now"): string {
     const summary = service.listSessions().find((session) => session.sessionId === sessionId);
     if (summary === undefined) {
       throw new Error(`no session '${sessionId}'`);
     }
-    const entries = service.getTimeline(sessionId);
-    const findings = service.getFindings(sessionId);
-    const configFindings = service.getConfigFindings(sessionId);
+    const entries = service.getTimeline(sessionId, undefined, rules);
+    const findings = service.getFindings(sessionId, rules);
+    const configFindings = service.getConfigFindings(sessionId, rules);
     const recorded = service.getConfiguration(sessionId) !== null;
     const titles = new Map([...findings, ...configFindings].map((finding) => [finding.ruleId, finding.title]));
 
@@ -66,6 +67,7 @@ export class ReportView {
 <body>
 <main>
 ${this.header(summary, entries.length, [...findings, ...configFindings][0]?.ruleSetDigest)}
+${this.rulesNotice(rules, service.getRuleVersions(sessionId))}
 ${this.inShort(entries, this.findings.needingALook(entries, findings), recorded, configFindings)}
 ${this.findings.render(entries, findings)}
 ${this.configuration.render(recorded, configFindings)}
@@ -114,6 +116,19 @@ ${this.glossary()}
 <h2>In short</h2>
 <dl class="status">${rows.map(([label, value, state]) => `<div class="${state}"><dt>${label}</dt><dd>${value}</dd></div>`).join("")}</dl>
 </section>`;
+  }
+
+  /** One plain line when the rules matter, as on the session page; empty when then and now agree. */
+  private rulesNotice(viewing: RuleChoice, versions: RuleVersions): string {
+    const text =
+      viewing === "then" && versions !== "unknown"
+        ? "These findings use the rules from when this session was recorded."
+        : versions === "different"
+          ? "These findings use today's rules. The rules from when this session was recorded give a different result."
+          : versions === "unknown"
+            ? "The rules from when this session was recorded were not kept, so these findings use today's rules."
+            : "";
+    return text === "" ? "" : `<p class="rules-notice">${text}</p>`;
   }
 
   private glossary(): string {
@@ -174,6 +189,7 @@ td.time{white-space:nowrap;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Conso
 td.outcome.denied,td.outcome.error{color:var(--bad);font-weight:600}
 tr:target{outline:2px solid var(--ring)}
 .glossary{margin-top:36px}
+.rules-notice{margin:16px 0 0;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);font-size:14px}
 @media (max-width:480px){h1{font-size:24px}.status div{flex-direction:column;gap:2px}.status dd{text-align:left}}
 @media print{body{background:#fff;font-size:12px}main{max-width:none;padding:0}li,tr{break-inside:avoid}}`;
   }

@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "The agent writes a script and then runs it: through bash, through python3 with a relative path, and directly after chmod.",
+  "note": "The agent writes a script and then runs it: written with the edit tool or by the shell (curl -o, a here-document, echo > after a cd), and run through bash, python3, sh, directly after chmod, or fed with <. Paths are compared in full against the project folder.",
   "expect": [
     {
       "rule": "runs-written-file",
@@ -21,6 +21,34 @@
       "events": [
         "evt_runs_w_deploy",
         "evt_runs_r_deploy"
+      ]
+    },
+    {
+      "rule": "runs-written-file",
+      "events": [
+        "evt_runs_w_curl",
+        "evt_runs_r_curl"
+      ]
+    },
+    {
+      "rule": "runs-written-file",
+      "events": [
+        "evt_runs_w_heredoc",
+        "evt_runs_r_heredoc"
+      ]
+    },
+    {
+      "rule": "runs-written-file",
+      "events": [
+        "evt_runs_w_cd",
+        "evt_runs_r_cd"
+      ]
+    },
+    {
+      "rule": "runs-written-file",
+      "events": [
+        "evt_runs_w_stdin",
+        "evt_runs_r_stdin"
       ]
     }
   ],
@@ -179,6 +207,196 @@
         "hook": "tool.execute.after",
         "target_tool": "bash",
         "target": "chmod +x deploy.sh && ./deploy.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_w_curl",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:07.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_w_curl",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "curl -s -o tool.sh http://127.0.0.1:9/tool",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_r_curl",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:08.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_r_curl",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "sh tool.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_w_heredoc",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:09.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_w_heredoc",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cat > gen.py <<'EOF'\nprint(1)\nEOF",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_r_heredoc",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:10.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_r_heredoc",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "python3 gen.py",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_w_cd",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:11.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_w_cd",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cd tools && echo 'make' > a.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_r_cd",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:12.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_r_cd",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "bash tools/a.sh",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_w_stdin",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:13.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_w_stdin",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/setup.sh",
+        "operation": "write",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_runs_r_stdin",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_runs",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-13T09:00:14.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_runs_r_stdin",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "bash < setup.sh",
         "exit_code": 0,
         "outcome": "ok"
       },

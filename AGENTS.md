@@ -13,7 +13,7 @@ A change that works but violates either one is rejected, not merged with a note 
 
 ## 1. What we are building now
 
-**Phases 1, 2, 3 and 4 are closed.** Their exit verifications are tickets 10, 33, 43 and 51. Phase 5 (the simulator) starts only when Kevin says so; until then, work is limited to fixes and follow-ups he asks for. Tickets 53 (opaque commands) and 54 (`tracevault harden`) are the hardening follow-up he asked for before Phase 5.
+**Phases 1, 2, 3 and 4 are closed.** Their exit verifications are tickets 10, 33, 43 and 51. Phase 5 (the simulator) starts only when Kevin says so; until then, work is limited to fixes and follow-ups he asks for. Tickets 53 (opaque commands) and 54 (`tracevault harden`) are the hardening follow-up he asked for before Phase 5. Tickets 55 to 59 (`docs/spec/scale-before-phase-5.md`) are the scale follow-up he asked for next; 56's numbers showed 58 is not needed and 59 waits on a real database's numbers. Tickets 60 to 66 (`docs/spec/evasion-before-phase-5.md`) close rule-evasion gaps; 62, 63 and 64 wait on probes and live runs Kevin makes, and 65 waits on 64's probe.
 
 **Phase 4, the last phase built, is the report generator:**
 

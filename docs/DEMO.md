@@ -76,7 +76,7 @@ npm run build
 npm test
 ```
 
-34 test files, 559 tests (13 Nov 2026).
+37 test files, 633 tests (15 Nov 2026).
 
 ## Phase 1 exit checklist (recorded 25 Oct 2026)
 
@@ -295,3 +295,38 @@ These are listed in `docs/spec/phase-4.md` under Known Blind Spots:
 - The report holds command text and paths as recorded. Sharing it shares them.
 - A recommendation is general advice per rule, not advice about this session.
 - The header names the rule-set digest only when some rule matched.
+
+# Rule evasion checks (tickets 60 to 66)
+
+**What it shows:** commands that hide what they run, scripts written and then run (by the edit tool or the shell, in one command or two), egress found as a program rather than as text, and an MCP tool that changed after it was first used. Spec: `docs/spec/evasion-before-phase-5.md`.
+
+The rules are proven in the gate by authored fixtures. Four steps need a real agent or your own history, and you run them:
+
+```bash
+npm run build
+# 62: does every bash call start in the project folder?
+TRACEVAULT_PROBE_MODEL=deepseek/deepseek-flash sh docs/probes/scripts/bash-cwd-probe.sh /tmp/tv-cwd
+# 64: does the bash tool inherit variables a plugin sets in shell.env?
+TRACEVAULT_PROBE_MODEL=deepseek/deepseek-flash sh docs/probes/scripts/proxy-env-probe.sh /tmp/tv-proxy
+# 63: the agent runs each evasion for real; the session is frozen as a fixture
+TRACEVAULT_PROBE_MODEL=deepseek/deepseek-flash sh docs/probes/scripts/evasion-exit-run.sh /tmp/tv-evasion
+# 63: how often each rule fires on your own OpenCode history (counts only; add --show to see commands, in this terminal only)
+node docs/probes/scripts/false-positive-audit.mjs
+```
+
+**Each script:**
+- The two probes print their answer on the last line.
+- The live run prints the findings by rule. Expect at least `opaque-execution`, `runs-written-file` and `runs-own-write`. It re-records `tests/fixtures/rules/evasion-exit/trigger.json`; keep it to close ticket 63, or run `git restore tests/fixtures` to drop it.
+- The audit imports your history into a throwaway database in the system temp folder and deletes it afterwards. Given a TraceVault database instead, it scans a copy. Share only the counts.
+
+**Safety:**
+- Every probe allows only its exact commands. The proxy probe points at 127.0.0.1:9, where nothing listens, and prints only the three variables it sets.
+- The live run's download comes from a throwaway file server on 127.0.0.1 that serves one `echo hello` script.
+
+## Rule evasion known limitations
+
+Listed in `docs/spec/evasion-before-phase-5.md` under Known Blind Spots:
+- Aliases and shell functions are not expanded.
+- A program not on the egress list is missed.
+- Full paths assume each bash call starts in the project folder, until the ticket 62 probe answers.
+- A changed MCP tool is reported in every later session, because a change cannot be accepted yet.

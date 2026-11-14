@@ -1,41 +1,71 @@
 import type { Bindings, Condition } from "./Condition.js";
-import { NormalisedPath } from "./NormalisedPath.js";
 import { type ShellCommand, ShellCommandLine } from "./ShellCommandLine.js";
+import { SESSION_PROJECT, ShellScripts } from "./ShellScripts.js";
 
-// Programs that run the file named as their first argument.
-const RUNNERS = /^(sh|bash|zsh|dash|ksh|fish|source|\.|python[0-9.]*|node|deno|bun|ruby|perl|php|osascript|pwsh)$/;
+interface Written {
+  readonly file: string;
+  readonly dir: string | null;
+}
 
 /**
- * `{ runs: name }`: the fact is a command line, and one of its commands runs
- * the file an earlier step bound as `name`, either directly (`./build.sh`) or
- * through a shell or interpreter (`bash build.sh`, `python3 tool.py`). A
- * relative path matches the end of the bound path.
+ * `{ runs: name }`: the fact is a command line that runs a file an earlier
+ * step wrote. The binding holds either that file's path (an edit-tool write)
+ * or the command line that wrote it (`echo … > x.sh`). Relative paths are
+ * resolved against the session's project folder and any `cd` in the line, and
+ * the full paths must be equal.
+ *
+ * `{ runs_by_name: name }` is the fallback for when a full path cannot be
+ * worked out (no project folder, or a `cd` the line does not explain): the
+ * names match when one ends with the other. A rule offers it as a separate,
+ * "probable" alternative.
  */
 export class RunsCondition implements Condition {
-  private constructor(private readonly binding: string) {}
+  private constructor(
+    private readonly binding: string,
+    private readonly byName: boolean,
+  ) {}
 
   static parse(argument: unknown): Condition {
-    if (typeof argument !== "string" || argument.length === 0) {
-      throw new TypeError("expects the name of a file path bound by an earlier step");
-    }
-    return new RunsCondition(argument);
+    return new RunsCondition(RunsCondition.name(argument), false);
+  }
+
+  static parseByName(argument: unknown): Condition {
+    return new RunsCondition(RunsCondition.name(argument), true);
   }
 
   matches(value: string | null, bound: Bindings): boolean {
-    const file = bound.get(this.binding);
-    if (value === null || file === undefined) {
+    const recorded = bound.get(this.binding);
+    if (value === null || recorded === undefined) {
       return false;
     }
-    const target = NormalisedPath.of(file).value;
-    return ShellCommandLine.parse(value).commands.some((command) => RunsCondition.runs(command, target));
+    const root = bound.get(SESSION_PROJECT) ?? null;
+    const written = RunsCondition.written(recorded);
+    return ShellCommandLine.parse(value).commands.some((command) => written.some((file) => this.runs(command, file, root)));
   }
 
-  private static runs(command: ShellCommand, target: string): boolean {
-    const script = RUNNERS.test(command.program) ? command.args.find((arg) => !arg.startsWith("-")) : command.path;
-    if (script === undefined) {
+  private runs(command: ShellCommand, written: Written, root: string | null): boolean {
+    const script = ShellScripts.script(command);
+    if (script === null) {
       return false;
     }
-    const path = NormalisedPath.of(script).value.replace(/^\.\//, "");
-    return path.length > 0 && (target === path || target.endsWith(`/${path}`));
+    const ran = ShellScripts.resolve(root, command.dir, script);
+    const wrote = ShellScripts.resolve(root, written.dir, written.file);
+    if (ran !== null && wrote !== null) {
+      return !this.byName && ran === wrote;
+    }
+    return this.byName && ShellScripts.sameByName(script, written.file);
+  }
+
+  /** The files a recorded write names: a command line's written files, or the recorded value as one path. */
+  private static written(recorded: string): readonly Written[] {
+    const writes = ShellCommandLine.parse(recorded).commands.flatMap((command) => command.writes.map((file) => ({ file, dir: command.dir })));
+    return writes.length > 0 ? writes : [{ file: recorded, dir: "" }];
+  }
+
+  private static name(argument: unknown): string {
+    if (typeof argument !== "string" || argument.length === 0) {
+      throw new TypeError("expects the name of a file path bound by an earlier step");
+    }
+    return argument;
   }
 }
