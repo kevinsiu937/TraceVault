@@ -1,14 +1,16 @@
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 
-const DEFAULT_STATE_DIR = process.env["LOCALAPPDATA"] ?? join(homedir(), ".local", "state");
-const DEFAULT_GAP_STATE = join(DEFAULT_STATE_DIR, "tracevault", "pending-gaps.json");
-
 export class PluginConfig {
+  /** Where TraceVault keeps what must outlive a project folder: the gap state and, by default, the database. */
+  static stateDirectory(): string {
+    return join(process.env["LOCALAPPDATA"] ?? join(homedir(), ".local", "state"), "tracevault");
+  }
+
   private readonly endpoint: string;
   private readonly gapPath: string;
 
-  constructor(endpoint: string, statePath: string = DEFAULT_GAP_STATE) {
+  constructor(endpoint: string, statePath: string = join(PluginConfig.stateDirectory(), "pending-gaps.json")) {
     const parsed = new URL(endpoint);
     if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
       throw new TypeError(`unsupported endpoint protocol: ${parsed.protocol}`);

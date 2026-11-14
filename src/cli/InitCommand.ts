@@ -1,6 +1,8 @@
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { AgentConfigFile } from "./AgentConfigFile.js";
+import type { HardenCommand } from "./HardenCommand.js";
 import { InstallManifest } from "./InstallManifest.js";
 
 const LOADER_FILE = join(".opencode", "plugin", "tracevault.js");
@@ -10,11 +12,16 @@ const HOOK_URL = "http://127.0.0.1:4319/hook";
 export class InitCommand {
   private readonly projectDir: string;
   private readonly block: boolean;
+  private readonly hardener: HardenCommand | null;
 
-  /** `block` installs the opt-in guard, which refuses a call a blockable rule matches. Off by default. */
-  constructor(projectDir: string, block = false) {
+  /**
+   * `block` installs the opt-in guard, which refuses a call a blockable rule matches. Off by default.
+   * `hardener`, when given, also tightens the project's configuration after the install.
+   */
+  constructor(projectDir: string, block = false, hardener: HardenCommand | null = null) {
     this.projectDir = projectDir;
     this.block = block;
+    this.hardener = hardener;
   }
 
   install(): string {
@@ -24,10 +31,23 @@ export class InitCommand {
     const existed = loader.exists();
     const previousContent = existed ? loader.read() : null;
 
-    new InstallManifest(loaderPath, existed, previousContent).save(manifestPath);
+    // A second init must keep the first run's record, or uninstall would restore TraceVault's own loader.
+    if (!existsSync(manifestPath)) {
+      new InstallManifest(loaderPath, existed, previousContent).save(manifestPath);
+    }
     loader.write(this.loaderSource());
 
-    return `installed TraceVault plugin at ${LOADER_FILE.replaceAll("\\", "/")}${this.block ? " with blocking on" : ""}`;
+    const installed = `installed TraceVault plugin at ${LOADER_FILE.replaceAll("\\", "/")}${this.block ? " with blocking on" : ""}`;
+    return this.hardener === null ? installed : `${installed}\n${this.harden(this.hardener)}`;
+  }
+
+  /** A configuration harden refuses to touch must not undo the install: recording still works without it. */
+  private harden(hardener: HardenCommand): string {
+    try {
+      return hardener.harden();
+    } catch (error) {
+      return `not hardened: ${error instanceof Error ? error.message : String(error)}`;
+    }
   }
 
   private loaderSource(): string {

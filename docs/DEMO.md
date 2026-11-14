@@ -9,8 +9,8 @@ Four parts, one per phase: capture and the timeline (Phase 1), workflow findings
 ```bash
 npm install
 npm run build
-node dist/cli/index.js init --dir .
-node dist/cli/index.js run --port 4319 --db data/demo.db
+node dist/cli/index.js init --dir .          # also hardens opencode.json; --no-harden skips that
+node dist/cli/index.js run --port 4319 --db data/demo.db   # without --db: tracevault/tracevault.db in your state folder (~/.local/state)
 ```
 
 Open http://127.0.0.1:4319/ . The list shows one row per session with agent, start, end/open and activity count.

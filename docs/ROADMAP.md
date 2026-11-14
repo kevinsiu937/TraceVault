@@ -1,4 +1,4 @@
-# Roadmap — Phases 2 to 5
+# Roadmap — Phases 2 to 6
 
 Phase 1 is not described here. It lives in `tickets/01-*` to `tickets/26-*`, indexed by `tickets/README.md`.
 
@@ -43,7 +43,18 @@ Each later phase starts only when the previous phase's exit criteria are met.
 
 **Exit:** the Phase 1 demo session exports a report a stranger can follow.
 
-## Phase 5 — Simulator (Semester 2)
+## Phase 5 — A second agent
+
+**Decided by Kevin on 15 Nov 2026:** TraceVault is for solo developers, who mostly do not use OpenCode, so a second agent comes before the simulator. Phases 1 to 4 are polished first.
+
+**Goal:** the same timeline, findings and report for a session of a second coding agent.
+
+- One new capture adapter behind `CapturePort`. Nothing past the event schema learns which agent a session came from.
+- Which agent, and what its hooks expose, is settled by a probe and a spec before any ticket.
+
+**Exit:** a recorded session of the second agent shows its timeline, raises the findings the same actions raise under OpenCode, and exports a report.
+
+## Phase 6 — Simulator (Semester 2)
 
 **Goal:** a sandbox that makes an agent misbehave on purpose, so the pipeline can be demonstrated without waiting for a real incident.
 

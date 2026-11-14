@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InitCommand } from "../../src/cli/InitCommand.js";
 import { UninstallCommand } from "../../src/cli/UninstallCommand.js";
 import { main } from "../../src/cli/index.js";
+import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const LOADER = ".opencode/plugin/tracevault.js";
 const MANIFEST = ".opencode/.tracevault-install.json";
@@ -121,6 +122,16 @@ describe("seam B: install writes the plugin, uninstall restores the project", ()
     expect(loader).toContain("new SessionPreamble(undefined, undefined, relay)");
   });
 
+  it("removes the plugin on uninstall after init was run twice", () => {
+    const before = snapshot(projectDir);
+
+    new InitCommand(projectDir).install();
+    new InitCommand(projectDir).install();
+    new UninstallCommand(projectDir).uninstall();
+
+    expect(snapshot(projectDir)).toEqual(before);
+  });
+
   it("installs the guard only when init is given --block", () => {
     new InitCommand(projectDir).install();
     const plain = readFileSync(join(projectDir, LOADER), "utf8");
@@ -188,5 +199,96 @@ describe("seam B: install writes the plugin, uninstall restores the project", ()
     } finally {
       stdout.mockRestore();
     }
+  });
+
+  describe("init hardens the project's configuration unless told not to", () => {
+    const PERMISSIVE = `{"permission":{"bash":"allow","read":{"*.env":"allow"}}}`;
+    let output: string;
+
+    beforeEach(() => {
+      output = "";
+      vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+        output += String(chunk);
+        return true;
+      });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("makes the agent ask before risky calls, and uninstall puts the original bytes back", async () => {
+      writeFileSync(join(projectDir, "opencode.json"), PERMISSIVE, "utf8");
+      const before = snapshot(projectDir);
+
+      await expect(main(["init", "--dir", projectDir])).resolves.toBe(0);
+      const hardened = JSON.parse(readFileSync(join(projectDir, "opencode.json"), "utf8")) as { permission: { bash: unknown } };
+      expect(hardened.permission.bash).toBe("ask");
+      expect(output).toContain("undo with: tracevault harden --undo");
+
+      await expect(main(["uninstall", "--dir", projectDir])).resolves.toBe(0);
+      expect(snapshot(projectDir)).toEqual(before);
+    });
+
+    it("leaves the configuration untouched with --no-harden", async () => {
+      writeFileSync(join(projectDir, "opencode.json"), PERMISSIVE, "utf8");
+
+      await expect(main(["init", "--no-harden", "--dir", projectDir])).resolves.toBe(0);
+
+      expect(readFileSync(join(projectDir, "opencode.json"), "utf8")).toBe(PERMISSIVE);
+      expect(existsSync(join(projectDir, LOADER))).toBe(true);
+    });
+
+    it("still installs when the configuration cannot be hardened, and says why", async () => {
+      writeFileSync(join(projectDir, "opencode.jsonc"), "{ /* mine */ }", "utf8");
+
+      await expect(main(["init", "--dir", projectDir])).resolves.toBe(0);
+
+      expect(existsSync(join(projectDir, LOADER))).toBe(true);
+      expect(existsSync(join(projectDir, "opencode.json"))).toBe(false);
+      expect(output).toContain("not hardened: this project uses opencode.jsonc");
+    });
+  });
+});
+
+describe("the database lives in the user's state folder unless --db says otherwise", () => {
+  const AGENT_STORE = join(import.meta.dirname, "../fixtures/opencode-store/opencode.db");
+  let state: string;
+
+  beforeEach(() => {
+    state = mkdtempSync(join(tmpdir(), "tracevault-state-"));
+    // LOCALAPPDATA wins on every platform, so the test never touches the real home folder.
+    vi.stubEnv("LOCALAPPDATA", state);
+    vi.stubEnv("TRACEVAULT_OPENCODE_DB", AGENT_STORE);
+    vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+    rmSync(state, { recursive: true, force: true });
+  });
+
+  it("import and report without --db share one file there", async () => {
+    const database = join(state, "tracevault", "tracevault.db");
+    const report = join(state, "report.html");
+
+    await expect(main(["import"])).resolves.toBe(0);
+    expect(existsSync(database)).toBe(true);
+
+    const store = new SqliteEventStore(database);
+    const sessionId = store.listSessions()[0]?.sessionId ?? "";
+    store.close();
+    await expect(main(["report", sessionId, "--out", report])).resolves.toBe(0);
+    expect(readFileSync(report, "utf8")).toContain(sessionId);
+  });
+
+  it("still uses the file --db names", async () => {
+    const chosen = join(state, "elsewhere", "mine.db");
+
+    await expect(main(["import", "--db", chosen])).resolves.toBe(0);
+
+    expect(existsSync(chosen)).toBe(true);
+    expect(existsSync(join(state, "tracevault", "tracevault.db"))).toBe(false);
   });
 });

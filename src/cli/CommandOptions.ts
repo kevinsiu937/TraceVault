@@ -1,6 +1,6 @@
 import type { RuleChoice } from "../service/RuleHistoryPort.js";
 
-export type Flag = "--port" | "--db" | "--dir" | "--block" | "--out" | "--undo" | "--rules";
+export type Flag = "--port" | "--db" | "--dir" | "--block" | "--out" | "--undo" | "--rules" | "--no-harden";
 
 export interface ParsedOptions {
   readonly port: number;
@@ -10,6 +10,8 @@ export interface ParsedOptions {
   /** Where a report is written; null when not given. */
   readonly out: string | null;
   readonly undo: boolean;
+  /** Whether init also tightens the project's configuration. On unless --no-harden is given. */
+  readonly harden: boolean;
   /** Which rules a report uses: today's, or those from when the session was recorded. */
   readonly rules: RuleChoice;
 }
@@ -19,16 +21,17 @@ export class CommandOptions {
   constructor(private readonly defaults: ParsedOptions) {}
 
   parse(args: readonly string[], accepted: readonly Flag[]): ParsedOptions {
-    let { port, dbPath, directory, block, out, undo, rules } = this.defaults;
+    let { port, dbPath, directory, block, out, undo, rules, harden } = this.defaults;
     const pending = [...args];
 
     for (let flag = pending.shift(); flag !== undefined; flag = pending.shift()) {
       if (!(accepted as readonly string[]).includes(flag)) {
         throw new TypeError(`unknown option '${flag}'`);
       }
-      if (flag === "--block" || flag === "--undo") {
+      if (flag === "--block" || flag === "--undo" || flag === "--no-harden") {
         block ||= flag === "--block";
         undo ||= flag === "--undo";
+        harden &&= flag !== "--no-harden";
         continue;
       }
       const value = pending.shift();
@@ -54,6 +57,6 @@ export class CommandOptions {
       }
     }
 
-    return { port, dbPath, directory, block, out, undo, rules };
+    return { port, dbPath, directory, block, out, undo, rules, harden };
   }
 }

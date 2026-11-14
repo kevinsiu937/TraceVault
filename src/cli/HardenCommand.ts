@@ -58,6 +58,11 @@ export class HardenCommand {
     ].join("\n");
   }
 
+  /** True while an original is saved, in other words while there is something to undo. */
+  hardened(): boolean {
+    return existsSync(join(this.projectDir, MANIFEST_FILE));
+  }
+
   undo(): string {
     const manifestPath = join(this.projectDir, MANIFEST_FILE);
     if (!existsSync(manifestPath)) {

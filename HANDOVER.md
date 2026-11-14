@@ -1,69 +1,90 @@
-# Handover — TraceVault, next session
+# Handover: TraceVault, next session
 
-Kevin has handed this repository to a fresh agent session. This file is the brief.
+Updated 15 Nov 2026. Read this, then `AGENTS.md` (the binding contract), then `tickets/README.md`.
 
-## Authorization (pre-granted by Kevin, do not re-ask)
+## What TraceVault is
 
-- Edit any file in this repository.
-- Run `npm install`, `npm run typecheck`, `npm test`, `npm run build`, and any node/vitest command.
-- Start and stop local processes on loopback (the TraceVault service, Chrome headless with CDP).
-- `git add` and `git commit` in this repository. **No push** (no remote is configured for it) and no force/rebase of published history.
-- Read OpenCode's local store read-only: `%USERPROFILE%\.local\share\opencode\opencode.db`.
-- Create and delete temporary databases under `%TEMP%`.
-- Do **not** commit `data/`, `dist/`, `.opencode/`, credentials, captured sessions, or real local paths. They are gitignored; keep it that way.
+A local investigation platform for OpenCode agents. It records what an agent did (Phase 1), flags risky sequences of actions (Phase 2), flags risky configuration and poisoned MCP tools (Phase 3), and exports a plain-language report per session (Phase 4).
 
-## Baseline
+**Positioning, decided by Kevin:** TraceVault tracks what the agent did and what it can do. It does not prevent. The one exception is the experimental `init --block` guard. It skips a dangerous file-tool call and tells the agent to carry on, and the session page and the report list what was skipped. `tracevault harden` tightens the project's own `opencode.json`, so OpenCode's own permissions do the stopping; since ticket 68, `init` does this by default.
 
-- Commit `ed4ad9b` — `chore: checkpoint phase-1 closure and cockpit views`.
-- Working tree was clean at handover except this file.
-- Gate: **137 tests / 19 files green**, `npm run typecheck` clean, `npm run build` clean, pre-commit hook runs typecheck + full suite.
+## Where things stand
 
-## Run the portal
+- **Phases 1 to 4 are closed.** Exit tickets 10, 33, 43 and 51.
+- **Hardening before Phase 5, all committed and pushed. Head is `6f758dc`.**
+  - 44: shell reads of secret files, and `git push` as egress.
+  - 53, 60 to 62: commands whose effect cannot be read from them, and files written then run. A shell parser (`ShellCommandLine`) backs the `invokes`, `runs` and `writes` operators.
+  - 54: `tracevault harden [--dir] [--undo]`.
+  - 55: schema migration on open. Event rows are never rewritten.
+  - 56: scale measurement, in `docs/probes/scale-measurements.md`.
+  - 57: rule sets are stored by digest, so a session can be viewed under the rules "then" or "now".
+  - 63: a live evasion run (frozen fixture) and a false-positive audit script. One false positive was found and fixed.
+  - 64: egress by parsed program (`network-programs`).
+  - 66: first-use trust for MCP tools (`tool-changed`).
+- **Semester 1 polish (15 Nov 2026, not committed yet):**
+  - 67: the service refuses requests from other web sites (`LocalRequest`).
+  - 68: `init` hardens unless given `--no-harden`, and `uninstall` undoes it.
+  - 69: a session's rule scan continues where it stopped, so a new event in a long session watched live costs milliseconds, not seconds.
+  - 70: without `--db`, the database is `tracevault/tracevault.db` in the state folder, not `data/` in the current folder.
+  - 71 to 76 are open, from the 15 Nov audit; see `tickets/README.md`.
+- **Gate:** 37 test files, 669 tests. Typecheck and build are clean. The pre-commit hook runs typecheck and the full suite.
+- **Phase 5 is now a second agent, and the simulator is Phase 6** (Kevin, 15 Nov 2026). Neither has started. Phases 1 to 4 are polished first.
+
+## Waiting on Kevin's decision
+
+1. **Ticket 65, local proxy.** Unblocked: the ticket 64 probe showed a plugin's `shell.env` hook reaches bash (`HTTPS_PROXY`, `HTTP_PROXY`). Only the spec and ticket exist.
+2. **Candidate tickets, proposed and not yet opened:**
+   - **Chain semantics.** OpenCode checks each part of `a | b && c ; d` against the permission patterns on its own; this was found in the 63 live run. `EffectivePermissions` and the `allowed_by` operator (escalation-then-use) treat the whole line as one command.
+   - **Long sessions.** First open of a 50,000-event session takes 54 s, because `destructive-action`, `exfiltration-chain` and `runs-written-file` grow with the square of the event count. Fix those three rules with incremental matching. The session page renders every row, so it also needs paging.
+   - **No way to accept a changed MCP tool.** `tool-changed` keeps flagging it in every later session.
+3. **58 (store repeats once) and 59 (archive after 90 days).** Deferred because the ticket 56 numbers show storage is small. Re-measure on real data first. If 59 is built, it must keep each server's earliest `mcp.tools` list, because 66's baseline is that event.
+
+## Working with Kevin
+
+- **Language:** reply in Traditional Chinese (Taiwan usage), short and plain. He wants working artefacts and a status line, not technical detail. `/tc` restates the last reply in Traditional Chinese.
+- **Commits:** commit only when he says so. Never add a `Co-Authored-By` line. Never use `--no-verify`. He pushes himself.
+- **Live runs:** real-model runs are his. Give him ready-to-paste commands with `!`, then verify what he pastes. His model is `deepseek/deepseek-flash`. His DeepSeek key is configured in OpenCode; never read it.
+- **Ask first** about phase scope, file structure, or what a stage records. Don't start a phase without his go.
+- **Background work:** when he says "run in the background", use a background agent and report when it finishes.
+- He likes the smallest complete change (ponytail style) and honest limits written down.
+
+## Environment
+
+- **Node 24:** `export PATH="$HOME/.local/node-v24.22.2-darwin-arm64/bin:$PATH"`.
+- **Commands:** `npm run typecheck`, `npm run build`, `npx vitest run`.
+- **Run:** `node dist/cli/index.js run --port 4319 --db <db>`. Port 4319 is where installed plugins post.
+- **Report:** `node dist/cli/index.js report <session> --db <db> --out <file>`. Add `--rules then` for the rules at recording time.
+- **Harden:** `node dist/cli/index.js harden --dir <project>`, and `--undo` to restore.
+- The `ui-ux-pro-max` skill is installed at `.claude/skills/` for this machine only. `.claude/` is listed in `.git/info/exclude`, by Kevin's choice. Never commit it.
+
+## Gotchas that cost time before
+
+- **Exit scripts overwrite the frozen fixtures** (phase-2, phase-3, evasion). Run `git restore tests/fixtures` afterwards unless the rerun is meant to replace them.
+- **No local paths in commits.** Before committing, grep the diff and new files for `/Users/`, `/private/tmp`, `/var/folders` and the username. `freeze-run.mjs` now scrubs the workspace, temp and home folders. Phase-2 freezes drop `config.snapshot` and `mcp.tools`, which carry the tester's username.
+- **OpenCode checks each part of a chained command separately.** A probe that allows `a | b` as one pattern gets refused; allow each part.
+- **Quote YAML values that contain `: `.** For example the recommendations' "(For the developer: …)" suffix. Unquoted, it fails to parse and every rule test fails at once.
+- **Headless Chrome will not render narrower than about 500 px.** A 390 px screenshot looks clipped when it isn't.
+- **Recommendation split.** Rule `recommendation` text ends with "(For the developer: …)". The report splits on that suffix and shows the plain part first.
+- **Opening a database migrates it** (ticket 55). Scan a copy when the original must stay untouched; the audit script does this.
+
+## Where to read more
+
+- **Specs:**
+  - `docs/spec/phase-1.md` to `phase-4.md`;
+  - `docs/spec/scale-before-phase-5.md`;
+  - `docs/spec/evasion-before-phase-5.md`.
+
+  Each has Known Blind Spots, which are the honest limits.
+- **ADRs:** `docs/adr/`. 0005 is the report format.
+- **Demo:** `docs/DEMO.md`, every phase step by step with the last recorded run.
+- **Probes and live evidence:** `docs/probes/`.
+
+## First commands
 
 ```bash
-npm run build
-node dist/cli/index.js run --port 4319 --db "%TEMP%\tracevault-portal.db"
+git log --oneline -5
+export PATH="$HOME/.local/node-v24.22.2-darwin-arm64/bin:$PATH"
+npm run typecheck && npm run build && npx vitest run
 ```
 
-Then open http://127.0.0.1:4319/ . The 4319 port matters: the installed plugin (`.opencode/plugin/tracevault.js`) posts live events there. The service imports OpenCode's history at startup. If the local DB is stale or was hand-edited, delete `%TEMP%\tracevault-portal.db*` and restart to re-import (append-only store: this is the supported reset).
-
-Note: imported history has no prompt events, so **turn dividers and replay only appear on sessions captured live after ticket 21**.
-
-## Done (do not redo)
-
-Old Phase-1 tickets 02/07/08/14 closed with live probes; import de-duplication fixed; 15 CI; 16 cockpit shell; 17 waterfall; 18 real durations; 19 file rail; 20 expression filters; 21 prompt capture; 22 turn grouping; 23 session-list enrichment; 25 graph view; 26 subagent nesting. Session list now ranks by **last activity**, not start time.
-
-Evidence: `docs/probes/phase-1-live-probes.md`. Decisions are recorded at the bottom of the relevant ticket in `tickets/`.
-
-## What is left
-
-1. ~~**Ticket 24 — replay bar.**~~ **Done.** `ReplayBarView` + `ReplayTimeline`, `?t=<ms>` URL state, sticky bar, turn dimming, error/denied/gap ticks, keyboard controls, reduced-motion fallback. Registered in both composition roots. Live check: `?t=5000` on a seeded two-turn session marks turn 1 past, turn 2 active, bar and error tick present.
-2. **Ticket 22 — one deferred box.** "Consecutive identical calls group into `N × command`." Deferred because collapsing changes row counts that the 1000-row and duplicate-row tests assert. Revisit those tests first, then implement.
-3. ~~**Ticket 10 — Phase 1 exit verification.**~~ **Done.** `docs/DEMO.md` now records PASS for denials, gaps, ordering, duplicate collapse, integrity, install reversibility, gaps-as-data, and live scroll (Chrome/CDP). Concurrency is proven with two interleaved HTTP writers, not two agent processes — that limit is stated in the table.
-4. **Ticket 15 — two boxes need a push.** The workflow is committed; the fixture-hash and red-PR demos require a remote.
-5. ~~**Live `parentID` unverified.**~~ **Verified:** a spawned subagent's live `session.start` stored its parent id (30 live children with parents in the store). The import-only fallback is therefore unused.
-
-## Known caveats (do not "fix" without a decision)
-
-- Filtering is SQL + page navigation. The old "without reload" wording is withdrawn.
-- Prompt text is truncated at 200 chars (`truncated: true` recorded).
-- Harness-injected `<available-skills>` prompts are filtered out of turn dividers.
-- Waterfall bars fall back to time-to-next-event for imported history without `state.time`; wide bars then mean pace, not tool duration.
-- `SessionSummary` is split into `SessionSummaryCore` + enriched; the cockpit context uses the core so `DashboardServer`'s fallback object stays valid.
-- The file rail follows the active filter (it can show "Files · 0" on a filtered view).
-
-## Working rules
-
-`AGENTS.md` is authoritative: OOD and TDD are the definition of done; tests attach at the two seams (A: HTTP → rendered page; B: raw hook payload → stored events), not one per class; no barrel files; no upward imports; composition roots only in `src/cli/`.
-
-One deliberate exception exists and is documented in `tests/seams/gap.seam.test.ts`: plugin-local durable gap state is invisible to both seams, so it is tested across two plugin instances there. Do not add more exceptions without asking.
-
-## First three commands
-
-```bash
-git log --oneline -3
-npm run typecheck && npm test
-npm run build && node dist/cli/index.js run --port 4319 --db "%TEMP%\tracevault-portal.db"
-```
-
-Then read `tickets/24-replay-bar.md` and start there.
+Then ask Kevin which of the waiting decisions above to take, or whether to start Phase 5.

@@ -73,7 +73,7 @@ Spec: `docs/spec/phase-3.md`, approved 11 Nov 2026.
 
 Spec: `docs/spec/phase-4.md`, approved 12 Nov 2026.
 
-**Phase 4 is complete.** Every ticket from 45 to 52 is done. Phase 5 starts only when Kevin says so. Format: `docs/adr/0005-report-format.md`.
+**Phase 4 is complete.** Every ticket from 45 to 52 is done. Phase 5 (a second agent) starts only when Kevin says so; the simulator is Phase 6. Format: `docs/adr/0005-report-format.md`.
 
 | # | Ticket | Blocked by | Status |
 |---|---|---|---|
@@ -120,6 +120,30 @@ Spec: `docs/spec/evasion-before-phase-5.md`. Kevin runs the probes and the live 
 | 64 | Egress by program, and can the shell be routed through a proxy? | 60 | done; probe waiting on Kevin |
 | 65 | A local proxy that records where the shell connects | 64 | waiting on 64's probe |
 | 66 | Trust an MCP tool when first seen, flag a later change | 41, 55 | done |
+
+## Semester 1 polish (requested by Kevin, 15 Nov 2026)
+
+Phases 1 to 4 are made solid before Phase 5. Found by a live run of the service.
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 67 | Only this machine's own pages and tools reach the service | — | done |
+| 68 | `init` hardens the project unless told not to | 54 | done |
+
+### From the 15 Nov 2026 audit
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 69 | A long session watched live does not slow the agent or invent gaps | — | done |
+| 70 | The database lives outside the project by default | — | done |
+| 71 | A service on another port still receives events | — | open |
+| 72 | Two writers cannot break the hash chain | — | open |
+| 73 | `tracevault verify` checks the record | 72 | open |
+| 74 | The service says why a request failed | — | open |
+| 75 | A freeze late in a long prompt is still seen | — | open |
+| 76 | An MCP server whose name has an underscore is named correctly | — (probe: Kevin) | open |
+
+Frontier: 71, 72, 74, 75, 76.
 
 ## Dependency shape
 

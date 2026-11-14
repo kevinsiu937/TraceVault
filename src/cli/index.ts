@@ -15,8 +15,9 @@
  */
 
 import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
+import { PluginConfig } from "../plugin/PluginConfig.js";
 import { SqliteEventStore } from "../store/SqliteEventStore.js";
 import { CommandOptions } from "./CommandOptions.js";
 import { HardenCommand } from "./HardenCommand.js";
@@ -31,9 +32,13 @@ export const VERSION = "0.1.0";
 const USAGE = `tracevault ${VERSION}
 
 Usage:
-  tracevault init [--dir <path>] [--block]   attach TraceVault to a project;
-                                          --block refuses calls a blockable rule matches
-  tracevault uninstall [--dir <path>]     remove TraceVault and restore the configuration
+  tracevault init [--dir <path>] [--block] [--no-harden]
+                                          attach TraceVault to a project and make its
+                                          opencode.json ask before risky calls;
+                                          --block refuses calls a blockable rule matches;
+                                          --no-harden leaves opencode.json alone
+  tracevault uninstall [--dir <path>]     remove TraceVault and restore the configuration,
+                                          including what init or harden changed
   tracevault harden [--dir <path>] [--undo]   make the project's opencode.json ask before
                                           risky calls; --undo puts the original back
   tracevault import [--db <path>]         import the agent's existing session history
@@ -43,10 +48,12 @@ Usage:
                                           under today's rules or those from when it was recorded
   tracevault --version
   tracevault --help
+
+Without --db, the database is tracevault/tracevault.db in your state folder
+(~/.local/state, or %LOCALAPPDATA% on Windows), never the current folder.
 `;
 
 const DEFAULT_PORT = 4319;
-const DEFAULT_DB = "data/tracevault.db";
 
 type Command = "init" | "uninstall" | "harden" | "import" | "run" | "report";
 
@@ -61,7 +68,17 @@ function errorMessage(error: unknown): string {
 }
 
 export async function main(argv: readonly string[]): Promise<number> {
-  const options = new CommandOptions({ port: DEFAULT_PORT, dbPath: DEFAULT_DB, directory: process.cwd(), block: false, out: null, undo: false, rules: "now" });
+  const options = new CommandOptions({
+    port: DEFAULT_PORT,
+    // Outside the project on purpose: a database in the working folder is one `git add .` from being published.
+    dbPath: join(PluginConfig.stateDirectory(), "tracevault.db"),
+    directory: process.cwd(),
+    block: false,
+    out: null,
+    undo: false,
+    rules: "now",
+    harden: true,
+  });
   const first = argv[0];
 
   if (first === "--version" || first === "-v") {
@@ -120,11 +137,12 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   if (first === "init" || first === "uninstall") {
     try {
-      const { directory, block } = options.parse(argv.slice(1), first === "init" ? ["--dir", "--block"] : ["--dir"]);
+      const { directory, block, harden } = options.parse(argv.slice(1), first === "init" ? ["--dir", "--block", "--no-harden"] : ["--dir"]);
+      const hardener = new HardenCommand(directory);
       const summary =
         first === "init"
-          ? new InitCommand(directory, block).install()
-          : new UninstallCommand(directory).uninstall();
+          ? new InitCommand(directory, block, harden ? hardener : null).install()
+          : new UninstallCommand(directory, hardener).uninstall();
       process.stdout.write(`${summary}\n`);
       return 0;
     } catch (error) {

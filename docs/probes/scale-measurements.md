@@ -53,6 +53,20 @@ Each workflow rule was timed alone on the same synthetic session (ms, findings):
 - **Config findings:** stay small. The static rules check one configuration, not the events.
 - **50,000 events:** the warm figures are one sample, not a median. Cold scans fit the square of the length: five times the events cost about 15 to 19 times the time. A warm page at this size is limited by its 110 MB of HTML, since the page renders every row of the session.
 
+## A new event while the page is open (ticket 69)
+
+Recorded 15 Nov 2026 with `docs/probes/scripts/measure-live.mjs` on the same machine. It times one `POST /hook` into the synthetic session, three samples each, in milliseconds.
+
+| Events | No page open | Page open, before | Page open, after |
+|---|---|---|---|
+| 1,000 | 6 to 25 | 85 to 103 | 11 to 23 |
+| 4,000 | 2 to 10 | 1,444 to 1,696 | 28 to 29 |
+| 10,000 | 2 to 7 | 6,347 to 8,406 | 63 to 73 |
+
+- **Before:** the open page asks for the timeline on every event, the findings cache missed because the session had grown, and the whole session was scanned again before the plugin got its answer. The plugin waits 2 s, so past about 5,000 events it recorded a gap for an event that had been stored.
+- **After:** `SessionFindings` continues a session's scan from where it stopped when the session only grew at its end. What is left grows in a straight line with the session: reading its events and building the rows.
+- **Still slow:** the first view of a long session after the service starts, and any event that sorts before ones already scanned, scan the session from the start. The three session-window rules still grow with the square of its length there.
+
 ## Size
 
 | Events | Bytes per event (body) | Configuration and tool lists | Database file | After VACUUM |

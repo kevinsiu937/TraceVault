@@ -180,6 +180,7 @@ Kevin asked on 13 Nov 2026 for a way to act on these findings without TraceVault
   - The keys it manages are written last, because OpenCode lets the last matching rule decide.
 - **Check.** The written file is scanned by the same static rules as a recorded snapshot. Findings that remain come from agents' own permission blocks, which harden does not change. The output names each one with its configuration entry so the user can fix it by hand.
 - **Undo.** The first run saves the original bytes in `.opencode/.tracevault-harden.json`. A second run keeps that copy. `--undo` restores the bytes, or removes a file harden created.
+- **On by default (ticket 68, decided 15 Nov 2026).** `tracevault init` hardens too, unless given `--no-harden`, and `tracevault uninstall` undoes it. A configuration harden refuses does not stop the install.
 
 ## Further Notes
 

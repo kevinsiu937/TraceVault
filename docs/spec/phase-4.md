@@ -88,7 +88,7 @@ A report generator turns one session into one HTML file. A stranger can read it 
 - Storing findings or reports in the database.
 - New rules, and changes to what existing rules match.
 - Making the guard default, or guarding shell commands.
-- The simulator (Phase 5), auth, accounts, theming.
+- The simulator (Phase 6), auth, accounts, theming.
 
 ## Known Blind Spots
 

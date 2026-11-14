@@ -18,10 +18,10 @@ Design documents live in the Obsidian vault at `D:\hermes\obsidian-vault\CUHK\IE
 
 ```
 Logger → Vulnerability Scanner → Workflow Scanner → Investigator → Report Generator
-                                                              (+ Simulator, Semester 2)
+                                                              (+ second agent, then Simulator)
 ```
 
-Semester 1 scope is stages 1–4. The simulator is out of scope until Semester 2.
+Semester 1 scope is stages 1–4. A second agent (Phase 5) and the simulator (Phase 6) come after.
 
 ## Logger — three capture paths
 
@@ -49,7 +49,7 @@ docs/
   spec/phase-1.md   the Phase 1 spec — binding
   ARCHITECTURE.md   stage contracts, structure rules, expected layout
   EVENT-SCHEMA.md   the event contract
-  ROADMAP.md        phases 2-5
+  ROADMAP.md        phases 2-6
   adr/              decision records
 tickets/            10 tracer-bullet tickets + index
 src/                code — folders appear when a ticket needs them
@@ -75,7 +75,7 @@ Node 24+ required (`node:sqlite`; developed on v24).
 - `AGENTS.md` — the working agreement every AI agent in this repo must follow (OOD + two-seam regression tests + ticket discipline)
 - `docs/spec/phase-1.md` — the Phase 1 spec (also published as issue #1)
 - `tickets/` — ten tracer-bullet tickets, index in `tickets/README.md`
-- `docs/ROADMAP.md` — phases 2-5 with exit criteria
+- `docs/ROADMAP.md` — phases 2-6 with exit criteria
 - `docs/ARCHITECTURE.md` — component boundaries, structure rules, expected layout
 - `docs/EVENT-SCHEMA.md` — the shape every capture path emits
 - `docs/adr/` — decision records

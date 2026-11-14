@@ -58,7 +58,7 @@ cat > "$C/opencode.json" <<'JSON'
 }
 JSON
 for W in "$M" "$C"; do
-  node "$REPO/dist/cli/index.js" init --dir "$W" > /dev/null
+  node "$REPO/dist/cli/index.js" init --no-harden --dir "$W" > /dev/null
   sed -i.bak "s#127.0.0.1:4319/hook#127.0.0.1:$PORT/hook#" "$W/.opencode/plugin/tracevault.js"
   rm "$W/.opencode/plugin/tracevault.js.bak"
 done

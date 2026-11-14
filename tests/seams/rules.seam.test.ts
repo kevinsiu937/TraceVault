@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { WorkflowScannerAssembly } from "../../src/cli/WorkflowScannerAssembly.js";
 import type { Event } from "../../src/schema/Event.js";
+import { SessionFindings } from "../../src/service/SessionFindings.js";
 
 const RULES = join(import.meta.dirname, "../../rules");
 const FIXTURES = join(import.meta.dirname, "../fixtures/rules");
@@ -438,5 +439,46 @@ describe("seam C: what counts as a freeze", () => {
     "The config is read-only, so copy it first.",
   ])("does not treat %j as a freeze", (text) => {
     expect(flagged(text)).toBe(false);
+  });
+});
+
+describe("seam C: a session that grows gives the findings a full scan gives", () => {
+  const scanner = new WorkflowScannerAssembly().fromDirectory(RULES);
+  const full = (events: readonly Event[]) => new SessionFindings(scanner).of(events);
+  const sessions = readdirSync(FIXTURES).filter((name) => existsSync(join(FIXTURES, name, "trigger.json")));
+
+  it.each(sessions)("%s, one event at a time", (name) => {
+    const { events } = fixture(name, "trigger");
+    const growing = new SessionFindings(scanner);
+
+    events.forEach((event, index) => {
+      const prefix = events.slice(0, index + 1);
+      expect(growing.of(prefix), `after ${event.id}`).toEqual(full(prefix));
+    });
+    expect(full(events).length).toBeGreaterThan(0);
+  });
+
+  it.each(sessions)("%s, when an event arrives that sorts before ones already seen", (name) => {
+    const { events } = fixture(name, "trigger");
+    const growing = new SessionFindings(scanner);
+
+    for (let late = 0; late < events.length - 1; late += 1) {
+      growing.of(events.filter((_, index) => index !== late));
+      expect(growing.of(events), `event ${late} arriving late`).toEqual(full(events));
+    }
+  });
+
+  it("keeps two sessions that grow in turn apart", () => {
+    const first = fixture("exfiltration-chain", "trigger").events;
+    const second = fixture("destructive-action", "trigger").events;
+    const growing = new SessionFindings(scanner);
+
+    for (let index = 1; index <= Math.max(first.length, second.length); index += 1) {
+      growing.of(first.slice(0, index));
+      growing.of(second.slice(0, index));
+    }
+
+    expect(growing.of(first)).toEqual(full(first));
+    expect(growing.of(second)).toEqual(full(second));
   });
 });

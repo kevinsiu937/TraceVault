@@ -9,6 +9,7 @@ import { DetailPaneView } from "./DetailPaneView.js";
 import { EventStream } from "./EventStream.js";
 import { FilterParams } from "./FilterParams.js";
 import { HookBodyReader } from "./HookBodyReader.js";
+import { LocalRequest } from "./LocalRequest.js";
 import { SessionHeaderView } from "./SessionHeaderView.js";
 import type { SessionListView } from "./SessionListView.js";
 import { SessionPageView } from "./SessionPageView.js";
@@ -31,6 +32,7 @@ export class DashboardServer {
   private server: Server | null = null;
   private readonly eventStream: EventStream;
   private readonly bodyReader = new HookBodyReader();
+  private readonly localRequest = new LocalRequest();
   private readonly sessionPageView: SessionPageView;
 
   constructor(
@@ -96,6 +98,10 @@ export class DashboardServer {
 
   private async handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
     try {
+      if (!this.localRequest.allows(request)) {
+        this.send(response, 403, "forbidden", "text/plain; charset=utf-8");
+        return;
+      }
       const url = new URL(request.url ?? "/", `http://${LOOPBACK}`);
       const path = url.pathname;
       const rules = url.searchParams.get("rules") === "then" ? "then" : "now";

@@ -6,8 +6,8 @@ import type { Event } from "../schema/Event.js";
  * timeline and the scanner both read through this, so they see the same session.
  */
 export class DistinctEvents {
-  of(events: readonly Event[]): Event[] {
-    const seen = new Set<string>();
+  /** `seen` carries the calls already kept, so a session can be read in parts. */
+  of(events: readonly Event[], seen: Set<string> = new Set()): Event[] {
     const distinct: Event[] = [];
 
     for (const event of events) {

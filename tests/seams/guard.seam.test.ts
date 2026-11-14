@@ -198,6 +198,7 @@ describe("seam B: the opt-in guard refuses a call before it runs", () => {
         new CallGuard(
           () => ({
             scan: () => [],
+            begin: () => ({ next: () => [] }),
             blockedBy: () => {
               throw new Error("matcher exploded");
             },

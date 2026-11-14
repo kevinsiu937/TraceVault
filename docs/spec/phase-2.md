@@ -132,7 +132,7 @@ An argument written `{ list: <name> }` is replaced by that list's items before t
 
 - The static configuration scanner and tool-poisoning detection (Phase 3).
 - Reports in any format (Phase 4).
-- The simulator (Phase 5).
+- The simulator (Phase 6).
 - Storing findings, alerting, or notifications outside the dashboard.
 - A rule editor in the UI.
 - Blocking on multi-step rules or on outcomes. Scope drift therefore cannot block.

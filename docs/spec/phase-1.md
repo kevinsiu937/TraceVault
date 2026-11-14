@@ -2,7 +2,7 @@
 
 > Status: published to the issue tracker as `ready-for-agent`.
 > Derived from the planning session of 25 Oct 2026. Binding until superseded.
-> Phase ladder: `docs/ROADMAP.md` (phases 2-5; phase 1 is the tickets). Structure rules: `docs/ARCHITECTURE.md`, `AGENTS.md`.
+> Phase ladder: `docs/ROADMAP.md` (phases 2-6; phase 1 is the tickets). Structure rules: `docs/ARCHITECTURE.md`, `AGENTS.md`.
 
 ## Problem Statement
 

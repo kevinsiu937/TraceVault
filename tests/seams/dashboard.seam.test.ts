@@ -1,4 +1,5 @@
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -32,6 +33,18 @@ describe("seam A: HTTP request in, rendered page out", () => {
         { type: "hook.script", data: { hook: "tool.execute.after", target_tool: "bash", target: "echo tracevault-fixture", exit_code: 0, outcome: "ok" } },
       ),
     );
+  }
+
+  // fetch refuses to set Host, so a browser on another site is played by a raw request.
+  function send(method: string, path: string, headers: Record<string, string>, body = ""): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const outgoing = request(`${baseUrl}${path}`, { method, headers }, (response) => {
+        response.resume();
+        resolve(response.statusCode ?? 0);
+      });
+      outgoing.on("error", reject);
+      outgoing.end(body);
+    });
   }
 
   beforeEach(async () => {
@@ -110,5 +123,26 @@ describe("seam A: HTTP request in, rendered page out", () => {
   it("returns 404 for unknown paths and 405 for a wrong method", async () => {
     expect((await fetch(`${baseUrl}/hook`)).status).toBe(405);
     expect((await fetch(`${baseUrl}/nope`)).status).toBe(404);
+  });
+
+  it("refuses a page asked for under another site's name", async () => {
+    storeEvent("ses_alpha", "2026-10-25T10:00:00.000Z");
+
+    expect(await send("GET", "/", { host: "evil.example" })).toBe(403);
+    expect(await send("GET", "/sessions/ses_alpha", { host: "evil.example:4319" })).toBe(403);
+  });
+
+  it("refuses an event posted by another site's page and stores nothing", async () => {
+    const status = await send("POST", "/hook", { origin: "https://evil.example", "content-type": "text/plain" }, readFileSync(BASH_FIXTURE, "utf8"));
+
+    expect(status).toBe(403);
+    expect(store.listSessions()).toHaveLength(0);
+  });
+
+  it("serves its own pages under localhost, and to a request its own page makes", async () => {
+    const port = new URL(baseUrl).port;
+
+    expect(await send("GET", "/", { host: `localhost:${port}` })).toBe(200);
+    expect(await send("GET", "/", { origin: baseUrl })).toBe(200);
   });
 });
