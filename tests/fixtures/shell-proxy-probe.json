@@ -1,0 +1,96 @@
+{
+  "opencode": "1.18.32",
+  "model": "deepseek/deepseek-flash",
+  "recorded": "2026-11-16",
+  "shellEnv": [
+    {
+      "sessionID": "ses_e1b2aeef5ffe3GUNbvNBWNWUwN",
+      "callID": "call_00_ET_xh0TRBtcRAHzCDnQCsTW2001",
+      "proxy": true
+    },
+    {
+      "sessionID": "ses_e1b2ab672ffeStJYzgba8Js9NJ",
+      "callID": "call_00_jKbUlRLYMMLnddgPZBK56018",
+      "proxy": true
+    }
+  ],
+  "calls": [
+    {
+      "tool": "bash",
+      "sessionID": "ses_e1b2aeef5ffe3GUNbvNBWNWUwN",
+      "callID": "call_00_ET_xh0TRBtcRAHzCDnQCsTW2001"
+    },
+    {
+      "tool": "task",
+      "sessionID": "ses_e1b2aeef5ffe3GUNbvNBWNWUwN",
+      "callID": "call_00_TjXx0nuy9cDvTJKbxs6L9349"
+    },
+    {
+      "tool": "bash",
+      "sessionID": "ses_e1b2ab672ffeStJYzgba8Js9NJ",
+      "callID": "call_00_jKbUlRLYMMLnddgPZBK56018"
+    }
+  ],
+  "proxyRequests": [
+    {
+      "kind": "http",
+      "target": "http://tracevault-probe.invalid/main/curl",
+      "auth": "ses_e1b2aeef5ffe3GUNbvNBWNWUwN:call_00_ET_xh0TRBtcRAHzCDnQCsTW2001",
+      "agent": "curl/8.7.1"
+    },
+    {
+      "kind": "https",
+      "target": "tracevault-probe.invalid:443",
+      "auth": "ses_e1b2aeef5ffe3GUNbvNBWNWUwN:call_00_ET_xh0TRBtcRAHzCDnQCsTW2001",
+      "agent": "curl/8.7.1"
+    },
+    {
+      "kind": "https",
+      "target": "tracevault-probe.invalid:4402",
+      "auth": null,
+      "agent": "git/2.50.1"
+    },
+    {
+      "kind": "https",
+      "target": "tracevault-probe.invalid:4403",
+      "auth": "ses_e1b2aeef5ffe3GUNbvNBWNWUwN:call_00_ET_xh0TRBtcRAHzCDnQCsTW2001",
+      "agent": null
+    },
+    {
+      "kind": "https",
+      "target": "tracevault-probe.invalid:4405",
+      "auth": "ses_e1b2aeef5ffe3GUNbvNBWNWUwN:call_00_ET_xh0TRBtcRAHzCDnQCsTW2001",
+      "agent": null
+    },
+    {
+      "kind": "http",
+      "target": "http://tracevault-probe.invalid/sub/curl",
+      "auth": "ses_e1b2ab672ffeStJYzgba8Js9NJ:call_00_jKbUlRLYMMLnddgPZBK56018",
+      "agent": "curl/8.7.1"
+    },
+    {
+      "kind": "https",
+      "target": "tracevault-probe.invalid:443",
+      "auth": "ses_e1b2ab672ffeStJYzgba8Js9NJ:call_00_jKbUlRLYMMLnddgPZBK56018",
+      "agent": "curl/8.7.1"
+    },
+    {
+      "kind": "https",
+      "target": "tracevault-probe.invalid:4402",
+      "auth": null,
+      "agent": "git/2.50.1"
+    },
+    {
+      "kind": "https",
+      "target": "tracevault-probe.invalid:4403",
+      "auth": "ses_e1b2ab672ffeStJYzgba8Js9NJ:call_00_jKbUlRLYMMLnddgPZBK56018",
+      "agent": null
+    },
+    {
+      "kind": "https",
+      "target": "tracevault-probe.invalid:4405",
+      "auth": "ses_e1b2ab672ffeStJYzgba8Js9NJ:call_00_jKbUlRLYMMLnddgPZBK56018",
+      "agent": null
+    }
+  ]
+}

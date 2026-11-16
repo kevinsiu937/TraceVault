@@ -10,7 +10,22 @@ Originally "A local proxy that records where the shell connects"; that work is n
 
 **Blocked by:** 64 (done: `shell.env` reaches bash), spec approved (16 Nov 2026).
 
-**Status:** open; the probe is Kevin's to run
+**Status:** done (16 Nov 2026)
+
+**Result (16 Nov 2026, OpenCode 1.18.32, deepseek-flash, Kevin's run):**
+
+| Program | Used the proxy | Sent session and call |
+|---|---|---|
+| curl, HTTP and HTTPS | yes | yes |
+| pip | yes | yes |
+| python3 urllib | yes | yes |
+| git 2.50.1 | yes | no, not even after a 407 challenge |
+| npm | not installed on Kevin's machine; untested | — |
+
+- **Subagents:** a subagent's bash call gets the subagent's own session id in `shell.env`, the same id its `tool.execute.before` carries. A connection is therefore attributed to the session that ran the command, not to the parent.
+- **git:** its connection is recorded, but under "unknown call". It still appears on the timeline and in the session's host list.
+
+Frozen as `tests/fixtures/shell-proxy-probe.json`.
 
 Run:
 `TRACEVAULT_PROBE_MODEL=deepseek/deepseek-flash sh docs/probes/scripts/shell-proxy-probe.sh /tmp/tv-shell-proxy`
@@ -18,6 +33,6 @@ Run:
 **Local check, without OpenCode (16 Nov 2026):** the script's proxy and clients were run by hand with fake ids in the proxy address. curl (HTTP and HTTPS), pip, npm and python3 urllib sent the ids. git 2.50.1 sent none, even after a 407 challenge. The live run decides; if git still sends none, its connections are recorded under "unknown call".
 
 - [x] `docs/probes/scripts/shell-proxy-probe.sh` written; it passes the probe-safety seam
-- [ ] Kevin ran it, and the result is recorded here: per program, whether it used the proxy and whether it sent the header; the session id a subagent's call gets
-- [ ] The recorded proxy requests are frozen as a fixture for ticket 86
-- [ ] The spec's blind spots name every program that ignored the proxy or dropped the header
+- [x] Kevin ran it, and the result is recorded here: per program, whether it used the proxy and whether it sent the header; the session id a subagent's call gets
+- [x] The recorded proxy requests are frozen as a fixture for ticket 86
+- [x] The spec's blind spots name every program that ignored the proxy or dropped the header
