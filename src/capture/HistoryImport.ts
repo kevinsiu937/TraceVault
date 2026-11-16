@@ -27,6 +27,11 @@ export class HistoryImport {
     let skipped = 0;
 
     for (const session of this.source.listSessions()) {
+      // An archived session left this database on purpose; importing it again would undo the archive.
+      if (this.store.isArchived(session.id)) {
+        skipped += 1;
+        continue;
+      }
       const agentName = session.agent ?? "opencode";
       let imported = false;
 

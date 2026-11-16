@@ -31,6 +31,7 @@ const CALLS: Readonly<Record<EventType, boolean>> = {
   "guard.failure": false,
   "config.snapshot": false,
   "mcp.tools": false,
+  "net.connect": true,
 };
 
 /**
@@ -90,7 +91,7 @@ export class EventFacts {
 
   /** The tool call's id: a call's own, or the one a permission prompt was raised for. */
   private static call(event: Event): string | null {
-    if (event.type === "admin.grant") {
+    if (event.type === "admin.grant" || event.type === "net.connect") {
       return event.data.call_id ?? null;
     }
     return CALLS[event.type] ? event.correlation_id : null;
@@ -135,6 +136,8 @@ export class EventFacts {
         return event.data.digest;
       case "mcp.tools":
         return event.data.server;
+      case "net.connect":
+        return `${event.data.host}:${event.data.port}`;
       case "session.start":
       case "session.end":
         return "session";
@@ -162,6 +165,8 @@ export class EventFacts {
         return "snapshot";
       case "mcp.tools":
         return "tools";
+      case "net.connect":
+        return event.data.opened ? "ok" : "error";
       case "session.start":
       case "session.end":
         return "boundary";

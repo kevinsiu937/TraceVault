@@ -23,7 +23,7 @@
     "name": "opencode",              // adapter name, never a version-specific id
     "version": "1.x"
   },
-  "capture_path": "plugin_hook",     // plugin_hook | session_store | mcp_proxy
+  "capture_path": "plugin_hook",     // plugin_hook | session_store | proxy
   "timestamp": "2026-10-25T11:32:04.812Z",
   "seq": 42,                          // may be null
   "duration_ms": 1234,                // wall-clock time of the action; null when unknown
@@ -123,6 +123,19 @@ The user approves a permission prompt. Only an approval at a prompt is an event:
 }
 ```
 Recorded shape: `tests/fixtures/permission-grants.json` (10 Nov 2026, OpenCode 1.18.32). The plugin holds each `permission.asked` until its `permission.replied` arrives, because a reply names only the request.
+
+### `net.connect`
+A connection the agent's shell made through TraceVault's proxy (`tracevault run`, service port + 1; spec `docs/spec/shell-proxy.md`). `capture_path` is `proxy`, and `correlation_id` is null. The session and call come from the proxy address's user name and password. Never a path, header or body.
+```jsonc
+"data": {
+  "host": "pypi.org",
+  "port": 443,
+  "kind": "https",                    // https (CONNECT) | http (absolute-URL request)
+  "call_id": "call_...",              // the bash call named in the proxy address; null when only the session was named
+  "opened": true                      // false when the upstream refused or could not be reached
+}
+```
+The timeline shows it under its bash call, as "connected to host:port".
 
 ## Meta events (not agent activity, but required by the design)
 

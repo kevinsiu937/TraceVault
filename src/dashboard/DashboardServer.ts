@@ -100,7 +100,7 @@ export class DashboardServer {
         if (this.refuseNonGet(request, response)) {
           return;
         }
-        this.send(response, 200, this.view.render(this.service.listSessions()), "text/html; charset=utf-8");
+        this.send(response, 200, this.view.render(this.service.listSessions(), this.service.listArchiveRuns()), "text/html; charset=utf-8");
         return;
       }
 

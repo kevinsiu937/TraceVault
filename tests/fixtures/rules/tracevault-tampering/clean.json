@@ -1,0 +1,194 @@
+{
+  "source": "authored",
+  "note": "Reading the state folder, listing it, a command that only mentions tracevault, tracevault verify, and a read-only sqlite3 query raise nothing.",
+  "events": [
+    {
+      "id": "evt_tamper_ses_tamper_clean_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_tamper_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-16T09:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_tamper_cat",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_tamper_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-16T09:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_tamper_cat",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cat ~/.local/state/tracevault/pending-gaps.json",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_tamper_ls",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_tamper_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-16T09:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_tamper_ls",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "ls -la ~/.local/state/tracevault",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_tamper_grep",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_tamper_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-16T09:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_tamper_grep",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "grep -rn tracevault src",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_tamper_echo",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_tamper_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-16T09:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_tamper_echo",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "echo 'remember to run tracevault trust later'",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_tamper_verify",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_tamper_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-16T09:00:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_tamper_verify",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "tracevault verify --db ~/.local/state/tracevault/tracevault.db",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_tamper_select",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_tamper_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-16T09:00:06.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_tamper_select",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "sqlite3 ~/.local/state/tracevault/tracevault.db 'SELECT count(*) FROM events'",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_tamper_read",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_tamper_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-16T09:00:07.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_tamper_read",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/.local/state/tracevault/pending-gaps.json",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": []
+}

@@ -7,6 +7,7 @@ import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
 import { main } from "../../src/cli/index.js";
 import type { Event } from "../../src/schema/Event.js";
 import { EventFactory } from "../../src/schema/EventFactory.js";
+import type { NetConnectData } from "../../src/schema/NetConnectData.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const FIXTURES = join(import.meta.dirname, "../fixtures");
@@ -50,6 +51,13 @@ describe("seam A: a session in, one self-contained report file out", () => {
     for (const payload of payloads) {
       expect(service.recordHookPayload(payload, new Date("2026-11-09T14:30:00.000Z"))).toBe("stored");
     }
+    store.close();
+  }
+
+  /** Records connections into the test session through the same path the shell proxy uses. */
+  function connect(...connections: NetConnectData[]): void {
+    const { service, store } = new ServiceAssembly().open(db);
+    connections.forEach((data, index) => service.recordConnection(SESSION, data, new Date(Date.UTC(2026, 10, 9, 14, 30, index))));
     store.close();
   }
 
@@ -229,6 +237,30 @@ describe("seam A: a session in, one self-contained report file out", () => {
     expect(html).toContain("<dt>Built-in setting</dt>");
   });
 
+  it("lists each host the shell contacted once, with how many connections and the first call that made one", async () => {
+    const [curl, wget] = TRIGGER.filter((event) => event.type === "hook.script");
+    connect(
+      { host: "example.test", port: 443, kind: "https", call_id: curl?.correlation_id ?? null, opened: true },
+      { host: "pypi.org", port: 443, kind: "https", call_id: null, opened: true },
+      { host: "example.test", port: 443, kind: "https", call_id: wget?.correlation_id ?? null, opened: true },
+    );
+
+    const html = await report();
+    const hosts = html.match(/<section class="hosts"[\s\S]*?<\/section>/)?.[0] ?? "";
+    const rows = [...hosts.matchAll(/<li>[\s\S]*?<\/li>/g)].map((match) => match[0]);
+
+    expect(hosts).toContain("<h2>Hosts contacted: 2</h2>");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toContain("<code>example.test:443</code> · 2 connections");
+    expect(rows[0]).toContain(`<a href="#event-${curl?.id}">`);
+    expect(rows[1]).toContain("<code>pypi.org:443</code> · 1 connection");
+    expect(rows[1]).toContain("a command TraceVault could not name");
+  });
+
+  it("shows no hosts section for a session whose shell made no connection", async () => {
+    expect(await report()).not.toContain('<section class="hosts"');
+  });
+
   it("does not count a skipped action again as something the agent did", async () => {
     record({ hook: "tool.failed", input: { ...REFUSED.input, args: REFUSED.output.args }, error: "refused", blockedBy: "self-modification" });
 
@@ -335,6 +367,15 @@ describe("seam A: a session in, one self-contained report file out", () => {
       expect(response.type).toBe("text/html; charset=utf-8");
       expect(response.disposition).toBe(`attachment; filename="tracevault-report-${SESSION}.html"`);
       expect(response.body).toBe(written);
+    });
+
+    it("downloads the same bytes the CLI writes when the shell contacted hosts", async () => {
+      connect({ host: "example.test", port: 443, kind: "https", call_id: null, opened: true });
+      const written = await report();
+      const body = await served(async (baseUrl) => (await fetch(`${baseUrl}/sessions/${SESSION}/report`)).text());
+
+      expect(written).toContain('<section class="hosts"');
+      expect(body).toBe(written);
     });
 
     it("answers 404 for an unknown session", async () => {

@@ -1,0 +1,51 @@
+# The agent works on TraceVault itself: it runs `tracevault trust`, which
+# accepts an MCP server's changed tools, or it writes or deletes something in
+# TraceVault's state folder or its database. The realistic attack is a
+# poisoned tool description that tells the agent to accept its own change
+# (ticket 85). Reading the folder, or a command that only mentions
+# tracevault, is not a finding.
+# A deletion is rm and its kin naming the folder or the database; a database
+# write is sqlite3 with a statement that changes rows or tables.
+# Not blockable: the guard checks file tools only.
+id: tracevault-tampering
+version: 1
+severity: high
+title: Tampered with TraceVault's own record
+explanation: "The agent accepted a changed add-on for TraceVault, or changed or deleted TraceVault's own files. An agent should never do either; a person decides what TraceVault trusts."
+recommendation: "Find out what made the agent do this, and undo it if nobody asked for it. (For the developer: check the add-on tool descriptions in the session for an instruction to run tracevault, and run tracevault verify.)"
+steps:
+  - each: true
+    any:
+      - label: accepted an add-on for TraceVault
+        match:
+          type: { equals: hook.script }
+          tool: { equals: bash }
+          target: { invokes: ["tracevault trust"] }
+      - label: accepted an add-on through npx
+        match:
+          type: { equals: hook.script }
+          tool: { equals: bash }
+          target: { regex: '(^|[;&|]\s*)npx\s+(-\S+\s+)*tracevault\s+trust\b' }
+      - label: wrote into TraceVault's state folder
+        match:
+          type: { equals: hook.script }
+          tool: { equals: bash }
+          target:
+            writes:
+              - "**/.local/state/tracevault/**"
+              - "**/AppData/Local/tracevault/**"
+              - "**/tracevault.db*"
+      - label: deleted or rewrote TraceVault's files
+        match:
+          type: { equals: hook.script }
+          tool: { equals: bash }
+          target: { regex: '(^|[;&|]\s*)(sudo\s+)?(rm|rmdir|unlink|shred|truncate)\s[^;&|]*(\.local/state/tracevault|AppData[/\\]Local[/\\]tracevault|tracevault\.db)|\bsqlite3\s[^;&|]*tracevault\.db\b[^;&|]*\b(insert|update|delete|drop|alter|create|replace)\b' }
+      - label: changed TraceVault's files with a file tool
+        match:
+          type: { equals: document.access }
+          operation: { in: [write, delete, rename] }
+          path:
+            glob:
+              - "**/.local/state/tracevault/**"
+              - "**/AppData/Local/tracevault/**"
+              - "**/tracevault.db*"

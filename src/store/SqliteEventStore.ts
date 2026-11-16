@@ -10,6 +10,7 @@ import { EventUpcaster } from "./EventUpcaster.js";
 import type { EventStorePort } from "./EventStorePort.js";
 import { HashChain } from "./HashChain.js";
 import { SchemaMigrations } from "./SchemaMigrations.js";
+import type { StoredArchiveRun } from "./StoredArchiveRun.js";
 import type { StoredSession } from "./StoredSession.js";
 
 // shortcut: Vitest's bundled Vite predates node:sqlite; Node's resolver loads it.
@@ -213,6 +214,30 @@ export class SqliteEventStore implements EventStorePort {
       .prepare("SELECT body FROM events WHERE correlation_id = ? ORDER BY rowid ASC LIMIT 1")
       .get(correlationId);
     return row === undefined ? null : this.parseBody(row["body"]);
+  }
+
+  listAnchors(): ReadonlyMap<string, string> {
+    const rows = this.database.prepare("SELECT from_hash, to_hash FROM chain_anchors").all();
+    return new Map(rows.map((row) => [this.asString(row["from_hash"], "from_hash"), this.asString(row["to_hash"], "to_hash")]));
+  }
+
+  isArchived(sessionId: string): boolean {
+    return this.database.prepare("SELECT 1 AS present FROM archived_sessions WHERE session_id = ?").get(sessionId) !== undefined;
+  }
+
+  listArchiveRuns(): StoredArchiveRun[] {
+    return this.database
+      .prepare(
+        `SELECT archived_at, archive, COUNT(*) AS sessions, SUM(events) AS events FROM archived_sessions
+         GROUP BY archived_at, archive ORDER BY archived_at DESC, archive DESC`,
+      )
+      .all()
+      .map((row) => ({
+        ranAt: this.asString(row["archived_at"], "archived_at"),
+        archive: this.asString(row["archive"], "archive"),
+        sessions: Number(row["sessions"]),
+        events: Number(row["events"]),
+      }));
   }
 
   close(): void {

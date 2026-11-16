@@ -8,6 +8,7 @@ import type { GuardFailureData } from "./GuardFailureData.js";
 import type { HookScriptData } from "./HookScriptData.js";
 import type { McpCallData } from "./McpCallData.js";
 import type { McpToolsData } from "./McpToolsData.js";
+import type { NetConnectData } from "./NetConnectData.js";
 import type { SessionLifecycleData } from "./SessionLifecycleData.js";
 import type { SkillCallData } from "./SkillCallData.js";
 import type { UserPromptData } from "./UserPromptData.js";
@@ -46,4 +47,5 @@ export type Event = EventEnvelope &
     | { readonly type: "guard.failure"; readonly data: GuardFailureData }
     | { readonly type: "config.snapshot"; readonly data: ConfigSnapshotData }
     | { readonly type: "mcp.tools"; readonly data: McpToolsData }
+    | { readonly type: "net.connect"; readonly data: NetConnectData }
   );

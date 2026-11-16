@@ -78,7 +78,7 @@ describe("seam C: a configuration in, static findings out", () => {
       it("raises exactly the expected findings on its trigger fixture", () => {
         const trigger = fixture(ruleId, "trigger");
         const found = scanner
-          .scan(snapshot(trigger.config), toolLists(trigger), toolLists(trigger, true))
+          .scan(snapshot(trigger.config), toolLists(trigger), toolLists(trigger, true).map((list) => ({ list })))
           .filter((finding) => finding.ruleId === ruleId)
           .map(({ subject, evidence }) => ({ subject, evidence }));
 
@@ -88,7 +88,7 @@ describe("seam C: a configuration in, static findings out", () => {
 
       it("says what to do about each finding it raises", () => {
         const trigger = fixture(ruleId, "trigger");
-        const found = scanner.scan(snapshot(trigger.config), toolLists(trigger), toolLists(trigger, true)).filter((finding) => finding.ruleId === ruleId);
+        const found = scanner.scan(snapshot(trigger.config), toolLists(trigger), toolLists(trigger, true).map((list) => ({ list }))).filter((finding) => finding.ruleId === ruleId);
 
         expect(found.length).toBeGreaterThan(0);
         expect(found.every((finding) => finding.recommendation.trim().length > 0)).toBe(true);
@@ -98,7 +98,7 @@ describe("seam C: a configuration in, static findings out", () => {
       it("stays silent on its clean fixture", () => {
         const clean = fixture(ruleId, "clean");
 
-        expect(scanner.scan(snapshot(clean.config), toolLists(clean), toolLists(clean, true)).filter((finding) => finding.ruleId === ruleId)).toEqual([]);
+        expect(scanner.scan(snapshot(clean.config), toolLists(clean), toolLists(clean, true).map((list) => ({ list }))).filter((finding) => finding.ruleId === ruleId)).toEqual([]);
       });
     });
   }

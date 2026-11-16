@@ -6,11 +6,11 @@ Spec: `docs/spec/shell-proxy.md`, "Rules" and "Display".
 
 **Blocked by:** 86.
 
-**Status:** open
+**Status:** done (16 Nov 2026). Only a connection that opened counts as egress: one that never opened sent nothing (clean row). The long-session reference (`tests/fixtures/long-session-findings.json`) was regenerated, because it is built from this rule's trigger fixture; without the new rows it still matches the pre-82 reference exactly.
 
-- [ ] A sensitive read, then a `net.connect` from an opaque command, raises `exfiltration-chain` (Seam C trigger row)
-- [ ] A `net.connect` with no earlier sensitive read raises nothing (Seam C clean row)
-- [ ] Every earlier `exfiltration-chain` fixture row still holds
-- [ ] The report lists the hosts contacted, and a session without connections shows no empty section (Seam A)
-- [ ] The CLI report and the page report stay byte-identical
-- [ ] Typecheck, build and the full suite pass
+- [x] A sensitive read, then a `net.connect` from an opaque command, raises `exfiltration-chain` (Seam C trigger row)
+- [x] A `net.connect` with no earlier sensitive read raises nothing (Seam C clean row)
+- [x] Every earlier `exfiltration-chain` fixture row still holds
+- [x] The report lists the hosts contacted, and a session without connections shows no empty section (Seam A)
+- [x] The CLI report and the page report stay byte-identical
+- [x] Typecheck, build and the full suite pass

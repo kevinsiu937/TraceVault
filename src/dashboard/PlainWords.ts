@@ -13,6 +13,7 @@ const KINDS: Record<string, string> = {
   "capture.gap": "Interruptions in the recording",
   "capture.duplicate": "Actions recorded twice",
   "guard.failure": "Times the safety check failed",
+  "net.connect": "Connections the commands made",
 };
 
 const RESULTS: Record<string, string> = {
@@ -68,6 +69,9 @@ export class PlainWords {
       return /^https?:\/\//.test(entry.target)
         ? `${tried ? "fetch" : "fetched"} the web page ${entry.target}`
         : `${tried ? "run" : "ran"} the command ${entry.target}`;
+    }
+    if (entry.type === "net.connect") {
+      return `${tried ? "connect" : "connected"} to ${entry.target}`;
     }
     return entry.target.length === 0 || entry.target === "session" ? this.kind(entry.type) : entry.target;
   }

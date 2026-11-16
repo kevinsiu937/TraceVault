@@ -23,7 +23,8 @@ export class TimelineRow {
       ? `<summary class="event-row"${marker}>${row}</summary>`
       : `<a class="event-row${selected ? " selected" : ""}" href="${HtmlText.escape(options.href)}"${marker}>${row}</a>`;
 
-    return `<li class="event${replay}" data-event-id="${HtmlText.escape(entry.eventId)}" data-time="${HtmlText.escape(entry.time)}" data-kind="${HtmlText.escape(entry.type)}" data-outcome="${HtmlText.escape(entry.outcome)}" id="event-${HtmlText.escape(entry.eventId)}">
+    const parent = entry.parentEventId === null ? "" : ` data-parent="${HtmlText.escape(entry.parentEventId)}"`;
+    return `<li class="event${replay}${parent === "" ? "" : " nested"}" data-event-id="${HtmlText.escape(entry.eventId)}"${parent} data-time="${HtmlText.escape(entry.time)}" data-kind="${HtmlText.escape(entry.type)}" data-outcome="${HtmlText.escape(entry.outcome)}" id="event-${HtmlText.escape(entry.eventId)}">
 ${head}
 <details class="event-details event-raw">
 <summary class="raw-summary" aria-label="Show stored event JSON">raw</summary>
@@ -33,7 +34,8 @@ ${head}
   }
 
   styles(): string {
-    return this.headerView.styles();
+    return `${this.headerView.styles()}
+.event.nested .event-row{padding-left:32px}`;
   }
 
   private header(entry: TimelineEntry): RowHeader {

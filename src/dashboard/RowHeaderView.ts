@@ -34,6 +34,9 @@ export class RowHeaderView {
     if (header.kind === "prompt.user") {
       return header.target.length <= PROMPT_ROW_LIMIT ? header.target : `${header.target.slice(0, PROMPT_ROW_LIMIT - 1)}…`;
     }
+    if (header.kind === "net.connect") {
+      return `connected to ${header.target}`;
+    }
     if (header.kind !== "document.access") {
       return header.target;
     }

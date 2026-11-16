@@ -26,6 +26,11 @@ const MIGRATIONS: readonly string[] = [
   // 2: every rule set the service has used, by digest, and the one current when each session was first recorded.
   `CREATE TABLE IF NOT EXISTS rule_sets (digest TEXT PRIMARY KEY, files TEXT NOT NULL);
    CREATE TABLE IF NOT EXISTS session_rules (session_id TEXT PRIMARY KEY, digest TEXT NOT NULL);`,
+  // 3: each time the developer accepted an MCP server's tool list (`tracevault trust`); rows are only ever added.
+  `CREATE TABLE IF NOT EXISTS mcp_trust (server TEXT NOT NULL, event_id TEXT NOT NULL, digest TEXT NOT NULL, accepted_at TEXT NOT NULL);`,
+  // 4: archiving (ticket 59). An anchor stands for chain rows moved to another file: the chain goes from from_hash to to_hash through them.
+  `CREATE TABLE IF NOT EXISTS chain_anchors (from_hash TEXT PRIMARY KEY, to_hash TEXT NOT NULL);
+   CREATE TABLE IF NOT EXISTS archived_sessions (session_id TEXT PRIMARY KEY, archive TEXT NOT NULL, events INTEGER NOT NULL, archived_at TEXT NOT NULL);`,
 ];
 
 export class SchemaMigrations {

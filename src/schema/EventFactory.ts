@@ -10,6 +10,7 @@ import type { GuardFailureData } from "./GuardFailureData.js";
 import type { HookScriptData } from "./HookScriptData.js";
 import type { McpToolsData } from "./McpToolsData.js";
 import type { McpCallData } from "./McpCallData.js";
+import type { NetConnectData } from "./NetConnectData.js";
 import type { SessionLifecycleData } from "./SessionLifecycleData.js";
 import type { SkillCallData } from "./SkillCallData.js";
 import type { UserPromptData } from "./UserPromptData.js";
@@ -94,6 +95,11 @@ export class EventFactory {
 
   mcpTools(meta: EventMeta, data: McpToolsData): Event {
     return { ...this.envelope(meta), type: "mcp.tools", data };
+  }
+
+  /** Always under the `proxy` capture path: the proxy, not a plugin hook, saw it. */
+  netConnect(meta: EventMeta, data: NetConnectData): Event {
+    return { ...this.envelope(meta), capture_path: "proxy", type: "net.connect", data };
   }
 
   private envelope(meta: EventMeta): Omit<Event, "type" | "data"> {

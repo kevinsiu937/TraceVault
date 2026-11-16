@@ -10,6 +10,7 @@
  *   run         start the local service (capture + scanners + dashboard on 127.0.0.1)
  *   report      write one session as a self-contained HTML report
  *   verify      check that the stored record has not been changed
+ *   trust       accept an MCP server's current tools after a deliberate change
  *
  * Only finding the command and turning its result into an exit code belong
  * here. Each command owns its flags and usage lines in its own file.
@@ -24,6 +25,7 @@ import { ImportCliCommand } from "./ImportCliCommand.js";
 import { InitCliCommand } from "./InitCliCommand.js";
 import { ReportCommand } from "./ReportCommand.js";
 import { RunCommand } from "./RunCommand.js";
+import { TrustCommand } from "./TrustCommand.js";
 import { UninstallCliCommand } from "./UninstallCliCommand.js";
 import { VerifyCommand } from "./VerifyCommand.js";
 
@@ -41,6 +43,7 @@ function commands(): readonly CliCommand[] {
     new RunCommand(dbPath),
     new ReportCommand(dbPath),
     new VerifyCommand(dbPath),
+    new TrustCommand(dbPath),
   ];
 }
 

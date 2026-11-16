@@ -1,6 +1,6 @@
 # Spec: Scale and architecture before Phase 5
 
-> Status: approved 13 Nov 2026. Kevin decided on 13 Nov 2026: local single-user by design; measure before optimising; old sessions can be viewed under the rules then and now; old sessions are archived automatically after 90 days (configurable), as ticket 59 if the numbers call for it.
+> Status: approved 13 Nov 2026. Kevin decided on 13 Nov 2026: local single-user by design; measure before optimising; old sessions can be viewed under the rules then and now; old sessions are archived automatically after 90 days (configurable), as ticket 59 if the numbers call for it. On 16 Nov 2026 Kevin gave the go to build 59 without waiting on a real database's numbers.
 > Tickets: `tickets/55-*` to `tickets/59-*`. Structure rules: `AGENTS.md`, `docs/ARCHITECTURE.md`.
 
 ## Problem Statement
@@ -46,6 +46,8 @@ Four limits stood between Phase 4 and Phase 5:
 - The service can compute findings, and configuration findings, under a stored digest, by rebuilding both scanners from the stored files.
 - The session page and the report show today's rules. When "then" is known and its findings differ, one plain line says so and links `?rules=then`. A session recorded before this feature says the rules from that time were not kept.
 
+**Archive (ticket 59).** On start, `run` moves each session whose last event is its end, more than `--archive-after` days ago (90; 0 = off), to `<db>-archive-<YYYY-MM>.db` beside the database (the month of the run), in one transaction over both files, then runs VACUUM. Rows move unchanged. The chain runs over every row, so each file gains `chain_anchors` rows that stand for the rows now in the other, and `verify` follows them. A session holding a server's first `mcp.tools` list stays. `archived_sessions` lists what moved; the session list shows it per run, and the history import skips it. `report` and `verify` take an archive as `--db`.
+
 ## Testing Decisions
 
 - **Seam B** opens databases: a file without a version is upgraded with every event kept and the chain verified; opening twice changes nothing; a newer file is refused and left byte for byte.
@@ -57,7 +59,7 @@ Four limits stood between Phase 4 and Phase 5:
 
 - Accounts, a shared server, and syncing between machines.
 - Storing findings. They stay a read model.
-- Deduplication (58) and archiving (59) until ticket 56's numbers call for them.
+- Deduplication (58) until ticket 56's numbers call for it.
 - Migrations that rewrite event bodies.
 
 ## Known Blind Spots
@@ -68,4 +70,9 @@ Four limits stood between Phase 4 and Phase 5:
 - A rule set is stored by its digest and file contents; rules edited and reverted produce the same digest and the same stored set, which is the intent.
 - The first view of a long session still scans it whole, and three session-window rules grow with the square of its length: about 3 s at 10,000 events and 54 s at 50,000 (`docs/probes/scale-measurements.md`). The findings cache only makes repeat views fast.
 - The session page renders every row: at 50,000 events it is 110 MB of HTML and takes 3.5 s even with the findings cached.
+- Archive anchors are outside the hash chain. `verify` on one file trusts them, so rows removed by hand together with a forged anchor would pass. Nothing checks the database and its archives together.
+- A subagent session is archived by its own end time, apart from its parent, so a parent can lose a child from its portal, or the reverse.
+- An archived session's report computes `tool-changed` against the tool lists in the archive, not the database, so its baseline can differ from the one shown before the move.
+- A session that receives an event after it was archived (resumed after 90 days) starts again in the database as a partial session.
+- The archive file is named by the month of the run, not the month the session ended.
 - Measurement uses synthetic sessions modelled on one recorded run, so real sessions with other mixes can behave differently.

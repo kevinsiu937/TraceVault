@@ -91,7 +91,7 @@ Scripts let Kevin run the agent for real and audit the rules against his own his
 - The proxy itself (ticket 65) until the ticket 64 probe says the shell inherits `shell.env`.
 - Expanding variables, aliases or functions; a full shell grammar.
 - Writes by programs other than the listed ones (`python3 -c "open(...)"`, `dd of=`, `sed -i`).
-- Accepting a changed tool, so it stops being reported. Today every later session reports it again.
+- Accepting a changed tool, so it stops being reported: ticket 85 added `tracevault trust <server>`, outside this spec.
 - Remote MCP servers, whose tool lists are not recorded.
 
 ## Known Blind Spots
@@ -106,4 +106,5 @@ Scripts let Kevin run the agent for real and audit the rules against his own his
 - **Tool changes:**
   - A server's first list is trusted, so a server that was poisoned from the start is left to the text-pattern rules.
   - Archiving the earliest sessions (ticket 59) would move the baseline unless the archive keeps each server's first tool list.
+  - An acceptance (ticket 85) sits outside the hash chain. Someone who can write any file on the machine can also change TraceVault itself; a local tool cannot stop that, and sending the record off the machine is out of scope. The `tracevault-tampering` rule flags an agent that tries, and every acceptance is listed on the configuration page and in the report.
 - **Audit:** the false-positive audit reads the history OpenCode keeps, which has no configuration, so it says nothing about the static rules.

@@ -30,29 +30,33 @@ A local investigation platform for OpenCode agents. It records what an agent did
   - 72: an append is one write transaction, so two processes cannot fork the hash chain.
   - 73: `tracevault verify [--db]` checks the chain and exits 1 on a break.
   - 67 to 70 are committed in `199b4fa`, and 71 to 73 in `7854d26`.
-  - 74: a request that fails prints one line (method, path, error; no body) to the service's error output. Not committed yet.
-  - 75: the plugin keeps 4000 characters of a prompt (was 200), so a late freeze reaches `destructive-action`; the timeline row still shows 200. Not committed yet.
-  - 76: an MCP tool is split at the longest server name in the session's configuration (`google_drive_search` is server `google_drive`), else at the first underscore. Not committed yet.
-  - 77: `ServiceAssembly.open` builds the service and the dashboard (nine panes); `run`, every seam test and the measure scripts use it. Not committed yet.
-  - 78: the session page, configuration page and report each come from one `getSession` call; scale numbers rerun in `docs/probes/scale-measurements.md`. Not committed yet.
-  - 79: each CLI command is one file implementing `CliCommand` with its own flags; `index.ts` is a table. Not committed yet.
-  - 80: `InstallManifest` applies a file change keeping the earliest original and undoes it; `init`, `harden` and `uninstall` only call it. The record's format is unchanged. Not committed yet.
-  - 81: views escape through one value object, `HtmlText`; the 24 private copies are gone. Not committed yet.
-  - 82: the rule matcher holds matches waiting at the same step with the same bindings once, so a scan grows with the session, not its square (cold 50,000-event view 1.4 s, was 115 s); the ticket 78 slowdown was the version-2 rules. Not committed yet.
-  - 83: the session timeline shows one page of 500 rows (newest by default, `?page=`, `?event=` opens its page); findings, file rail, header counts and the report still cover the whole session. Not committed yet.
-  - 84: `allowed_by` (escalation-then-use, now version 2) judges a chained command part by part, as OpenCode does: each part's source text, `cd` skipped, every part covered. `EffectivePermissions` needed no change. Not committed yet.
+  - 74: a request that fails prints one line (method, path, error; no body) to the service's error output.
+  - 75: the plugin keeps 4000 characters of a prompt (was 200), so a late freeze reaches `destructive-action`; the timeline row still shows 200.
+  - 76: an MCP tool is split at the longest server name in the session's configuration (`google_drive_search` is server `google_drive`), else at the first underscore.
+  - 77: `ServiceAssembly.open` builds the service and the dashboard (nine panes); `run`, every seam test and the measure scripts use it.
+  - 78: the session page, configuration page and report each come from one `getSession` call; scale numbers rerun in `docs/probes/scale-measurements.md`.
+  - 79: each CLI command is one file implementing `CliCommand` with its own flags; `index.ts` is a table.
+  - 80: `InstallManifest` applies a file change keeping the earliest original and undoes it; `init`, `harden` and `uninstall` only call it. The record's format is unchanged.
+  - 81: views escape through one value object, `HtmlText`; the 24 private copies are gone.
+  - 82: the rule matcher holds matches waiting at the same step with the same bindings once, so a scan grows with the session, not its square (cold 50,000-event view 1.4 s, was 115 s); the ticket 78 slowdown was the version-2 rules.
+  - 83: the session timeline shows one page of 500 rows (newest by default, `?page=`, `?event=` opens its page); findings, file rail, header counts and the report still cover the whole session.
+  - 84: `allowed_by` (escalation-then-use, now version 2) judges a chained command part by part, as OpenCode does: each part's source text, `cd` skipped, every part covered. `EffectivePermissions` needed no change.
+  - 85: `tracevault trust <server>` accepts a server's latest tool list (table `mcp_trust`, migration 3, rows only added); sessions recorded later compare with it, earlier ones keep their finding; acceptances are listed on the configuration page and in the report; new rule `tracevault-tampering` (high). Not committed yet.
+  - 86 (in progress): `tracevault run` starts the shell proxy on the service port + 1 (`ShellProxy`, in `capture/`); each CONNECT or plain request is forwarded unchanged and stored as `net.connect` (capture path `proxy`; host, port, kind, call, opened), nested under its bash call on the timeline. A connection naming no session (git's) is forwarded but not stored: where to store it is Kevin's question in the ticket. Not committed yet.
+  - 88: `exfiltration-chain` (now version 3) counts a `net.connect` that opened as egress, whatever the command looked like; the report lists "Hosts contacted" (each host:port once, its connection count, and the call that made the first), and no section when there were none. The long-session reference was regenerated (its source fixture grew). Not committed yet.
+  - 59 (built on Kevin's go, 16 Nov 2026, in a worktree and merged): on start, `run` moves sessions that ended more than `--archive-after` days ago (90; 0 = off) to `<db>-archive-<YYYY-MM>.db`, keeping each server's first tool list and every tool list a `mcp_trust` row points to; both files verify through `chain_anchors`, the session list names each run, and `report`/`verify` take an archive as `--db`. 85's `mcp_trust` is migration 3, 59's tables are 4. The hash chain is one chain over every row, not one per session. Not committed yet.
   - 77 to 81 are the refactors from the 15 Nov architecture review, listed above. The review's sixth candidate, the second agent's seam, is a Phase 5 constraint in `docs/ROADMAP.md`.
-- **Gate:** 39 test files, 706 tests. Typecheck and build are clean. The pre-commit hook runs typecheck and the full suite.
+- **Gate:** 41 test files, 742 tests. Typecheck and build are clean. The pre-commit hook runs typecheck and the full suite.
 - **Phase 5 is now a second agent, and the simulator is Phase 6** (Kevin, 15 Nov 2026). Neither has started. Phases 1 to 4 are polished first.
 
 ## Waiting on Kevin's decision
 
-1. **Ticket 65, local proxy.** Unblocked: the ticket 64 probe showed a plugin's `shell.env` hook reaches bash (`HTTPS_PROXY`, `HTTP_PROXY`). Only the spec and ticket exist.
+1. **Ticket 86, a proxy connection that names no session** (git sends none): which session it is stored under. Options in the ticket.
 2. **Candidate tickets, proposed and not yet opened:**
    - **Chain semantics:** done as ticket 84, 16 Nov 2026.
    - **Long sessions:** opened as tickets 82 (rule scan in time that grows with the session) and 83 (timeline pages), 16 Nov 2026.
-   - **No way to accept a changed MCP tool:** ticket 85. Where to record an acceptance is Kevin's call: the options and the recommendation (a `mcp_trust` table pointing at the accepted `mcp.tools` event) are in the ticket. No code yet.
-3. **58 (store repeats once) and 59 (archive after 90 days).** Deferred because the ticket 56 numbers show storage is small. Re-measure on real data first. If 59 is built, it must keep each server's earliest `mcp.tools` list, because 66's baseline is that event.
+   - **No way to accept a changed MCP tool:** done as ticket 85, 16 Nov 2026 (option 2, Kevin's decision).
+3. **58 (store repeats once).** Deferred because the ticket 56 numbers show storage is small. Re-measure on real data first. 59 was built on Kevin's go (16 Nov 2026).
 
 ## Working with Kevin
 

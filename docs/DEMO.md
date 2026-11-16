@@ -67,6 +67,21 @@ node dist/cli/index.js verify --db data/demo.db
 
 It prints that the record is intact, or the first stored event that was changed or removed, and exits 1 on a break.
 
+## Archiving old sessions (ticket 59)
+
+```bash
+node dist/cli/index.js run --db data/demo.db --archive-after 90
+```
+
+On start, the service moves every session that ended more than 90 days ago (0 turns it off) to `data/demo-archive-<YYYY-MM>.db` and prints `archive: … moved to …`. The session list ends with an "Archived" line per run. Both files check out, and an archived session still makes a report:
+
+```bash
+node dist/cli/index.js verify --db data/demo-archive-2026-11.db
+node dist/cli/index.js report <session-id> --db data/demo-archive-2026-11.db --out old.html
+```
+
+Last run (16 Nov 2026, scratch database, a session ended 1 June): `archive: 1 session(s), 3 events, moved to events-archive-2026-11.db`; both files verified (1 and 3 events); the report from the archive was written.
+
 ## 4. Reversible install
 
 ```bash
@@ -337,4 +352,49 @@ Listed in `docs/spec/evasion-before-phase-5.md` under Known Blind Spots:
 - Aliases and shell functions are not expanded.
 - A program not on the egress list is missed.
 - Full paths assume each bash call starts in the project folder, until the ticket 62 probe answers.
-- A changed MCP tool is reported in every later session, because a change cannot be accepted yet.
+- A changed MCP tool is reported in every later session until it is accepted with `tracevault trust` (below).
+
+## Accepting a changed MCP tool (ticket 85)
+
+**What it shows:** after a deliberate upgrade, `tracevault trust <server>` accepts the server's latest tool list. Sessions recorded later compare with it; sessions recorded before keep their finding. The configuration page and the report list each acceptance.
+
+```bash
+npm run build
+mkdir -p /tmp/tv-trust && node dist/cli/index.js run --port 4391 --db /tmp/tv-trust/demo.db &
+post() { curl -s -X POST -H 'content-type: application/json' --data "$1" http://127.0.0.1:4391/hook; echo; }
+CFG='{"mcp":{"docs":{"type":"local","command":["node","docs.js"]}}}'
+post "{\"hook\":\"config.snapshot\",\"sessionID\":\"ses_a\",\"config\":$CFG}"
+post '{"hook":"mcp.tools","sessionID":"ses_a","server":"docs","tools":[{"name":"search","description":"Search the docs."}]}'
+post "{\"hook\":\"config.snapshot\",\"sessionID\":\"ses_b\",\"config\":$CFG}"
+post '{"hook":"mcp.tools","sessionID":"ses_b","server":"docs","tools":[{"name":"search","description":"Search the docs, v2."}]}'
+node dist/cli/index.js trust nope --db /tmp/tv-trust/demo.db   # refused, exit 1
+node dist/cli/index.js trust docs --db /tmp/tv-trust/demo.db   # accepted
+post "{\"hook\":\"config.snapshot\",\"sessionID\":\"ses_c\",\"config\":$CFG}"
+post '{"hook":"mcp.tools","sessionID":"ses_c","server":"docs","tools":[{"name":"search","description":"Search the docs, v2."}]}'
+node dist/cli/index.js verify --db /tmp/tv-trust/demo.db       # still intact
+```
+
+**Expect:**
+- `http://127.0.0.1:4391/sessions/ses_b/config` still shows `tool-changed` ("since docs was first seen").
+- `/sessions/ses_c/config` shows no `tool-changed`.
+- Both list "docs: accepted <time>".
+- An agent that runs `tracevault trust`, or writes into the state folder, raises `tracevault-tampering`.
+
+# The shell proxy (ticket 86, in progress)
+
+**What it shows:** `tracevault run` also starts a proxy on the service port + 1. A connection through it reaches its host unchanged and appears on the session's timeline as "connected to host:port", under the bash call named in the proxy address. The plugin does not point the shell at it yet (ticket 87), so the demo uses `curl -x` by hand. Spec: `docs/spec/shell-proxy.md`.
+
+```bash
+npm run build
+mkdir -p /tmp/tv-proxy && node dist/cli/index.js run --port 4391 --db /tmp/tv-proxy/demo.db &
+# prints "shell proxy on http://127.0.0.1:4392"; if 4392 is taken it prints "shell proxy not started: port 4392 is already in use" and the service still runs
+node -e 'require("http").createServer((q,r)=>r.end("hello\n")).listen(4399,"127.0.0.1")' &
+curl -x http://ses_demo:call_demo@127.0.0.1:4392 http://127.0.0.1:4399/some/path    # hello
+curl -s -o /dev/null -w "%{http_code}\n" -x http://ses_demo:call_demo@127.0.0.1:4392 http://127.0.0.1:4398/  # 502: nothing listens
+node dist/cli/index.js verify --db /tmp/tv-proxy/demo.db
+```
+
+**Expect:**
+- `http://127.0.0.1:4391/sessions/ses_demo` lists "connected to 127.0.0.1:4399" (ok) and "connected to 127.0.0.1:4398" (error, not opened).
+- The stored event holds host, port, kind, call and whether it opened; the path `/some/path` is nowhere in it.
+- `curl -x http://127.0.0.1:4392 …` with no user name still gets its answer, but nothing is stored yet (Kevin's question in ticket 86).

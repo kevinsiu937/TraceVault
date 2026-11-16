@@ -1,5 +1,6 @@
 import type { ConfigFinding, RuleSource } from "../schema/ConfigFinding.js";
 import type { ConfigurationSnapshot } from "../service/ConfigurationSnapshot.js";
+import { AcceptancesView } from "./AcceptancesView.js";
 import { DashboardStyle } from "./DashboardStyle.js";
 import { HtmlText } from "./HtmlText.js";
 
@@ -12,7 +13,10 @@ const SOURCE_NAMES: Record<RuleSource["kind"], string> = {
 
 /** The configuration a session ran under, secrets already replaced, and the static findings on it. */
 export class ConfigurationView {
-  constructor(private readonly style: DashboardStyle = new DashboardStyle()) {}
+  constructor(
+    private readonly style: DashboardStyle = new DashboardStyle(),
+    private readonly acceptances: AcceptancesView = new AcceptancesView(),
+  ) {}
 
   render(sessionId: string, title: string, snapshot: ConfigurationSnapshot | null, findings: readonly ConfigFinding[]): string {
     const name = title.length > 0 ? title : sessionId;
@@ -21,6 +25,7 @@ export class ConfigurationView {
       : `<p class="sub">Recorded <time datetime="${HtmlText.escape(snapshot.recordedAt)}">${HtmlText.escape(snapshot.recordedAt)}</time> · <code>${HtmlText.escape(snapshot.digest)}</code></p>
 ${this.findings(findings)}
 ${this.mcpTools(snapshot.mcpTools)}
+${this.acceptances.render(snapshot.acceptances)}
 <p class="sub">Secret values were replaced with <code>[redacted]</code> before they left OpenCode.</p>
 <pre class="config-json">${HtmlText.escape(JSON.stringify(snapshot.config, null, 2))}</pre>`;
 

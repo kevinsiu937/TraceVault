@@ -1,4 +1,6 @@
 import type { ConfigFinding, RuleSource } from "../schema/ConfigFinding.js";
+import type { ConfigurationSnapshot } from "../service/ConfigurationSnapshot.js";
+import { AcceptancesView } from "./AcceptancesView.js";
 import { PlainWords } from "./PlainWords.js";
 import { HtmlText } from "./HtmlText.js";
 
@@ -16,9 +18,12 @@ const SUBJECTS: Record<ConfigFinding["subjectKind"], string> = { agent: "agent",
  * naming every agent or add-on it applies to, so one risk reads once.
  */
 export class ReportConfigurationView {
-  constructor(private readonly words: PlainWords = new PlainWords()) {}
+  constructor(
+    private readonly words: PlainWords = new PlainWords(),
+    private readonly acceptances: AcceptancesView = new AcceptancesView(words),
+  ) {}
 
-  render(recorded: boolean, findings: readonly ConfigFinding[]): string {
+  render(recorded: boolean, findings: readonly ConfigFinding[], acceptances: ConfigurationSnapshot["acceptances"] = []): string {
     const groups = new Map<string, ConfigFinding[]>();
     for (const finding of findings) {
       groups.set(finding.ruleId, [...(groups.get(finding.ruleId) ?? []), finding]);
@@ -34,6 +39,7 @@ export class ReportConfigurationView {
     return `<section class="configuration" id="configuration">
 <h2>What the agent's settings allow without asking: ${heading}</h2>
 ${body}
+${this.acceptances.render(acceptances)}
 </section>`;
   }
 

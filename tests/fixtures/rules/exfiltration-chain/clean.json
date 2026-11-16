@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "A sensitive read with no egress, egress before the read, denied egress of each kind (it never ran), and egress outside the 30-minute window. A local commit after the read whose message mentions push is not a push. Version 2 (ticket 64): after a .env read, a command that only mentions curl, wget or ssh as text is not egress.",
+  "note": "A sensitive read with no egress, egress before the read, denied egress of each kind (it never ran), and egress outside the 30-minute window. A local commit after the read whose message mentions push is not a push. Version 2 (ticket 64): after a .env read, a command that only mentions curl, wget or ssh as text is not egress. Version 3 (ticket 88): a recorded connection with no sensitive read before it, and, after a .env read, a connection that never opened (nothing was sent).",
   "events": [
     {
       "id": "evt_exfil_start",
@@ -301,6 +301,100 @@
         "target": "grep -rn \"ssh\" docs",
         "exit_code": 0,
         "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_pip",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T13:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_exfil_pip",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "pip install requests",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_pip_connect",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-07T13:00:00.500Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "pypi.org",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_exfil_pip",
+        "opened": true
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_unopened_env",
+      "schema_version": 1,
+      "type": "document.access",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-07T14:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_exfil_unopened_env",
+      "prev_hash": null,
+      "data": {
+        "path": "/home/dev/demo/.env",
+        "operation": "read",
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_exfil_unopened_connect",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_exfil",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-07T14:01:00.500Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "paste.example.test",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_exfil_unopened",
+        "opened": false
       },
       "raw_extra": {}
     }

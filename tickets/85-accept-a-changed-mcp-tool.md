@@ -6,7 +6,16 @@ The acceptance is recorded, never a rewrite: the store is append-only, and the f
 
 **Blocked by:** None.
 
-**Status:** open; design written 16 Nov 2026, waiting on Kevin. Every workable option records something the store does not record today (an acceptance), so it is his decision under the working agreement. No code yet.
+**Status:** done (16 Nov 2026). Kevin decided 16 Nov 2026 (see "Decision" below).
+
+**Decision (Kevin, 16 Nov 2026):**
+1. **Option 2: a table `mcp_trust`, rows only ever added**, with no hash chain of its own. A chain cannot stop a forged acceptance, because a forgery is an append: hashes carry no secret, so anyone who can write the database can append a row with a correct hash. The same is true of the events chain, so option 1 would not stop it either.
+2. **An acceptance pins one exact tool list**: the accepted `mcp.tools` event's id and a digest of its tools. Any later difference, however small, is reported again.
+3. **Acceptances are visible**: the configuration page and the report list each one ("google_drive: accepted 16 Nov 2026"), so an acceptance nobody made can be seen.
+4. **The realistic attack is the agent accepting for itself.** A poisoned tool description tells the agent to run `tracevault trust …`. A new workflow rule, `tracevault-tampering` (high), flags an agent's bash call that runs `tracevault` with `trust`, or that writes or deletes anything in TraceVault's state folder or its database. It uses the existing `invokes` and `writes` operators where they fit.
+5. **Older sessions keep what they showed**: each session is compared with the latest acceptance made before its configuration snapshot, else the first list. The finding names its baseline.
+
+**Blind spot to write in the spec:** someone who can write any file on the machine can also change TraceVault itself; a local tool cannot stop that, and sending the record off the machine is out of scope.
 
 **Where an acceptance can be recorded.** Today the baseline is each server's earliest `mcp.tools` event in any session (`SessionConfiguration.firstSeen`), passed to the static scanner's `changed_since_first_seen` check. The store has the hash-chained `events` table, chained per session, and two tables outside the chain (`rule_sets`, `session_rules`, migration 2).
 
@@ -19,10 +28,13 @@ The acceptance is recorded, never a rewrite: the store is append-only, and the f
 
 **A sub-decision to take with it:** findings are computed when a page is read, so after an acceptance, older sessions would also stop reporting the change. I recommend that each session is compared with the latest acceptance made before its configuration snapshot (else the first list). Sessions recorded before the acceptance then still show what they showed, and the finding names its baseline ("since `<server>` was accepted, `<time>`" or "first seen").
 
-- [ ] After accepting a server, a later session with the same tools raises no `tool-changed` finding (Seam B)
-- [ ] A change after the acceptance is still reported, and names the acceptance as the baseline (Seam B)
-- [ ] Accepting a server never seen is refused with a clear message, and exits 1
-- [ ] The acceptance survives reopening the database, and `tracevault verify` still passes
-- [ ] The first tool list is never changed or removed; the ticket 59 constraint (keep each server's first list) still holds
-- [ ] `docs/spec/evasion-before-phase-5.md`'s out-of-scope line about accepting a change points here
-- [ ] Typecheck, build and the full suite pass
+- [x] After accepting a server, a later session with the same tools raises no `tool-changed` finding (Seam B)
+- [x] A change after the acceptance is still reported, and names the acceptance as the baseline (Seam B)
+- [x] Accepting a server never seen is refused with a clear message, and exits 1
+- [x] The acceptance survives reopening the database, and `tracevault verify` still passes
+- [x] The first tool list is never changed or removed; the ticket 59 constraint (keep each server's first list) still holds
+- [x] A session recorded before the acceptance still shows its finding (Seam B)
+- [x] The configuration page and the report list the server's acceptances (Seam A)
+- [x] An agent's bash call running `tracevault trust google_drive`, or writing into TraceVault's state folder, raises `tracevault-tampering`; reading the folder, or a command that only mentions tracevault, raises nothing (Seam C)
+- [x] `docs/spec/evasion-before-phase-5.md`'s out-of-scope line about accepting a change points here, and its blind spots carry the one above
+- [x] Typecheck, build and the full suite pass

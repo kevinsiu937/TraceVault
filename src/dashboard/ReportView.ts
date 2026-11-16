@@ -8,6 +8,7 @@ import { PlainWords } from "./PlainWords.js";
 import { ReportConfigurationView } from "./ReportConfigurationView.js";
 import { ReportEventsView } from "./ReportEventsView.js";
 import { ReportFindingsView } from "./ReportFindingsView.js";
+import { ReportHostsView } from "./ReportHostsView.js";
 import { HtmlText } from "./HtmlText.js";
 
 const GLOSSARY: readonly [string, string][] = [
@@ -36,6 +37,7 @@ export class ReportView {
     private readonly configuration: ReportConfigurationView = new ReportConfigurationView(),
     private readonly events: ReportEventsView = new ReportEventsView(),
     private readonly words: PlainWords = new PlainWords(),
+    private readonly hosts: ReportHostsView = new ReportHostsView(),
   ) {}
 
   render(service: InvestigationServicePort, sessionId: string, rules: RuleChoice = "now"): string {
@@ -61,7 +63,8 @@ ${this.header(summary, entries.length, [...findings, ...configFindings][0]?.rule
 ${this.rulesNotice(rules, view.ruleVersions)}
 ${this.inShort(entries, this.findings.needingALook(entries, findings), recorded, configFindings)}
 ${this.findings.render(entries, findings)}
-${this.configuration.render(recorded, configFindings)}
+${this.hosts.render(entries)}
+${this.configuration.render(recorded, configFindings, view.configuration?.acceptances)}
 ${this.events.render(entries, titles)}
 ${this.glossary()}
 </main>
@@ -159,7 +162,7 @@ p{margin:0 0 8px}
 .status dt{color:var(--text)}.status dd{margin:0;font-weight:600;text-align:right}
 .status .ok dd{color:var(--good)}.status .check dd{color:var(--bad)}.status .unknown dd{color:var(--warn)}
 ol,ul{margin:0;padding:0;list-style:none}
-.findings>ol>li,.configuration>ol>li,.skipped>ul>li{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 10px}
+.findings>ol>li,.configuration>ol>li,.skipped>ul>li,.hosts>ul>li{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:0 0 10px}
 .skipped>ul>li{border-left:4px solid var(--warn)}
 li strong{font-weight:600}
 .severity{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600;vertical-align:2px;background:var(--soft);color:var(--muted)}

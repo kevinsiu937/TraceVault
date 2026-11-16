@@ -1,9 +1,12 @@
 import type { CapturePort } from "../capture/CapturePort.js";
 import type { Event } from "../schema/Event.js";
 import type { EventFactory } from "../schema/EventFactory.js";
+import type { NetConnectData } from "../schema/NetConnectData.js";
 import type { EventStorePort } from "../store/EventStorePort.js";
+import type { McpTrustPort } from "../store/McpTrustPort.js";
 import type { StoredSession } from "../store/StoredSession.js";
 import { ActivityFilter } from "./ActivityFilter.js";
+import type { ArchiveRun } from "./ArchiveRun.js";
 import type { InvestigationServicePort, RecordResult } from "./InvestigationServicePort.js";
 import type { SessionActivity } from "./SessionActivity.js";
 import { SessionConfiguration } from "./SessionConfiguration.js";
@@ -36,6 +39,7 @@ export class InvestigationService implements InvestigationServicePort {
     private readonly findings: SessionFindings = new SessionFindings(),
     private readonly configuration: SessionConfiguration = new SessionConfiguration(),
     history: RuleHistoryPort | null = null,
+    private readonly trust: McpTrustPort | null = null,
   ) {
     this.rules = new SessionRules({ findings, configuration }, history);
   }
@@ -80,6 +84,15 @@ export class InvestigationService implements InvestigationServicePort {
       }
     }
 
+    this.keep(event);
+    return "stored";
+  }
+
+  recordConnection(sessionId: string, data: NetConnectData, receivedAt: Date): void {
+    this.keep(this.factory.netConnect({ sessionId, correlationId: null, receivedAt }, data));
+  }
+
+  private keep(event: Event): void {
     const first = !this.store.hasSession(event.session_id);
     this.store.append(event);
     if (first) {
@@ -88,7 +101,6 @@ export class InvestigationService implements InvestigationServicePort {
     if (event.type !== "capture.duplicate") {
       this.publish(event);
     }
-    return "stored";
   }
 
   /** The MCP server names in the session's latest recorded configuration. */
@@ -118,7 +130,11 @@ export class InvestigationService implements InvestigationServicePort {
     return stored.map((session) => this.summary(session, activity.get(session.sessionId) ?? []));
   }
 
-  private summary(session: StoredSession, events: readonly Event[]): SessionSummary {
+  listArchiveRuns(): ArchiveRun[] {
+    return this.store.listArchiveRuns();
+  }
+
+  private summary(session: StoredSession,events: readonly Event[]): SessionSummary {
     const analysed = this.analyse(events.filter((event) => !META_TYPES.has(event.type)));
     return {
       sessionId: session.sessionId,
@@ -173,13 +189,14 @@ export class InvestigationService implements InvestigationServicePort {
     const scanners = this.rules.for(sessionId, rules);
     const allEntries = scanners.findings.flag(this.timeline.build(events), events);
     const known = this.store.listMatching({ sessionId: null, kinds: ["mcp.tools"], outcomes: [], operations: [], text: "" });
+    const acceptances = this.trust?.list() ?? [];
     return {
       summary: this.summary(own, events),
       allEntries,
       entries: filter.active ? scanners.findings.flag(this.timeline.build(this.store.listMatching(filter.toQuery(sessionId))), events) : allEntries,
       findings: scanners.findings.of(events),
-      configuration: this.configuration.latest(events),
-      configFindings: scanners.configuration.findings(events, known.filter((event) => event.type === "mcp.tools")),
+      configuration: this.configuration.latest(events, acceptances),
+      configFindings: scanners.configuration.findings(events, known.filter((event) => event.type === "mcp.tools"), acceptances),
       ruleVersions: this.rules.versions(sessionId, events),
       previousSessionId: stored[index + 1]?.sessionId ?? null,
       nextSessionId: stored[index - 1]?.sessionId ?? null,

@@ -17,4 +17,6 @@ export interface TimelineEntry {
   readonly flags: readonly string[];
   /** The rule the opt-in guard refused this call under, or null when the guard did not skip it. */
   readonly blockedBy: string | null;
+  /** The call this row belongs to, shown under it: a shell connection's bash call. Null for a row of its own. */
+  readonly parentEventId: string | null;
 }

@@ -5,13 +5,14 @@
 # check does not depend on the wording, so it catches what the text patterns
 # of tool-hidden-instructions miss. The first sighting is trusted: a server
 # whose first list is already poisoned is left to the text-pattern rules.
-# A removed tool is not reported.
+# A removed tool is not reported. After `tracevault trust <server>`, the
+# accepted list is the baseline for sessions recorded later (ticket 85).
 id: tool-changed
 version: 1
 severity: medium
 title: An add-on tool changed since it was first seen
 explanation: "The text this add-on's tool shows the AI is different from when the add-on was first used, or the tool is new. An add-on that was safe at first can later change what it tells the AI."
-recommendation: "Find out why the add-on changed before using it again. (For the developer: compare the tool's description and input schema with the first recorded version on the Configuration page, and pin the server's version.)"
+recommendation: "Find out why the add-on changed before using it again. (For the developer: compare the tool's description and input schema with the first recorded version on the Configuration page, and pin the server's version. Once the change is understood, run tracevault trust with the server's name.)"
 source:
   kind: owasp-mcp
   id: "MCP03:2025"

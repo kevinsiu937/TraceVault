@@ -223,6 +223,7 @@ describe("seam B: install writes the plugin, uninstall restores the project", ()
   it.each([
     [["run", "--port", "70000"], "--port expects an integer between 0 and 65535, got '70000'"],
     [["run", "--db"], "--db expects a file path"],
+    [["run", "--archive-after", "-1"], "--archive-after expects a whole number of days, 0 or more, got '-1'"],
     [["import", "--port", "4319"], "unknown option '--port'"],
     [["init", "--dir"], "--dir expects a directory path"],
   ])("refuses %j before touching anything", async (argv, message) => {

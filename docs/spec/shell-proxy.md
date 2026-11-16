@@ -74,6 +74,7 @@ The command can be written any way; if the program it ends up running honours th
 
 ## Known Blind Spots
 
+- **Programs that drop the session and call** (ticket 65 probe, 16 Nov 2026): git 2.50.1 uses the proxy but never sends them, even after a 407 challenge, so its connections are recorded under "unknown call". curl, pip and python3 urllib send them. npm was not installed on the probe machine and is untested.
 - **Programs that ignore proxy variables** are invisible: `nc`, `ssh`, raw sockets, DNS lookups (`dig` sends DNS, not HTTP), and some language runtimes. Node's built-in `fetch` ignores them by default, for example. These stay with the command-text rules.
 - **A command can unset the variables** (`env -u HTTPS_PROXY curl …`, `curl --noproxy '*'`). The command-text rules still see the program; the proxy does not see the connection.
 - **The service stopping mid-call** makes that call's connections fail, which is the only way this feature can stop work.

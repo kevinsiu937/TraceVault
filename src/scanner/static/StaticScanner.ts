@@ -2,7 +2,7 @@ import type { ConfigEvidence, ConfigFinding } from "../../schema/ConfigFinding.j
 import type { ConfigCheck, ConfigRule, MatchFact } from "./ConfigRule.js";
 import { EffectivePermissions } from "./EffectivePermissions.js";
 import { type McpServer, McpServers } from "./McpServers.js";
-import type { ConfigSnapshotEvent, McpToolsEvent, StaticScannerPort } from "./StaticScannerPort.js";
+import type { ConfigSnapshotEvent, McpToolsEvent, StaticScannerPort, ToolBaseline } from "./StaticScannerPort.js";
 import { ToolTexts } from "./ToolTexts.js";
 
 export interface ConfigRuleSet {
@@ -28,8 +28,8 @@ const INVISIBLE = /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF\u{E0000}-\u{E0
 export class StaticScanner implements StaticScannerPort {
   constructor(private readonly ruleSet: ConfigRuleSet) {}
 
-  scan(snapshot: ConfigSnapshotEvent, toolLists: readonly McpToolsEvent[] = [], firstSeen: readonly McpToolsEvent[] = []): ConfigFinding[] {
-    const first = new Map(firstSeen.map((list) => [list.data.server, list]));
+  scan(snapshot: ConfigSnapshotEvent, toolLists: readonly McpToolsEvent[] = [], baselines: readonly ToolBaseline[] = []): ConfigFinding[] {
+    const first = new Map(baselines.map((baseline) => [baseline.list.data.server, baseline]));
     const permissions = EffectivePermissions.of(snapshot.data.config);
     const servers = McpServers.of(snapshot.data.config);
     const subjects: Record<ConfigRule["subject"], Subject[]> = {
@@ -88,16 +88,16 @@ export class StaticScanner implements StaticScannerPort {
       .replace(INVISIBLE, (character) => `<U+${character.codePointAt(0)?.toString(16).toUpperCase()}>`);
   }
 
-  /** How a tool differs from its server's first recorded list; nothing when no list was recorded before. */
-  private changed(tool: Subject["tool"], first: ReadonlyMap<string, McpToolsEvent>): Found[] {
+  /** How a tool differs from its server's baseline list; nothing when no list was recorded before. */
+  private changed(tool: Subject["tool"], first: ReadonlyMap<string, ToolBaseline>): Found[] {
     const baseline = tool === undefined ? undefined : first.get(tool.server);
     if (tool === undefined || baseline === undefined) {
       return [];
     }
-    const since = `since ${tool.server} was first seen, ${baseline.timestamp}`;
-    const before = baseline.data.tools.find((candidate) => candidate["name"] === tool.listed["name"]);
+    const since = baseline.acceptedAt === undefined ? `since ${tool.server} was first seen, ${baseline.list.timestamp}` : `since ${tool.server} was accepted, ${baseline.acceptedAt}`;
+    const before = baseline.list.data.tools.find((candidate) => candidate["name"] === tool.listed["name"]);
     if (before === undefined) {
-      return [{ value: `a tool its first list did not have, ${since}`, entry: "/name" }];
+      return [{ value: `a tool its ${baseline.acceptedAt === undefined ? "first" : "accepted"} list did not have, ${since}`, entry: "/name" }];
     }
     return (["description", "inputSchema"] as const)
       .filter((key) => this.stable(before[key]) !== this.stable(tool.listed[key]))

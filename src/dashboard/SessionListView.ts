@@ -1,3 +1,4 @@
+import type { ArchiveRun } from "../service/ArchiveRun.js";
 import type { SessionSummary } from "../service/SessionSummary.js";
 import { DashboardStyle } from "./DashboardStyle.js";
 import { SessionStreak } from "./SessionStreak.js";
@@ -9,7 +10,7 @@ export class SessionListView {
     private readonly streaks: SessionStreak = new SessionStreak(),
   ) {}
 
-  render(sessions: readonly SessionSummary[]): string {
+  render(sessions: readonly SessionSummary[], archiveRuns: readonly ArchiveRun[] = []): string {
     // Subagents appear only in their parent's portal, never as peer rows.
     const roots = sessions.filter((session) => session.parentSessionId === null);
     return `<!doctype html>
@@ -30,6 +31,7 @@ ${this.style.render()}
 <a class="back" href="/activity">Activity across sessions →</a>
 </header>
 ${roots.length === 0 ? "<div class=\"card empty\">No sessions captured yet.</div>" : `${this.renderStreaks(roots)}${this.renderTable(roots)}`}
+${this.renderArchiveRuns(archiveRuns)}
 </main>
 </body>
 </html>
@@ -61,6 +63,19 @@ ${rows}
         : `<span class="pill closed">${HtmlText.escape(session.endedAt)}</span>`;
     const badge = this.badge(session);
     return `<tr data-session-id="${HtmlText.escape(session.sessionId)}"><td><a href="/sessions/${encodeURIComponent(session.sessionId)}">${HtmlText.escape(label)}</a>${secondary}</td><td class="muted">${HtmlText.escape(session.agentName)}</td><td class="muted mono" title="started ${HtmlText.escape(session.startedAt)}">${HtmlText.escape(session.lastActivityAt)}</td><td>${this.sparkline(session.density)}</td><td class="right mono">${session.eventCount}</td><td class="right mono">${session.filesTouched}</td><td class="right mono">${session.errorCount}</td><td class="right mono">${session.deniedCount}</td><td class="right mono">${this.duration(session.durationMs)}</td><td>${status}</td><td><span class="pill ${badge.className}">${badge.label}</span></td></tr>`;
+  }
+
+  private renderArchiveRuns(runs: readonly ArchiveRun[]): string {
+    if (runs.length === 0) {
+      return "";
+    }
+    const items = runs
+      .map((run) => `<li><span class="mono">${HtmlText.escape(run.ranAt)}</span>: ${run.sessions} ${run.sessions === 1 ? "session" : "sessions"} (${run.events} ${run.events === 1 ? "event" : "events"}) moved to <span class="mono">${HtmlText.escape(run.archive)}</span></li>`)
+      .join("");
+    return `<section class="archive-runs">
+<h2 class="sub">Archived</h2>
+<ul class="sub">${items}</ul>
+</section>`;
   }
 
   private renderStreaks(sessions: readonly SessionSummary[]): string {

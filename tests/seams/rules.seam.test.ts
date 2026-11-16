@@ -97,6 +97,7 @@ describe("seam C: rule fixtures in, findings out", () => {
       ["sensitive read", "shell egress"],
       ["sensitive read", "shell egress"],
       ["sensitive read", "shell egress"],
+      ["sensitive read", "connection through the proxy"],
     ]);
   });
 

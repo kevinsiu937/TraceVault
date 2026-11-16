@@ -11,4 +11,5 @@ export type EventType =
   | "admin.grant"
   | "guard.failure"
   | "config.snapshot"
-  | "mcp.tools";
+  | "mcp.tools"
+  | "net.connect";

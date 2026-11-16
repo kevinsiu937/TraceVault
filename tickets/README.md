@@ -105,7 +105,7 @@ Spec: `docs/spec/scale-before-phase-5.md`. Local single-user is a design decisio
 | 56 | How slow and how big: measure first | 55 | done |
 | 57 | A session under the rules then and now | 55, 56 | done |
 | 58 | Store repeated configurations and tool lists once | 55, 56 | not needed (56) |
-| 59 | Archive old sessions automatically | 55, 56 | waiting on a real database's numbers |
+| 59 | Archive old sessions automatically | 55, 56 | done (Kevin's go, 16 Nov 2026, without waiting on real numbers) |
 
 ## Rule evasion before Phase 5 (requested by Kevin, 13 Nov 2026)
 
@@ -118,7 +118,7 @@ Spec: `docs/spec/evasion-before-phase-5.md`. Kevin runs the probes and the live 
 | 62 | Compare the full path of the file that ran | 61 | done (probe run 15 Nov) |
 | 63 | Validate the evasion rules live, and audit them for false positives | 60, 61, 62 | done (live run and audit 15 Nov) |
 | 64 | Egress by program, and can the shell be routed through a proxy? | 60 | done (probe run 15 Nov) |
-| 65 | Probe: can a proxy tell which call made a connection? (the proxy itself is 86 to 89) | 64 | open; probe waiting on Kevin |
+| 65 | Probe: can a proxy tell which call made a connection? (the proxy itself is 86 to 89) | 64 | done (probe run 16 Nov) |
 | 66 | Trust an MCP tool when first seen, flag a later change | 41, 55 | done |
 
 ## Semester 1 polish (requested by Kevin, 15 Nov 2026)
@@ -169,7 +169,7 @@ From the "long sessions" candidate in `HANDOVER.md`. Kevin wants 59 first; 59 wa
 | # | Ticket | Blocked by | Status |
 |---|---|---|---|
 | 84 | A chained command is judged part by part, as OpenCode judges it | — | done |
-| 85 | A changed MCP tool can be accepted | — | open; design written, waiting on Kevin |
+| 85 | A changed MCP tool can be accepted | — | done |
 
 84 and 85 are on the frontier once 82 and 83 are done.
 
@@ -179,13 +179,13 @@ The proxy records where the agent's shell connects, and never blocks.
 
 | # | Ticket | Blocked by | Status |
 |---|---|---|---|
-| 65 | Probe: can a proxy tell which call made a connection? | 64 | open; probe waiting on Kevin |
-| 86 | The proxy records a connection (tracer bullet) | 65 | open |
+| 65 | Probe: can a proxy tell which call made a connection? | 64 | done (probe run 16 Nov) |
+| 86 | The proxy records a connection (tracer bullet) | 65 | in progress; built except a connection that names no session (question for Kevin in the ticket) |
 | 87 | The plugin points the shell at the proxy, only when the service answers | 86 | open |
-| 88 | Exfiltration through any program, and the hosts in the report | 86 | open |
+| 88 | Exfiltration through any program, and the hosts in the report | 86 | done |
 | 89 | The first connection to an unknown host is flagged | 88 | open |
 
-Frontier: 85.
+Frontier: 86 (waiting on Kevin: where a connection with no session is stored) and 89.
 
 ## Dependency shape
 

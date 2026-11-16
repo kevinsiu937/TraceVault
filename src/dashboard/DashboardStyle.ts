@@ -44,6 +44,7 @@ a:hover{text-decoration:underline}
 .mono,code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
 .card{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
 .empty{padding:64px 24px;text-align:center;color:var(--muted)}
+.archive-runs{margin-top:24px}.archive-runs ul{padding-left:18px}
 .result-count{margin:0 0 12px;color:var(--muted);font-size:12.5px}
 
 /* session list */
