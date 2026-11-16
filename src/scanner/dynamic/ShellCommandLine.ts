@@ -1,4 +1,4 @@
-import { ShellWords } from "./ShellWords.js";
+import { type RawCommand, ShellWords } from "./ShellWords.js";
 
 /** One simple command inside a command line, interpreted the way the shell would run it. */
 export interface ShellCommand {
@@ -22,6 +22,8 @@ export interface ShellCommand {
    * line does not say (`cd`, `cd -`, `cd ~`, `cd $X`).
    */
   readonly dir: string | null;
+  /** The command as written, quotes and redirections included. */
+  readonly text: string;
 }
 
 // Words that run the command after them rather than being the command, each with its flags that take a value.
@@ -52,7 +54,7 @@ export class ShellCommandLine {
     const commands: ShellCommand[] = [];
     let dir: string | null = "";
     for (const raw of ShellWords.split(line)) {
-      const command = ShellCommandLine.command(raw.words, raw.piped, dir);
+      const command = ShellCommandLine.command(raw, dir);
       if (command === null) {
         continue;
       }
@@ -72,7 +74,7 @@ export class ShellCommandLine {
     return target.startsWith("/") || dir === "" ? target : `${dir}/${target}`;
   }
 
-  private static command(words: readonly string[], piped: boolean, dir: string | null): ShellCommand | null {
+  private static command({ words, piped, text }: RawCommand, dir: string | null): ShellCommand | null {
     let index = ShellCommandLine.programIndex(words);
     const path = words[index];
     if (path === undefined || path === "") {
@@ -105,7 +107,7 @@ export class ShellCommandLine {
     const program = path.slice(path.lastIndexOf("/") + 1);
     writes.push(...ShellCommandLine.programWrites(program, args));
     const computed = path.startsWith("$") || path.includes("`");
-    return { program, path, args, piped: piped || inline, computed, writes, input, dir };
+    return { program, path, args, piped: piped || inline, computed, writes, input, dir, text };
   }
 
   /** Skips `VAR=value` words and wrappers such as `sudo -u root` or `timeout 5`, to the word that names the program. */

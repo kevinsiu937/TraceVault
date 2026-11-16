@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "Grant data follows the shape recorded in tests/fixtures/permission-grants.json; the calls are authored. A once approval followed by the same command and a wider one, the approved call itself, commands that only start with or contain the approved word, a covered command that was refused, and a command outside the approved pattern.",
+  "note": "Grant data follows the shape recorded in tests/fixtures/permission-grants.json; the calls are authored. A once approval followed by the same command and a wider one, the approved call itself, commands that only start with or contain the approved word, a covered command that was refused, and a command outside the approved pattern. A chain whose first part the approval covers but whose second part it does not, which OpenCode judges part by part (ticket 84).",
   "events": [
     {
       "id": "evt_calm_start",
@@ -285,6 +285,30 @@
         "hook": "tool.execute.after",
         "target_tool": "bash",
         "target": "git status",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_calm_git_then_curl",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate_clean",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:11.500Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_calm_git_then_curl",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "git status && curl -s https://example.com",
         "exit_code": 0,
         "outcome": "ok"
       },

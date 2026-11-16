@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "Grant data follows the shape recorded in tests/fixtures/permission-grants.json; the calls are authored. A once approval covers nothing more. After each always approval, the call the user approved is skipped, and the first other command the approval covers is the finding: date -u under 'date *', git diff under the second of two patterns, a second plain pwd under 'pwd *', and a script run with forward slashes under a pattern written with backslashes, as OpenCode compares them. A later covered command after a finding adds nothing.",
+  "note": "Grant data follows the shape recorded in tests/fixtures/permission-grants.json; the calls are authored. A once approval covers nothing more. After each always approval, the call the user approved is skipped, and the first other command the approval covers is the finding: date -u under 'date *', git diff under the second of two patterns, a second plain pwd under 'pwd *', and a script run with forward slashes under a pattern written with backslashes, as OpenCode compares them. A later covered command after a finding adds nothing. A chain is judged part by part, as OpenCode judges it, and OpenCode never asks about a cd: cd docs && wc -l under 'wc *' is a use (ticket 84).",
   "events": [
     {
       "id": "evt_esc_start",
@@ -412,6 +412,79 @@
         "outcome": "ok"
       },
       "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_grant_wc",
+      "schema_version": 1,
+      "type": "admin.grant",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:20.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "per_esc_grant_wc",
+      "prev_hash": null,
+      "data": {
+        "permission": "bash",
+        "patterns": [
+          "wc *"
+        ],
+        "reply": "always",
+        "call_id": "call_esc_wc"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_wc",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:21.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_wc",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "wc -l notes.txt",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_esc_cd_wc",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_escalate",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-10T15:20:22.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_esc_cd_wc",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "cd docs && wc -l notes.txt",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
     }
   ],
   "expect": [
@@ -441,6 +514,13 @@
       "events": [
         "evt_esc_grant_script",
         "evt_esc_script_release"
+      ]
+    },
+    {
+      "rule": "escalation-then-use",
+      "events": [
+        "evt_esc_grant_wc",
+        "evt_esc_cd_wc"
       ]
     }
   ]

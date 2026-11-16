@@ -2,6 +2,8 @@
 export interface RawCommand {
   readonly words: readonly string[];
   readonly piped: boolean;
+  /** The command as written, quotes and redirections included, trimmed: the text OpenCode matches a permission pattern against. */
+  readonly text: string;
 }
 
 /**
@@ -24,6 +26,7 @@ export class ShellWords {
     let word = "";
     let started = false;
     let piped = false;
+    let start = 0;
     const heredocs: string[] = [];
     const endWord = (): void => {
       if (started) {
@@ -32,10 +35,10 @@ export class ShellWords {
       word = "";
       started = false;
     };
-    const endCommand = (nextPiped: boolean): void => {
+    const endCommand = (nextPiped: boolean, end: number): void => {
       endWord();
       if (words.length > 0) {
-        into.push({ words, piped });
+        into.push({ words, piped, text: line.slice(start, end).trim() });
       }
       words = [];
       piped = nextPiped;
@@ -85,17 +88,21 @@ export class ShellWords {
         word += character;
         started = true;
       } else if (character === "|" && next !== "|") {
-        endCommand(true);
+        endCommand(true, index);
+        start = index + 1;
       } else if (character === "\n" && heredocs.length > 0) {
-        endCommand(false);
+        endCommand(false, index);
         index = ShellWords.skipBodies(line, index + 1, heredocs.splice(0)) - 1;
+        start = index + 1;
       } else if (character === ";" || character === "\n" || character === "&" || character === "|") {
-        endCommand(false);
+        endCommand(false, index);
         if (next === character) {
           index += 1;
         }
+        start = index + 1;
       } else if (character === "(" || character === ")") {
-        endCommand(false);
+        endCommand(false, index);
+        start = index + 1;
       } else if (/\s/.test(character)) {
         endWord();
       } else {
@@ -103,7 +110,7 @@ export class ShellWords {
         started = true;
       }
     }
-    endCommand(false);
+    endCommand(false, line.length);
   }
 
   /** Skips each here-document body in turn, through its delimiter line; returns where the line goes on. */
