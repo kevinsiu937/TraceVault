@@ -136,14 +136,26 @@ Phases 1 to 4 are made solid before Phase 5. Found by a live run of the service.
 |---|---|---|---|
 | 69 | A long session watched live does not slow the agent or invent gaps | — | done |
 | 70 | The database lives outside the project by default | — | done |
-| 71 | A service on another port still receives events | — | open |
-| 72 | Two writers cannot break the hash chain | — | open |
-| 73 | `tracevault verify` checks the record | 72 | open |
+| 71 | A service on another port still receives events | — | done |
+| 72 | Two writers cannot break the hash chain | — | done |
+| 73 | `tracevault verify` checks the record | 72 | done |
 | 74 | The service says why a request failed | — | open |
 | 75 | A freeze late in a long prompt is still seen | — | open |
 | 76 | An MCP server whose name has an underscore is named correctly | — (probe: Kevin) | open |
 
-Frontier: 71, 72, 74, 75, 76.
+### From the 15 Nov 2026 architecture review
+
+Refactors: none changes what a user sees. Candidate 6 of the review (where the second agent plugs in) is not a ticket; it is a constraint on Phase 5, written in `docs/ROADMAP.md`.
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 77 | Seam tests run the assembly the user runs | — | open |
+| 78 | One call returns everything about a session | 77 | open |
+| 79 | A CLI command is one file | — | open |
+| 80 | A reversible file change is written once | — (same files as 79; one at a time) | open |
+| 81 | Text reaches a page through one escaping rule | — | open |
+
+Frontier: 74, 75, 76, 77, 79, 80, 81.
 
 ## Dependency shape
 

@@ -11,7 +11,7 @@ A local investigation platform for OpenCode agents. It records what an agent did
 ## Where things stand
 
 - **Phases 1 to 4 are closed.** Exit tickets 10, 33, 43 and 51.
-- **Hardening before Phase 5, all committed and pushed. Head is `6f758dc`.**
+- **Hardening before Phase 5, all committed and pushed in `6f758dc`.**
   - 44: shell reads of secret files, and `git push` as egress.
   - 53, 60 to 62: commands whose effect cannot be read from them, and files written then run. A shell parser (`ShellCommandLine`) backs the `invokes`, `runs` and `writes` operators.
   - 54: `tracevault harden [--dir] [--undo]`.
@@ -26,8 +26,13 @@ A local investigation platform for OpenCode agents. It records what an agent did
   - 68: `init` hardens unless given `--no-harden`, and `uninstall` undoes it.
   - 69: a session's rule scan continues where it stopped, so a new event in a long session watched live costs milliseconds, not seconds.
   - 70: without `--db`, the database is `tracevault/tracevault.db` in the state folder, not `data/` in the current folder.
-  - 71 to 76 are open, from the 15 Nov audit; see `tickets/README.md`.
-- **Gate:** 37 test files, 669 tests. Typecheck and build are clean. The pre-commit hook runs typecheck and the full suite.
+  - 71: `init --port <n>` for a service that is not on 4319.
+  - 72: an append is one write transaction, so two processes cannot fork the hash chain.
+  - 73: `tracevault verify [--db]` checks the chain and exits 1 on a break.
+  - 67 to 70 are committed in `199b4fa`, and 71 to 73 in `7854d26`.
+  - 74 to 76 are open, from the 15 Nov audit; see `tickets/README.md`.
+  - 77 to 81 are open refactors from the 15 Nov architecture review: tests through the real assembly (77), one read per session (78, after 77), a command per file (79), one reversible file change (80), one escaping rule (81). The review's sixth candidate, the second agent's seam, is a Phase 5 constraint in `docs/ROADMAP.md`.
+- **Gate:** 37 test files, 675 tests. Typecheck and build are clean. The pre-commit hook runs typecheck and the full suite.
 - **Phase 5 is now a second agent, and the simulator is Phase 6** (Kevin, 15 Nov 2026). Neither has started. Phases 1 to 4 are polished first.
 
 ## Waiting on Kevin's decision

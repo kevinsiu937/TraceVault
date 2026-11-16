@@ -4,6 +4,8 @@
 
 **Blocked by:** None (can start immediately). The probe is Kevin's to run.
 
+**Related:** the fix belongs in the tool classifier, which is OpenCode-specific. Phase 5 moves that knowledge behind an adapter (`docs/ROADMAP.md`); keep this change small so it moves with it.
+
 **Status:** ready-for-agent
 
 - [ ] The probe's recorded tool name is frozen as a fixture

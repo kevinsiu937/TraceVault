@@ -51,6 +51,7 @@ Each later phase starts only when the previous phase's exit criteria are met.
 
 - One new capture adapter behind `CapturePort`. Nothing past the event schema learns which agent a session came from.
 - Which agent, and what its hooks expose, is settled by a probe and a spec before any ticket.
+- **Where the second agent plugs in is decided after that probe, not before** (architecture review, 15 Nov 2026). Today `CapturePort` has one adapter, so the seam is a guess. OpenCode's own knowledge runs from the plugin's payloads through the hook parser, the tool classifier (OpenCode tool names) and the event factory (agent name defaults to `opencode`) into the rules (`tool: bash` in 13 places), and adding one event type has touched about 20 source files. The spec must name the agent-neutral event the two adapters meet at, and say what happens to rules that name an OpenCode tool. ADR 0002 (capture on `tool.execute.after`) stays true for OpenCode; the second agent gets its own ADR.
 
 **Exit:** a recorded session of the second agent shows its timeline, raises the findings the same actions raise under OpenCode, and exports a report.
 
