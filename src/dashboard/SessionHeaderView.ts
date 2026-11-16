@@ -1,13 +1,6 @@
 import type { TimelineEntry } from "../service/TimelineEntry.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 export interface SessionHeaderRenderer {
   render(context: SessionRenderContext): string;
@@ -32,8 +25,8 @@ export class SessionHeaderView implements SessionHeaderRenderer {
     return `<header class="cockpit-head">
 <div class="head-main">
 <a class="back" href="/">← All sessions</a>${parent}<a class="config-link" href="/sessions/${encodeURIComponent(context.sessionId)}/config">${configLabel}</a><a class="report-link" href="/sessions/${encodeURIComponent(context.sessionId)}/report">Export report</a>
-<h1>${this.escape(title)}</h1>
-<p class="head-sub"><code>${this.escape(context.sessionId)}</code> · ${this.escape(context.summary.agentName)} · started <time datetime="${this.escape(started)}">${this.escape(this.wallClock(started))}</time> · ${this.totalDuration(context.allEntries)}</p>
+<h1>${HtmlText.escape(title)}</h1>
+<p class="head-sub"><code>${HtmlText.escape(context.sessionId)}</code> · ${HtmlText.escape(context.summary.agentName)} · started <time datetime="${HtmlText.escape(started)}">${HtmlText.escape(this.wallClock(started))}</time> · ${this.totalDuration(context.allEntries)}</p>
 <ul class="stats">
 <li><span class="stat-value">${context.allEntries.length}</span> <span class="stat-label">${context.allEntries.length === 1 ? "event" : "events"}</span></li>
 <li><span class="stat-value">${errors}</span> <span class="stat-label">${errors === 1 ? "error" : "errors"}</span></li>
@@ -81,7 +74,7 @@ ${this.step("Next", "next", context.nextSessionId, "Next →")}
     if (sessionId === null) {
       return `<span class="step disabled" aria-disabled="true">${text}</span>`;
     }
-    return `<a class="step" rel="${rel}" href="/sessions/${encodeURIComponent(sessionId)}" aria-label="${this.escape(label)} session">${text}</a>`;
+    return `<a class="step" rel="${rel}" href="/sessions/${encodeURIComponent(sessionId)}" aria-label="${HtmlText.escape(label)} session">${text}</a>`;
   }
 
   private totalDuration(entries: readonly TimelineEntry[]): string {
@@ -107,9 +100,5 @@ ${this.step("Next", "next", context.nextSessionId, "Next →")}
 
   private wallClock(time: string): string {
     return time.length >= 19 ? time.slice(11, 19) : time || "—";
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

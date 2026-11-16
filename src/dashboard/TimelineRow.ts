@@ -2,14 +2,7 @@ import type { TimelineEntry } from "../service/TimelineEntry.js";
 import type { ReplayTurnState } from "./ReplayTimeline.js";
 import type { RowHeader } from "./RowHeader.js";
 import { RowHeaderView } from "./RowHeaderView.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 export interface TimelineRowOptions {
   readonly href?: string;
@@ -28,13 +21,13 @@ export class TimelineRow {
     const row = this.headerView.render(this.header(entry));
     const head = options.href === undefined
       ? `<summary class="event-row"${marker}>${row}</summary>`
-      : `<a class="event-row${selected ? " selected" : ""}" href="${this.escape(options.href)}"${marker}>${row}</a>`;
+      : `<a class="event-row${selected ? " selected" : ""}" href="${HtmlText.escape(options.href)}"${marker}>${row}</a>`;
 
-    return `<li class="event${replay}" data-event-id="${this.escape(entry.eventId)}" data-time="${this.escape(entry.time)}" data-kind="${this.escape(entry.type)}" data-outcome="${this.escape(entry.outcome)}" id="event-${this.escape(entry.eventId)}">
+    return `<li class="event${replay}" data-event-id="${HtmlText.escape(entry.eventId)}" data-time="${HtmlText.escape(entry.time)}" data-kind="${HtmlText.escape(entry.type)}" data-outcome="${HtmlText.escape(entry.outcome)}" id="event-${HtmlText.escape(entry.eventId)}">
 ${head}
 <details class="event-details event-raw">
 <summary class="raw-summary" aria-label="Show stored event JSON">raw</summary>
-<div class="event-detail"><pre>${this.escape(entry.detail)}</pre></div>
+<div class="event-detail"><pre>${HtmlText.escape(entry.detail)}</pre></div>
 </details>
 </li>`;
   }
@@ -53,9 +46,5 @@ ${head}
       pills: [{ outcome: entry.outcome, label: entry.outcome }],
       flags: entry.flags,
     };
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

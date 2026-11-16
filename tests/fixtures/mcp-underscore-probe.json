@@ -1,0 +1,84 @@
+[
+  {
+    "hook": "tool.execute.before",
+    "input": {
+      "tool": "google_drive_search",
+      "sessionID": "ses_e1b5d8623ffexgsnwmBFxXWVG5",
+      "callID": "call_00_7pwaLznp28mU4xfIwWTk0358"
+    },
+    "output": {
+      "args": {
+        "query": "tracevault"
+      }
+    }
+  },
+  {
+    "hook": "event",
+    "event": {
+      "id": "evt_1e4a28a1c001wROZuYcY4ZuUpz",
+      "type": "message.part.updated",
+      "properties": {
+        "sessionID": "ses_e1b5d8623ffexgsnwmBFxXWVG5",
+        "part": {
+          "type": "tool",
+          "tool": "google_drive_search",
+          "callID": "call_00_7pwaLznp28mU4xfIwWTk0358",
+          "state": {
+            "status": "error",
+            "input": {
+              "query": "tracevault"
+            },
+            "error": "This test server runs nothing.",
+            "time": {
+              "start": 1794837219832,
+              "end": 1794837219868
+            }
+          },
+          "id": "prt_1e4a289c4001e2FbvJxyJoNfDJ",
+          "sessionID": "ses_e1b5d8623ffexgsnwmBFxXWVG5",
+          "messageID": "msg_1e4a27e30001TBsRoG6Q4OQAxF"
+        },
+        "time": 1794837219868
+      }
+    }
+  },
+  {
+    "hook": "tool.execute.before",
+    "input": {
+      "tool": "google_drive_list_files",
+      "sessionID": "ses_e1b5d8623ffexgsnwmBFxXWVG5",
+      "callID": "call_00_FEH1cXpLRuVS5lH1sH3k4049"
+    },
+    "output": {
+      "args": {}
+    }
+  },
+  {
+    "hook": "event",
+    "event": {
+      "id": "evt_1e4a28e21001BhOmhqKNAOQ6D2",
+      "type": "message.part.updated",
+      "properties": {
+        "sessionID": "ses_e1b5d8623ffexgsnwmBFxXWVG5",
+        "part": {
+          "type": "tool",
+          "tool": "google_drive_list_files",
+          "callID": "call_00_FEH1cXpLRuVS5lH1sH3k4049",
+          "state": {
+            "status": "error",
+            "input": {},
+            "error": "This test server runs nothing.",
+            "time": {
+              "start": 1794837220890,
+              "end": 1794837220897
+            }
+          },
+          "id": "prt_1e4a28e150012S7yN7SLDtWES2",
+          "sessionID": "ses_e1b5d8623ffexgsnwmBFxXWVG5",
+          "messageID": "msg_1e4a28a4f001jfoRtKebHcrL9z"
+        },
+        "time": 1794837220897
+      }
+    }
+  }
+]

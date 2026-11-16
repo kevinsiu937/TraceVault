@@ -6,12 +6,14 @@ Refactor: the rendered pages and the report keep their bytes. From the 15 Nov 20
 
 **Blocked by:** 77 (so the tests change once, at the assembly, not in 23 files).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The session page, the report and the configuration page are each built from one call for the session
-- [ ] That call reads the session's events from the store once, and does not read other sessions' events to find the summary
-- [ ] The service's interface no longer offers the separate per-part reads the three callers used; the live stream keeps what it needs
-- [ ] The report from the CLI and from the page are still byte-identical, under today's rules and under the recorded ones
-- [ ] A session that does not exist is still a 404 on every route, and an error from the report command
-- [ ] `measure-scale.mjs` is rerun and the session-page and report rows in `docs/probes/scale-measurements.md` are updated
-- [ ] Typecheck, build and the full suite pass
+- [x] The session page, the report and the configuration page are each built from one call for the session
+- [x] That call reads the session's events from the store once, and does not read other sessions' events to find the summary
+- [x] The service's interface no longer offers the separate per-part reads the three callers used; the live stream keeps what it needs
+- [x] The report from the CLI and from the page are still byte-identical, under today's rules and under the recorded ones
+- [x] A session that does not exist is still a 404 on every route, and an error from the report command
+- [x] `measure-scale.mjs` is rerun and the session-page and report rows in `docs/probes/scale-measurements.md` are updated
+- [x] Typecheck, build and the full suite pass
+
+**Notes (16 Nov 2026):** `InvestigationServicePort.getSession(id, rules, filter)` returns a `SessionView` (`src/service/SessionView.ts`); `getFindings`, `getRuleVersions`, `getConfiguration` and `getConfigFindings` are gone, and `getTimeline` stays for the live stream. The call reads the session's events once. It also runs the store's session-list query (no event bodies) for the summary's counts, the previous and next session and the subagents, reads each subagent session for its card's duration, reads the filtered rows when a filter is on, and reads every session's `mcp.tools` events, which `tool-changed` needs as its baseline. The configuration page now pays for the workflow findings too, which are cached. Pages and reports of six probe databases, under both rule choices, kept their bytes.

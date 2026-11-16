@@ -1,27 +1,22 @@
 import type { RowHeader } from "./RowHeader.js";
+import { HtmlText } from "./HtmlText.js";
 
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+const PROMPT_ROW_LIMIT = 200;
 
 /** Draws the cells of a one-line row header: time, marker, kind and target, flags, duration, pills. */
 export class RowHeaderView {
   render(header: RowHeader): string {
     const count = header.count === null ? "" : `<span class="repeat-count">${header.count} ×</span> `;
     const flags = header.flags
-      .map((ruleId) => `<span class="flag" data-rule="${this.escape(ruleId)}" title="Flagged by rule ${this.escape(ruleId)}">⚑ ${this.escape(ruleId)}</span>`)
+      .map((ruleId) => `<span class="flag" data-rule="${HtmlText.escape(ruleId)}" title="Flagged by rule ${HtmlText.escape(ruleId)}">⚑ ${HtmlText.escape(ruleId)}</span>`)
       .join("");
     const pills = header.pills
-      .map((pill) => `<span class="pill ${this.escape(pill.outcome)}">${this.escape(pill.label)}</span>`)
+      .map((pill) => `<span class="pill ${HtmlText.escape(pill.outcome)}">${HtmlText.escape(pill.label)}</span>`)
       .join("");
-    return `<time class="event-time mono" datetime="${this.escape(header.time)}" title="${this.escape(header.time)}">${this.escape(this.shortTime(header.time))}</time>
-<span class="marker" data-kind="${this.escape(header.kind)}" aria-hidden="true"></span>
-<span class="event-main"><span class="kind-label">${this.escape(header.kind)}</span><span class="target mono">${count}${this.escape(this.displayTarget(header))}</span></span>
-<span class="event-side">${flags}<span class="mono">${this.escape(this.duration(header.durationMs))}</span>${pills}<span class="chevron" aria-hidden="true"></span></span>`;
+    return `<time class="event-time mono" datetime="${HtmlText.escape(header.time)}" title="${HtmlText.escape(header.time)}">${HtmlText.escape(this.shortTime(header.time))}</time>
+<span class="marker" data-kind="${HtmlText.escape(header.kind)}" aria-hidden="true"></span>
+<span class="event-main"><span class="kind-label">${HtmlText.escape(header.kind)}</span><span class="target mono">${count}${HtmlText.escape(this.displayTarget(header))}</span></span>
+<span class="event-side">${flags}<span class="mono">${HtmlText.escape(this.duration(header.durationMs))}</span>${pills}<span class="chevron" aria-hidden="true"></span></span>`;
   }
 
   styles(): string {
@@ -36,6 +31,9 @@ export class RowHeaderView {
   }
 
   private displayTarget(header: RowHeader): string {
+    if (header.kind === "prompt.user") {
+      return header.target.length <= PROMPT_ROW_LIMIT ? header.target : `${header.target.slice(0, PROMPT_ROW_LIMIT - 1)}…`;
+    }
     if (header.kind !== "document.access") {
       return header.target;
     }
@@ -45,9 +43,5 @@ export class RowHeaderView {
 
   private shortTime(time: string): string {
     return time.length >= 19 ? time.slice(11, 19) : time;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

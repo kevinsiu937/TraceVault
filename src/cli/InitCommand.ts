@@ -1,7 +1,5 @@
-import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { AgentConfigFile } from "./AgentConfigFile.js";
 import type { HardenCommand } from "./HardenCommand.js";
 import { InstallManifest } from "./InstallManifest.js";
 
@@ -31,17 +29,7 @@ export class InitCommand {
   }
 
   install(): string {
-    const loaderPath = join(this.projectDir, LOADER_FILE);
-    const manifestPath = join(this.projectDir, MANIFEST_FILE);
-    const loader = new AgentConfigFile(loaderPath);
-    const existed = loader.exists();
-    const previousContent = existed ? loader.read() : null;
-
-    // A second init must keep the first run's record, or uninstall would restore TraceVault's own loader.
-    if (!existsSync(manifestPath)) {
-      new InstallManifest(loaderPath, existed, previousContent).save(manifestPath);
-    }
-    loader.write(this.loaderSource());
+    new InstallManifest(join(this.projectDir, MANIFEST_FILE)).apply(join(this.projectDir, LOADER_FILE), this.loaderSource());
 
     const installed = `installed TraceVault plugin at ${LOADER_FILE.replaceAll("\\", "/")}${this.block ? " with blocking on" : ""}`;
     const lines = [

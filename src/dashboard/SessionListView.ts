@@ -1,14 +1,7 @@
 import type { SessionSummary } from "../service/SessionSummary.js";
 import { DashboardStyle } from "./DashboardStyle.js";
 import { SessionStreak } from "./SessionStreak.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 export class SessionListView {
   constructor(
@@ -59,15 +52,15 @@ ${rows}
   private renderRow(session: SessionSummary): string {
     const label = session.title.length > 0 ? session.title : session.sessionId;
     const secondary = session.title.length > 0
-      ? `<div class="muted mono">${this.escapeHtml(session.sessionId)}</div>`
+      ? `<div class="muted mono">${HtmlText.escape(session.sessionId)}</div>`
       : "";
     const status = session.gapCount > 0
       ? '<span class="pill gap">uncovered</span>'
       : session.endedAt === null
         ? '<span class="muted">—</span>'
-        : `<span class="pill closed">${this.escapeHtml(session.endedAt)}</span>`;
+        : `<span class="pill closed">${HtmlText.escape(session.endedAt)}</span>`;
     const badge = this.badge(session);
-    return `<tr data-session-id="${this.escapeHtml(session.sessionId)}"><td><a href="/sessions/${encodeURIComponent(session.sessionId)}">${this.escapeHtml(label)}</a>${secondary}</td><td class="muted">${this.escapeHtml(session.agentName)}</td><td class="muted mono" title="started ${this.escapeHtml(session.startedAt)}">${this.escapeHtml(session.lastActivityAt)}</td><td>${this.sparkline(session.density)}</td><td class="right mono">${session.eventCount}</td><td class="right mono">${session.filesTouched}</td><td class="right mono">${session.errorCount}</td><td class="right mono">${session.deniedCount}</td><td class="right mono">${this.duration(session.durationMs)}</td><td>${status}</td><td><span class="pill ${badge.className}">${badge.label}</span></td></tr>`;
+    return `<tr data-session-id="${HtmlText.escape(session.sessionId)}"><td><a href="/sessions/${encodeURIComponent(session.sessionId)}">${HtmlText.escape(label)}</a>${secondary}</td><td class="muted">${HtmlText.escape(session.agentName)}</td><td class="muted mono" title="started ${HtmlText.escape(session.startedAt)}">${HtmlText.escape(session.lastActivityAt)}</td><td>${this.sparkline(session.density)}</td><td class="right mono">${session.eventCount}</td><td class="right mono">${session.filesTouched}</td><td class="right mono">${session.errorCount}</td><td class="right mono">${session.deniedCount}</td><td class="right mono">${this.duration(session.durationMs)}</td><td>${status}</td><td><span class="pill ${badge.className}">${badge.label}</span></td></tr>`;
   }
 
   private renderStreaks(sessions: readonly SessionSummary[]): string {
@@ -78,9 +71,9 @@ ${rows}
           .map((session) => {
             const label = session.title.length > 0 ? session.title : session.sessionId;
             const secondary = session.title.length > 0
-              ? ` <span class="mono muted">${this.escapeHtml(session.sessionId)}</span>`
+              ? ` <span class="mono muted">${HtmlText.escape(session.sessionId)}</span>`
               : "";
-            return `<li><a href="/sessions/${encodeURIComponent(session.sessionId)}">${this.escapeHtml(label)}</a>${secondary}</li>`;
+            return `<li><a href="/sessions/${encodeURIComponent(session.sessionId)}">${HtmlText.escape(label)}</a>${secondary}</li>`;
           })
           .join("");
         return `<section class="card streak" role="status">
@@ -124,9 +117,5 @@ ${rows}
       return { className: "error", label: "has errors" };
     }
     return { className: "ok", label: "clean" };
-  }
-
-  private escapeHtml(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

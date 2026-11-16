@@ -186,7 +186,7 @@ opencode run -m deepseek/deepseek-flash "Use the edit tool to add \"share\": \"d
 
 These are listed in `docs/spec/phase-2.md` under Known Blind Spots:
 - Shell egress is matched by pattern and is easy to evade.
-- Prompts are stored cut at 200 characters, so a freeze phrase past that point is missed.
+- Prompts are stored cut at 4000 characters (200 before ticket 75), so a freeze phrase past that point is missed.
 - Rules rescan the whole session on every page load.
 
 # Phase 3 — configuration findings

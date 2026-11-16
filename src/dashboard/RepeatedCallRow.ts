@@ -4,14 +4,7 @@ import type { ReplayTurnState } from "./ReplayTimeline.js";
 import type { RowHeader, RowPill } from "./RowHeader.js";
 import { RowHeaderView } from "./RowHeaderView.js";
 import { TimelineRow } from "./TimelineRow.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 /** Outcomes that must lead the header so a failure inside a run is never hidden. */
 const SEVERITY = ["error", "denied"] as const;
@@ -48,7 +41,7 @@ export class RepeatedCallRow {
       )
       .join("\n");
 
-    return `<li class="event-group${replay}" data-kind="${this.escape(first.type)}" data-outcome="${this.escape(this.headline(run))}" data-count="${run.length}">
+    return `<li class="event-group${replay}" data-kind="${HtmlText.escape(first.type)}" data-outcome="${HtmlText.escape(this.headline(run))}" data-count="${run.length}">
 <details class="repeat"${open ? " open" : ""}>
 <summary class="event-row repeat-row">${this.headerView.render(this.header(run))}</summary>
 <ol class="repeat-members">
@@ -95,9 +88,5 @@ ${members}
   private total(run: RepeatedRun): number | null {
     const known = run.filter((entry) => entry.durationMs !== null);
     return known.length === 0 ? null : known.reduce((sum, entry) => sum + (entry.durationMs ?? 0), 0);
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

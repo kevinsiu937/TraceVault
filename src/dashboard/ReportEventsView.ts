@@ -1,13 +1,6 @@
 import type { TimelineEntry } from "../service/TimelineEntry.js";
 import { PlainWords } from "./PlainWords.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 const MISSING_EVIDENCE = new Set(["capture.gap", "guard.failure"]);
 
@@ -27,8 +20,8 @@ export class ReportEventsView {
     }
     const sections = [...groups]
       .map(
-        ([type, group]) => `<section class="event-group" data-type="${this.escape(type)}">
-<h3>${this.escape(this.words.kind(type))} · ${group.length}</h3>
+        ([type, group]) => `<section class="event-group" data-type="${HtmlText.escape(type)}">
+<h3>${HtmlText.escape(this.words.kind(type))} · ${group.length}</h3>
 <table><thead><tr><th>Time</th><th>What happened</th><th>Result</th><th>Flagged as</th></tr></thead><tbody>
 ${group.map((entry) => this.row(entry, titles)).join("\n")}
 </tbody></table>
@@ -43,7 +36,7 @@ ${sections.length === 0 ? "<p>No actions were recorded.</p>" : `<details><summar
 
   private row(entry: TimelineEntry, titles: ReadonlyMap<string, string>): string {
     const flags = entry.flags.map((rule) => titles.get(rule) ?? rule).join("; ");
-    return `<tr id="event-${this.escape(entry.eventId)}"><td class="time"><time datetime="${this.escape(entry.time)}">${this.escape(this.words.clock(entry.time))}</time></td><td class="target">${this.escape(this.words.action(entry))}</td><td class="outcome ${this.escape(entry.outcome)}">${this.escape(this.words.result(entry.outcome))}</td><td>${this.escape(flags)}</td></tr>`;
+    return `<tr id="event-${HtmlText.escape(entry.eventId)}"><td class="time"><time datetime="${HtmlText.escape(entry.time)}">${HtmlText.escape(this.words.clock(entry.time))}</time></td><td class="target">${HtmlText.escape(this.words.action(entry))}</td><td class="outcome ${HtmlText.escape(entry.outcome)}">${HtmlText.escape(this.words.result(entry.outcome))}</td><td>${HtmlText.escape(flags)}</td></tr>`;
   }
 
   private gaps(entries: readonly TimelineEntry[]): string {
@@ -55,9 +48,9 @@ ${sections.length === 0 ? "<p>No actions were recorded.</p>" : `<details><summar
       .map((entry) => {
         const text =
           entry.type === "capture.gap"
-            ? `Recording stopped from ${this.when(entry.gapFrom ?? entry.time)} to ${this.when(entry.gapTo ?? entry.time)}. Actions in that time may be missing. Reason: ${this.escape(entry.target)}`
-            : `At ${this.when(entry.time)} the safety check failed, and one action went ahead without being checked. Reason: ${this.escape(entry.target)}`;
-        return `<li>${text} <a href="#event-${this.escape(entry.eventId)}">(see the record)</a></li>`;
+            ? `Recording stopped from ${this.when(entry.gapFrom ?? entry.time)} to ${this.when(entry.gapTo ?? entry.time)}. Actions in that time may be missing. Reason: ${HtmlText.escape(entry.target)}`
+            : `At ${this.when(entry.time)} the safety check failed, and one action went ahead without being checked. Reason: ${HtmlText.escape(entry.target)}`;
+        return `<li>${text} <a href="#event-${HtmlText.escape(entry.eventId)}">(see the record)</a></li>`;
       })
       .join("\n");
     return `<section class="gaps" id="gaps">
@@ -70,10 +63,6 @@ ${items}
   }
 
   private when(iso: string): string {
-    return `<time datetime="${this.escape(iso)}">${this.escape(this.words.dateTime(iso))}</time>`;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
+    return `<time datetime="${HtmlText.escape(iso)}">${HtmlText.escape(this.words.dateTime(iso))}</time>`;
   }
 }

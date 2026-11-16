@@ -4,15 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
-import { PayloadDigest } from "../../src/capture/PayloadDigest.js";
-import { PluginHookCapture } from "../../src/capture/PluginHookCapture.js";
-import { ToolClassifier } from "../../src/capture/ToolClassifier.js";
+import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
 import { PendingGapStore } from "../../src/plugin/PendingGapStore.js";
 import { TraceVaultPlugin } from "../../src/plugin/TraceVaultPlugin.js";
-import { EventFactory } from "../../src/schema/EventFactory.js";
 import { InvestigationService } from "../../src/service/InvestigationService.js";
-import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const BASH_FIXTURE = new URL("../fixtures/tool-execute-after-bash.json", import.meta.url);
@@ -58,14 +53,7 @@ describe("seam B: hook payload in, stored events out", () => {
 
   beforeEach(() => {
     directory = mkdtempSync(join(tmpdir(), "tracevault-capture-"));
-    store = new SqliteEventStore(join(directory, "events.db"));
-    const factory = new EventFactory();
-    const capture = new PluginHookCapture(
-      new HookPayloadParser(),
-      new ToolClassifier(new PayloadDigest()),
-      factory,
-    );
-    service = new InvestigationService(capture, store, factory, new TimelineBuilder());
+    ({ service, store } = new ServiceAssembly().open(join(directory, "events.db")));
   });
 
   afterEach(() => {
@@ -149,6 +137,69 @@ describe("seam B: hook payload in, stored events out", () => {
     expect(event?.type).toBe("mcp.call");
     expect(event?.data).toMatchObject({ server: "context7", tool: "resolve-library-id", outcome: "ok" });
     expect(event?.data).toMatchObject({ args_digest: expect.stringMatching(/^sha256:[0-9a-f]{64}$/) });
+  });
+
+  describe("an MCP server whose name has an underscore", () => {
+    // Recorded 16 Nov 2026 by mcp-underscore-probe.sh: OpenCode names the tools of server google_drive
+    // google_drive_search and google_drive_list_files, and reports each failed call as an error part.
+    type PluginHooks = ReturnType<TraceVaultPlugin["hooks"]>;
+    const PROBE = JSON.parse(readFileSync(new URL("../fixtures/mcp-underscore-probe.json", import.meta.url), "utf8")) as {
+      hook: string;
+      input?: Parameters<PluginHooks["tool.execute.before"]>[0];
+      output?: Parameters<PluginHooks["tool.execute.before"]>[1];
+      event?: Parameters<PluginHooks["event"]>[0]["event"];
+    }[];
+    const SESSION = PROBE[0]?.input?.sessionID ?? "";
+
+    async function replayProbe(): Promise<{ server: unknown; tool: unknown }[]> {
+      const sent: unknown[] = [];
+      const hooks = new TraceVaultPlugin(
+        { forward: async (payload: unknown): Promise<void> => void sent.push(payload) },
+        new PendingGapStore(join(directory, "pending-gaps.json")),
+        () => 0,
+      ).hooks();
+      for (const record of PROBE) {
+        if (record.input !== undefined && record.output !== undefined) {
+          await hooks["tool.execute.before"](record.input, record.output);
+        } else if (record.event !== undefined) {
+          await hooks.event({ event: record.event });
+        }
+      }
+      for (const payload of sent) {
+        expect(service.recordHookPayload(payload, RECEIVED_AT)).toBe("stored");
+      }
+      return store
+        .listBySession(SESSION)
+        .flatMap((event) => (event.type === "mcp.call" ? [{ server: event.data.server, tool: event.data.tool }] : []));
+    }
+
+    function configure(...servers: string[]): void {
+      const mcp = Object.fromEntries(servers.map((server) => [server, { type: "local", command: ["node", `${server}.js`] }]));
+      expect(service.recordHookPayload({ hook: "config.snapshot", sessionID: SESSION, config: { mcp } }, RECEIVED_AT)).toBe("stored");
+    }
+
+    it("records a call under the longest server name the session's configuration holds", async () => {
+      configure("google", "google_drive");
+
+      expect(await replayProbe()).toEqual([
+        { server: "google_drive", tool: "search" },
+        { server: "google_drive", tool: "list_files" },
+      ]);
+    });
+
+    it("cuts at the first underscore when the session recorded no configuration", async () => {
+      expect(await replayProbe()).toEqual([
+        { server: "google", tool: "drive_search" },
+        { server: "google", tool: "drive_list_files" },
+      ]);
+    });
+
+    it("records a server without an underscore as before", () => {
+      configure("context7");
+      service.recordHookPayload(toolAfter("context7_resolve-library-id", { libraryName: "express" }, "call_context7", SESSION), RECEIVED_AT);
+
+      expect(store.listBySession(SESSION).find((event) => event.type === "mcp.call")?.data).toMatchObject({ server: "context7", tool: "resolve-library-id" });
+    });
   });
 
   it("records a failed tool call as an error with no success fields", () => {

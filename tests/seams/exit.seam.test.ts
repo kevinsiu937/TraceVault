@@ -4,28 +4,13 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
-import { PayloadDigest } from "../../src/capture/PayloadDigest.js";
-import { PluginHookCapture } from "../../src/capture/PluginHookCapture.js";
-import { ToolClassifier } from "../../src/capture/ToolClassifier.js";
+import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
 import { WorkflowScannerAssembly } from "../../src/cli/WorkflowScannerAssembly.js";
-import { ActivityView } from "../../src/dashboard/ActivityView.js";
 import { DashboardServer } from "../../src/dashboard/DashboardServer.js";
-import { DetailPaneView } from "../../src/dashboard/DetailPaneView.js";
-import { FindingsPanelView } from "../../src/dashboard/FindingsPanelView.js";
-import { SessionHeaderView } from "../../src/dashboard/SessionHeaderView.js";
-import { SessionListView } from "../../src/dashboard/SessionListView.js";
-import { SessionPageView } from "../../src/dashboard/SessionPageView.js";
-import { TimelineView } from "../../src/dashboard/TimelineView.js";
 import { ConfigRuleLoader } from "../../src/scanner/static/ConfigRuleLoader.js";
 import { StaticScanner } from "../../src/scanner/static/StaticScanner.js";
 import type { ConfigSnapshotEvent, McpToolsEvent } from "../../src/scanner/static/StaticScannerPort.js";
 import type { Event } from "../../src/schema/Event.js";
-import { EventFactory } from "../../src/schema/EventFactory.js";
-import { InvestigationService } from "../../src/service/InvestigationService.js";
-import { SessionConfiguration } from "../../src/service/SessionConfiguration.js";
-import { SessionFindings } from "../../src/service/SessionFindings.js";
-import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const RULES = join(import.meta.dirname, "../../rules");
@@ -41,7 +26,7 @@ function run(name: "trigger" | "clean"): ExitRun {
   return JSON.parse(readFileSync(join(EXIT, `${name}.json`), "utf8")) as ExitRun;
 }
 
-describe.each(["permission-probe.sh", "phase-2-exit-run.sh", "refusal-probe.sh", "subagent-probe.sh", "config-probe.sh", "tool-probe.sh", "phase-3-exit-run.sh", "bash-cwd-probe.sh", "proxy-env-probe.sh", "evasion-exit-run.sh"])("probe output safety: %s", (script) => {
+describe.each(["permission-probe.sh", "phase-2-exit-run.sh", "refusal-probe.sh", "subagent-probe.sh", "config-probe.sh", "tool-probe.sh", "phase-3-exit-run.sh", "bash-cwd-probe.sh", "proxy-env-probe.sh", "evasion-exit-run.sh", "mcp-underscore-probe.sh"])("probe output safety: %s", (script) => {
   let directory: string;
   let output: string;
   let bin: string;
@@ -164,24 +149,7 @@ describe("Phase 2 exit: the scripted session on the page", () => {
 
   beforeEach(async () => {
     directory = mkdtempSync(join(tmpdir(), "tracevault-exit-"));
-    store = new SqliteEventStore(join(directory, "events.db"));
-    const factory = new EventFactory();
-    const service = new InvestigationService(
-      new PluginHookCapture(new HookPayloadParser(), new ToolClassifier(new PayloadDigest()), factory),
-      store,
-      factory,
-      new TimelineBuilder(),
-      new SessionFindings(new WorkflowScannerAssembly().fromDirectory(RULES)),
-    );
-    const timelineView = new TimelineView();
-    server = new DashboardServer(
-      service,
-      new SessionListView(),
-      timelineView,
-      new ActivityView(),
-      undefined,
-      new SessionPageView(new SessionHeaderView(), [new FindingsPanelView(), timelineView], new DetailPaneView()),
-    );
+    ({ store, server } = new ServiceAssembly().open(join(directory, "events.db")));
     baseUrl = `http://127.0.0.1:${await server.listen(0)}`;
   });
 
@@ -279,17 +247,7 @@ describe("Phase 3 exit: the misconfigured and clean runs, frozen", () => {
 
   it("shows every rule on the misconfigured session's Configuration view", async () => {
     const directory = mkdtempSync(join(tmpdir(), "tracevault-exit3-"));
-    const store = new SqliteEventStore(join(directory, "events.db"));
-    const factory = new EventFactory();
-    const service = new InvestigationService(
-      new PluginHookCapture(new HookPayloadParser(), new ToolClassifier(new PayloadDigest()), factory),
-      store,
-      factory,
-      new TimelineBuilder(),
-      undefined,
-      new SessionConfiguration(scanner),
-    );
-    const server = new DashboardServer(service, new SessionListView(), new TimelineView(), new ActivityView());
+    const { store, server } = new ServiceAssembly().open(join(directory, "events.db"));
     try {
       const events = exit("misconfigured").events;
       for (const event of events) {

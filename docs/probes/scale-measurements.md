@@ -53,6 +53,19 @@ Each workflow rule was timed alone on the same synthetic session (ms, findings):
 - **Config findings:** stay small. The static rules check one configuration, not the events.
 - **50,000 events:** the warm figures are one sample, not a median. Cold scans fit the square of the length: five times the events cost about 15 to 19 times the time. A warm page at this size is limited by its 110 MB of HTML, since the page renders every row of the session.
 
+## One read per session (ticket 78)
+
+Recorded 16 Nov 2026 on the same machine, after the session page, the configuration page and the report moved to one call (`getSession`) that reads the session's events once. "Session view" is that call; it replaces the separate findings and configuration-findings rows.
+
+| Events | Timeline | Session view | Findings | Session page | Page size | Report | Report size |
+|---|---|---|---|---|---|---|---|
+| 1,000 | 95 / 5 | 98 / 10 | 307 | 162 / 55 | 2.2 MB | 88 / 15 | 0.5 MB |
+| 10,000 | 4,986 / 52 | 4,894 / 89 | 3,076 | 5,459 / 415 | 21.9 MB | 5,058 / 176 | 5.0 MB |
+| 50,000 | 134,598 / 320 | 114,762 / 886 | 15,384 | 106,577 / 2,603 | 110 MB | 100,341 / 3,028 | 25 MB |
+
+- **Warm:** the page and the report no longer read the session five or six times, or every session's events to find one summary. A repeat view of a 10,000-event page went from 563 to 415 ms, and the report from 329 to 176 ms.
+- **Cold:** slower than on 13 Nov, and the timeline row, which ticket 78 did not change, grew by the same factor. Both pay for the first scan of the rules, which has more rules to run since tickets 60 to 66. This run did not separate that from load on the machine, so the cause is the shared scan, not the single read. It is still quadratic in the session's length.
+
 ## A new event while the page is open (ticket 69)
 
 Recorded 15 Nov 2026 with `docs/probes/scripts/measure-live.mjs` on the same machine. It times one `POST /hook` into the synthetic session, three samples each, in milliseconds.

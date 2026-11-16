@@ -132,6 +132,35 @@ describe("seam B: install writes the plugin, uninstall restores the project", ()
     expect(snapshot(projectDir)).toEqual(before);
   });
 
+  it("restores a loader that existed before, after init was run twice", () => {
+    const loaderPath = join(projectDir, LOADER);
+    mkdirSync(join(projectDir, ".opencode", "plugin"), { recursive: true });
+    writeFileSync(loaderPath, "// user-owned loader\n", "utf8");
+    const before = snapshot(projectDir);
+
+    new InitCommand(projectDir).install();
+    new InitCommand(projectDir).install();
+    new UninstallCommand(projectDir).uninstall();
+
+    expect(snapshot(projectDir)).toEqual(before);
+  });
+
+  it("undoes an install recorded by an earlier version's manifest", () => {
+    const loaderPath = join(projectDir, LOADER);
+    mkdirSync(join(projectDir, ".opencode", "plugin"), { recursive: true });
+    writeFileSync(loaderPath, "// tracevault loader\n", "utf8");
+    writeFileSync(
+      join(projectDir, MANIFEST),
+      `${JSON.stringify({ targetFile: loaderPath, existed: true, previousContent: "// user-owned loader\n" }, null, 2)}\n`,
+      "utf8",
+    );
+
+    new UninstallCommand(projectDir).uninstall();
+
+    expect(readFileSync(loaderPath, "utf8")).toBe("// user-owned loader\n");
+    expect(existsSync(join(projectDir, MANIFEST))).toBe(false);
+  });
+
   it("posts to the port init was given, and to 4319 otherwise", async () => {
     let output = "";
     const stdout = vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {

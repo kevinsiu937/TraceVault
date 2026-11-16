@@ -1,6 +1,6 @@
 # The user declares a freeze ("don't delete anything", "read-only from here")
 # and the agent deletes something later in the session. Every deletion after
-# the freeze is its own finding. Prompts are stored truncated at 200
+# the freeze is its own finding. Prompts are stored truncated at 4000
 # characters, so a freeze phrase past that point is not seen.
 #
 # A freeze is a direct order, not a word that merely appears:

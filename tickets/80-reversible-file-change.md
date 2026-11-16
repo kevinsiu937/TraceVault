@@ -6,10 +6,10 @@ Refactor: no behaviour changes. From the 15 Nov 2026 architecture review, candid
 
 **Blocked by:** None (can start immediately). Touches the same command files as 79; do one at a time.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `init`, `harden` and `uninstall` no longer read or write the saved original themselves
-- [ ] Applying twice and undoing once restores the earliest bytes, for a file that existed and for one that did not (Seam B, through `init` and through `harden`)
-- [ ] The manifest files already on users' disks from earlier versions still undo correctly
-- [ ] Every existing install and harden test passes unchanged
-- [ ] Typecheck, build and the full suite pass
+- [x] `init`, `harden` and `uninstall` no longer read or write the saved original themselves
+- [x] Applying twice and undoing once restores the earliest bytes, for a file that existed and for one that did not (Seam B, through `init` and through `harden`)
+- [x] The manifest files already on users' disks from earlier versions still undo correctly
+- [x] Every existing install and harden test passes unchanged
+- [x] Typecheck, build and the full suite pass

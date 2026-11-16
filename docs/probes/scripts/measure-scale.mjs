@@ -20,18 +20,6 @@ import { performance } from "node:perf_hooks";
 const REPO = new URL("../../../", import.meta.url);
 const dist = (path) => new URL(`dist/${path}`, REPO).href;
 const { ServiceAssembly } = await import(dist("cli/ServiceAssembly.js"));
-const { DashboardServer } = await import(dist("dashboard/DashboardServer.js"));
-const { SessionListView } = await import(dist("dashboard/SessionListView.js"));
-const { TimelineView } = await import(dist("dashboard/TimelineView.js"));
-const { ActivityView } = await import(dist("dashboard/ActivityView.js"));
-const { SessionPageView } = await import(dist("dashboard/SessionPageView.js"));
-const { SessionHeaderView } = await import(dist("dashboard/SessionHeaderView.js"));
-const { DetailPaneView } = await import(dist("dashboard/DetailPaneView.js"));
-const panes = await Promise.all(
-  ["RulesNoticeView", "SkippedCallsView", "FindingsPanelView", "FileRailView", "TimelineView", "WaterfallView", "GraphView", "SubagentPortalView", "ReplayBarView"].map(
-    async (name) => new (await import(dist(`dashboard/${name}.js`)))[name](),
-  ),
-);
 const { ReportView } = await import(dist("dashboard/ReportView.js"));
 const { DatabaseSync } = createRequire(import.meta.url)("node:sqlite");
 
@@ -63,17 +51,17 @@ function median(values) {
 }
 
 async function time(dbPath, label, run) {
-  const { service, store } = new ServiceAssembly().open(dbPath);
+  const opened = new ServiceAssembly().open(dbPath);
   const samples = [];
   let result;
   try {
     for (let index = 0; index < RUNS; index += 1) {
       const started = performance.now();
-      result = await run(service);
+      result = await run(opened);
       samples.push(performance.now() - started);
     }
   } finally {
-    store.close();
+    opened.store.close();
   }
   const [cold, ...warm] = samples;
   const out = { cold: cold.toFixed(0), warm: warm.length === 0 ? "-" : median(warm).toFixed(0), result };
@@ -93,12 +81,10 @@ for (const size of sizes.length > 0 ? sizes : [1000, 10000, 50000]) {
   }
   store.close();
 
-  const timeline = await time(dbPath, "timeline", (service) => service.getTimeline(id));
-  const findings = await time(dbPath, "findings", (service) => service.getFindings(id));
-  const configFindings = await time(dbPath, "config findings", (service) => service.getConfigFindings(id));
-  const report = await time(dbPath, "report", (service) => new ReportView().render(service, id));
-  const page = await time(dbPath, "session page", async (service) => {
-    const server = new DashboardServer(service, new SessionListView(), new TimelineView(), new ActivityView(), undefined, new SessionPageView(new SessionHeaderView(), panes, new DetailPaneView()));
+  const timeline = await time(dbPath, "timeline", ({ service }) => service.getTimeline(id));
+  const view = await time(dbPath, "session view", ({ service }) => service.getSession(id));
+  const report = await time(dbPath, "report", ({ service }) => new ReportView().render(service, id));
+  const page = await time(dbPath, "session page", async ({ server }) => {
     try {
       return await (await fetch(`http://127.0.0.1:${await server.listen(0)}/sessions/${id}`)).text();
     } finally {
@@ -117,9 +103,8 @@ for (const size of sizes.length > 0 ? sizes : [1000, 10000, 50000]) {
   rows.push({
     events: size,
     timelineMs: `${timeline.cold} / ${timeline.warm}`,
-    findingsMs: `${findings.cold} / ${findings.warm}`,
-    findings: findings.result.length,
-    configMs: `${configFindings.cold} / ${configFindings.warm}`,
+    viewMs: `${view.cold} / ${view.warm}`,
+    findings: view.result.findings.length,
     pageMs: `${page.cold} / ${page.warm}`,
     pageKB: (page.result.length / 1024).toFixed(0),
     reportMs: `${report.cold} / ${report.warm}`,

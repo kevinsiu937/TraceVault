@@ -22,7 +22,8 @@ export interface SessionRenderContext {
   readonly rules: { readonly viewing: RuleChoice; readonly versions: RuleVersions };
   readonly filter: ActivityFilter;
   readonly state: SessionParams;
-  readonly sessions: readonly SessionSummary[];
+  /** The subagent sessions this session started. */
+  readonly children: readonly SessionSummary[];
   readonly previousSessionId: string | null;
   readonly nextSessionId: string | null;
 }

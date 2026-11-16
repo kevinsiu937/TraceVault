@@ -1,13 +1,6 @@
 import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 /**
  * The calls the opt-in guard skipped, above the findings: what the agent did
@@ -31,9 +24,9 @@ export class SkippedCallsView implements SessionPaneView {
         // A blockable rule matches one event and never tests the outcome, so it always flags the call it refused.
         const recommendation = context.findings.find((finding) => finding.ruleId === rule)?.recommendation;
         const call = [entry.time.slice(11, 19), entry.type, entry.operation, entry.target].filter((part) => part !== null && part.length > 0).join(" ");
-        return `<li class="skipped-call" data-rule="${this.escape(rule)}">
-<a href="${this.escape(context.state.href(basePath, { event: entry.eventId }))}">${this.escape(call)}</a>
-<span class="skipped-rule">skipped by ${this.escape(rule)}</span>${recommendation === undefined ? "" : `\n<span class="skipped-recommendation">What to do: ${this.escape(recommendation)}</span>`}
+        return `<li class="skipped-call" data-rule="${HtmlText.escape(rule)}">
+<a href="${HtmlText.escape(context.state.href(basePath, { event: entry.eventId }))}">${HtmlText.escape(call)}</a>
+<span class="skipped-rule">skipped by ${HtmlText.escape(rule)}</span>${recommendation === undefined ? "" : `\n<span class="skipped-recommendation">What to do: ${HtmlText.escape(recommendation)}</span>`}
 </li>`;
       })
       .join("\n");
@@ -58,9 +51,5 @@ ${items}
 
   script(_context: SessionRenderContext): string {
     return "";
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

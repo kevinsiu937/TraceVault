@@ -1,13 +1,6 @@
 import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 /**
  * The session's findings above the cockpit grid: each names its rule, says
@@ -31,14 +24,14 @@ export class FindingsPanelView implements SessionPaneView {
           .map((eventId) => {
             const entry = entries.get(eventId);
             const label = entry === undefined ? eventId : `${entry.time.slice(11, 19)} ${entry.type} ${entry.target}`;
-            return `<a href="${this.escape(context.state.href(basePath, { event: eventId }))}">${this.escape(label)}</a>`;
+            return `<a href="${HtmlText.escape(context.state.href(basePath, { event: eventId }))}">${HtmlText.escape(label)}</a>`;
           })
           .join(" ");
-        return `<li class="finding" data-rule="${this.escape(finding.ruleId)}" data-severity="${this.escape(finding.severity)}">
-<span class="severity ${this.escape(finding.severity)}">${this.escape(finding.severity)}</span>
-<span class="flag" data-rule="${this.escape(finding.ruleId)}">⚑ ${this.escape(finding.ruleId)}</span>
-<span class="finding-explanation">${this.escape(finding.explanation)}</span>
-<span class="finding-recommendation">What to do: ${this.escape(finding.recommendation)}</span>${finding.matched.length === 0 ? "" : `\n<span class="finding-matched">via ${this.escape(finding.matched.join(", "))}</span>`}
+        return `<li class="finding" data-rule="${HtmlText.escape(finding.ruleId)}" data-severity="${HtmlText.escape(finding.severity)}">
+<span class="severity ${HtmlText.escape(finding.severity)}">${HtmlText.escape(finding.severity)}</span>
+<span class="flag" data-rule="${HtmlText.escape(finding.ruleId)}">⚑ ${HtmlText.escape(finding.ruleId)}</span>
+<span class="finding-explanation">${HtmlText.escape(finding.explanation)}</span>
+<span class="finding-recommendation">What to do: ${HtmlText.escape(finding.recommendation)}</span>${finding.matched.length === 0 ? "" : `\n<span class="finding-matched">via ${HtmlText.escape(finding.matched.join(", "))}</span>`}
 <span class="finding-events">${links}</span>
 </li>`;
       })
@@ -68,9 +61,5 @@ ${items}
 
   script(_context: SessionRenderContext): string {
     return "";
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

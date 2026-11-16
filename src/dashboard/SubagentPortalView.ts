@@ -1,14 +1,7 @@
 import type { SessionSummary } from "../service/SessionSummary.js";
 import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 type SubagentStatus = "open" | "ended" | "uncovered";
 
@@ -23,9 +16,7 @@ export class SubagentPortalView implements SessionPaneView {
   readonly slot = "top" as const;
 
   render(context: SessionRenderContext): string {
-    const children = context.sessions
-      .filter((session) => session.parentSessionId === context.sessionId)
-      .sort(
+    const children = [...context.children].sort(
         (left, right) =>
           left.startedAt.localeCompare(right.startedAt) || left.sessionId.localeCompare(right.sessionId),
       );
@@ -70,8 +61,8 @@ ${children.map((child) => this.card(child)).join("\n")}
     const errors = child.errorCount > 0 ? " has-errors" : "";
 
     return `<li><a class="subagent-card" href="/sessions/${encodeURIComponent(child.sessionId)}">
-<span class="subagent-title">${this.escape(title)}</span>
-<span class="subagent-meta"><span>${this.escape(child.agentName)}</span><span>${child.eventCount} ${child.eventCount === 1 ? "event" : "events"}</span><span class="subagent-errors${errors}">${child.errorCount} ${child.errorCount === 1 ? "error" : "errors"}</span><span>${this.duration(child.durationMs)}</span><span class="subagent-status ${status}">${status}</span></span>
+<span class="subagent-title">${HtmlText.escape(title)}</span>
+<span class="subagent-meta"><span>${HtmlText.escape(child.agentName)}</span><span>${child.eventCount} ${child.eventCount === 1 ? "event" : "events"}</span><span class="subagent-errors${errors}">${child.errorCount} ${child.errorCount === 1 ? "error" : "errors"}</span><span>${this.duration(child.durationMs)}</span><span class="subagent-status ${status}">${status}</span></span>
 </a></li>`;
   }
 
@@ -88,9 +79,5 @@ ${children.map((child) => this.card(child)).join("\n")}
     }
     const seconds = Math.round(ms / 1000);
     return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

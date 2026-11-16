@@ -13,10 +13,6 @@ import { request } from "node:http";
 const REPO = new URL("../../../", import.meta.url);
 const dist = (p) => new URL(`dist/${p}`, REPO).href;
 const { ServiceAssembly } = await import(dist("cli/ServiceAssembly.js"));
-const { DashboardServer } = await import(dist("dashboard/DashboardServer.js"));
-const { SessionListView } = await import(dist("dashboard/SessionListView.js"));
-const { TimelineView } = await import(dist("dashboard/TimelineView.js"));
-const { ActivityView } = await import(dist("dashboard/ActivityView.js"));
 const fixture = (p) => JSON.parse(readFileSync(new URL(`tests/fixtures/${p}`, REPO), "utf8")).events;
 const all = fixture("rules/phase-2-exit/trigger.json");
 const actions = all.filter((e) => !e.type.startsWith("session."));
@@ -25,14 +21,13 @@ const sizes = process.argv.slice(2).map(Number).filter((size) => size > 0);
 for (const size of sizes.length > 0 ? sizes : [1000, 4000, 10000]) {
   const id = `ses_live_${size}`;
   const db = join(mkdtempSync(join(tmpdir(), "tv-live-")), "events.db");
-  const { service, store } = new ServiceAssembly().open(db);
+  const { store, server } = new ServiceAssembly().open(db);
   const at = (i) => new Date(Date.UTC(2026, 10, 13, 9) + i * 500).toISOString();
   store.append({ ...start, id: `s${size}`, session_id: id, timestamp: at(0) });
   for (let i = 0; i < size; i += 1) {
     const t = actions[i % actions.length];
     store.append({ ...t, id: `e${size}_${i}`, session_id: id, correlation_id: t.correlation_id === null ? null : `c${size}_${i}`, timestamp: at(i + 1) });
   }
-  const server = new DashboardServer(service, new SessionListView(), new TimelineView(), new ActivityView());
   const base = `http://127.0.0.1:${await server.listen(0)}`;
   let n = 0;
   const post = async () => {

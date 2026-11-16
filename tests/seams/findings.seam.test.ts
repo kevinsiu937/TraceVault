@@ -3,27 +3,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
-import { PayloadDigest } from "../../src/capture/PayloadDigest.js";
-import { PluginHookCapture } from "../../src/capture/PluginHookCapture.js";
-import { ToolClassifier } from "../../src/capture/ToolClassifier.js";
-import { WorkflowScannerAssembly } from "../../src/cli/WorkflowScannerAssembly.js";
-import { ActivityView } from "../../src/dashboard/ActivityView.js";
+import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
 import { DashboardServer } from "../../src/dashboard/DashboardServer.js";
-import { DetailPaneView } from "../../src/dashboard/DetailPaneView.js";
-import { FindingsPanelView } from "../../src/dashboard/FindingsPanelView.js";
-import { SessionHeaderView } from "../../src/dashboard/SessionHeaderView.js";
-import { SessionListView } from "../../src/dashboard/SessionListView.js";
-import { SessionPageView } from "../../src/dashboard/SessionPageView.js";
-import { TimelineView } from "../../src/dashboard/TimelineView.js";
-import { EventFactory } from "../../src/schema/EventFactory.js";
 import { InvestigationService } from "../../src/service/InvestigationService.js";
-import { SessionFindings } from "../../src/service/SessionFindings.js";
-import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const SESSION = "ses_findings";
-const RULES = join(import.meta.dirname, "../../rules");
 const CONFIG = "/home/dev/demo/opencode.json";
 
 function write(filePath: string, callID: string): Record<string, unknown> {
@@ -59,33 +44,7 @@ describe("seam A: findings on the session page", () => {
 
   beforeEach(async () => {
     directory = mkdtempSync(join(tmpdir(), "tracevault-findings-"));
-    store = new SqliteEventStore(join(directory, "events.db"));
-    const factory = new EventFactory();
-    const capture = new PluginHookCapture(
-      new HookPayloadParser(),
-      new ToolClassifier(new PayloadDigest()),
-      factory,
-    );
-    service = new InvestigationService(
-      capture,
-      store,
-      factory,
-      new TimelineBuilder(),
-      new SessionFindings(new WorkflowScannerAssembly().fromDirectory(RULES)),
-    );
-    const timelineView = new TimelineView();
-    server = new DashboardServer(
-      service,
-      new SessionListView(),
-      timelineView,
-      new ActivityView(),
-      undefined,
-      new SessionPageView(
-        new SessionHeaderView(),
-        [new FindingsPanelView(), timelineView],
-        new DetailPaneView(),
-      ),
-    );
+    ({ service, store, server } = new ServiceAssembly().open(join(directory, "events.db")));
     baseUrl = `http://127.0.0.1:${await server.listen(0)}`;
   });
 

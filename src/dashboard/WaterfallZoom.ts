@@ -1,12 +1,5 @@
 import type { SessionRenderContext } from "./SessionRenderContext.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 /**
  * Zooming the waterfall. Dragging across the plot turns the selection into
@@ -22,7 +15,7 @@ export class WaterfallZoom {
     }
     const reset = context.state.href(basePath, { view: "waterfall", from: null, to: null });
     const label = `${this.wallClock(range.from)}–${this.wallClock(range.to)}`;
-    return `<div class="wf-toolbar"><span class="wf-range">Zoomed to <time datetime="${this.escape(range.from)}">${this.escape(label)}</time></span><a class="wf-reset" href="${this.escape(reset)}">Reset zoom</a></div>`;
+    return `<div class="wf-toolbar"><span class="wf-range">Zoomed to <time datetime="${HtmlText.escape(range.from)}">${HtmlText.escape(label)}</time></span><a class="wf-reset" href="${HtmlText.escape(reset)}">Reset zoom</a></div>`;
   }
 
   /** Attributes the plot carries so the script can turn pixels into time. */
@@ -103,9 +96,5 @@ export class WaterfallZoom {
 
   private wallClock(time: string): string {
     return time.slice(11, 19);
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

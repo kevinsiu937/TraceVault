@@ -3,19 +3,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
-import { PayloadDigest } from "../../src/capture/PayloadDigest.js";
-import { PluginHookCapture } from "../../src/capture/PluginHookCapture.js";
-import { ToolClassifier } from "../../src/capture/ToolClassifier.js";
+import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
+import { WorkflowScannerAssembly } from "../../src/cli/WorkflowScannerAssembly.js";
 import { PendingGapStore } from "../../src/plugin/PendingGapStore.js";
 import { TraceVaultPlugin } from "../../src/plugin/TraceVaultPlugin.js";
 import { EventFactory } from "../../src/schema/EventFactory.js";
 import { InvestigationService } from "../../src/service/InvestigationService.js";
-import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 // Frozen from the live chat.message probe (docs/probes/phase-1-live-probes.md §21):
 // the plugin forwards the user message it saw, scrubbed of live ids.
+const RULES = join(import.meta.dirname, "../../rules");
 const PROMPT_FIXTURE = new URL("../fixtures/chat-message-user-prompt.json", import.meta.url);
 const RECEIVED_AT = new Date("2026-10-26T14:31:08.000Z");
 const PROMPT_CREATED = Date.parse("2026-10-26T14:31:07.314Z");
@@ -56,14 +54,7 @@ describe("seam B: a user prompt becomes the first timeline entry", () => {
 
   beforeEach(() => {
     directory = mkdtempSync(join(tmpdir(), "tracevault-prompt-"));
-    store = new SqliteEventStore(join(directory, "events.db"));
-    const factory = new EventFactory();
-    const capture = new PluginHookCapture(
-      new HookPayloadParser(),
-      new ToolClassifier(new PayloadDigest()),
-      factory,
-    );
-    service = new InvestigationService(capture, store, factory, new TimelineBuilder());
+    ({ service, store } = new ServiceAssembly().open(join(directory, "events.db")));
   });
 
   afterEach(() => {
@@ -133,18 +124,36 @@ describe("seam B: a user prompt becomes the first timeline entry", () => {
     });
   });
 
-  it("truncates a long prompt to 200 characters and marks it truncated", async () => {
+  it("truncates a prompt past 4000 characters and marks it truncated", async () => {
     const sent: unknown[] = [];
-    const long = "a".repeat(240);
+    const long = "a".repeat(4100);
     await plugin(sent).hooks()["chat.message"]({ sessionID: "ses_fixture_prompt" }, chatOutput([{ type: "text", text: long }]));
 
     const payload = forwarded(sent, "chat.message");
-    expect(payload["text"]).toHaveLength(200);
+    expect(payload["text"]).toHaveLength(4000);
     expect(payload).toMatchObject({ truncated: true });
 
     service.recordHookPayload(payload, RECEIVED_AT);
     const [event] = store.listBySession("ses_fixture_prompt");
-    expect(event?.data).toEqual({ text: "a".repeat(200), message_id: "msg_fixture_prompt", truncated: true });
+    expect(event?.data).toEqual({ text: "a".repeat(4000), message_id: "msg_fixture_prompt", truncated: true });
+  });
+
+  it("keeps a freeze said after character 200, so a later deletion raises destructive-action", async () => {
+    const sent: unknown[] = [];
+    const text = `${"Some context about the repo. ".repeat(10)}Now, do not delete anything.`;
+    expect(text.indexOf("do not delete")).toBeGreaterThan(200);
+    await plugin(sent).hooks()["chat.message"]({ sessionID: "ses_fixture_prompt" }, chatOutput([{ type: "text", text }]));
+    service.recordHookPayload(forwarded(sent, "chat.message"), RECEIVED_AT);
+    store.append(
+      new EventFactory().fromClassified(
+        { sessionId: "ses_fixture_prompt", correlationId: "call_rm", receivedAt: new Date(PROMPT_CREATED + 1000) },
+        { type: "hook.script", data: { hook: "tool.execute.after", target_tool: "bash", target: "rm -rf build", exit_code: 0, outcome: "ok" } },
+      ),
+    );
+
+    const findings = new WorkflowScannerAssembly().fromDirectory(RULES).scan(store.listBySession("ses_fixture_prompt"));
+
+    expect(findings.map((finding) => finding.ruleId)).toContain("destructive-action");
   });
 
   it("does not forward a message that is not a user prompt", async () => {

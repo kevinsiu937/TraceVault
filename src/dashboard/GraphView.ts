@@ -2,14 +2,7 @@ import { KindRunAggregator } from "./KindRunAggregator.js";
 import type { KindRunNode } from "./KindRunAggregator.js";
 import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 /**
  * The centre Graph pane: the session as runs of one kind, in execution order.
@@ -94,15 +87,11 @@ ${steps.join("\n")}
       : `\n<svg class="graph-edge${node.errorCount > 0 ? " graph-edge-error" : ""}" width="14" height="20" viewBox="0 0 14 20" aria-hidden="true" focusable="false"><line x1="7" y1="1" x2="7" y2="13"></line><polyline points="3,10 7,14 11,10"></polyline></svg>`;
 
     return `<li class="graph-step">
-<a class="graph-node" data-kind="${this.escape(node.kind)}" data-count="${node.count}" data-errors="${node.errorCount}" href="${this.escape(href)}"${selected ? ' aria-current="true"' : ""}><span class="graph-node-kind"><span class="graph-dot" aria-hidden="true"></span>${this.escape(node.kind)}</span><span class="graph-node-meta"><span class="graph-count">×${node.count}</span>${errors}<time class="graph-time" datetime="${this.escape(node.firstTime)}">${this.escape(this.wallClock(node.firstTime))}</time></span></a>${edge}
+<a class="graph-node" data-kind="${HtmlText.escape(node.kind)}" data-count="${node.count}" data-errors="${node.errorCount}" href="${HtmlText.escape(href)}"${selected ? ' aria-current="true"' : ""}><span class="graph-node-kind"><span class="graph-dot" aria-hidden="true"></span>${HtmlText.escape(node.kind)}</span><span class="graph-node-meta"><span class="graph-count">×${node.count}</span>${errors}<time class="graph-time" datetime="${HtmlText.escape(node.firstTime)}">${HtmlText.escape(this.wallClock(node.firstTime))}</time></span></a>${edge}
 </li>`;
   }
 
   private wallClock(time: string): string {
     return time.length >= 19 ? time.slice(11, 19) : time;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

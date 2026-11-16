@@ -2,14 +2,7 @@ import { TurnBuilder } from "../service/TurnBuilder.js";
 import { ReplayTimeline } from "./ReplayTimeline.js";
 import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 /**
  * The replay bar: one row that turns the timeline into a re-watchable session.
@@ -233,15 +226,11 @@ ${this.ticks(replay)}
   }
 
   private tick(kind: string, percent: number, title: string): string {
-    return `<div class="replay-tick ${kind}" style="left:${percent.toFixed(3)}%" title="${this.escape(title)}"></div>`;
+    return `<div class="replay-tick ${kind}" style="left:${percent.toFixed(3)}%" title="${HtmlText.escape(title)}"></div>`;
   }
 
   private clock(milliseconds: number): string {
     const seconds = Math.floor(milliseconds / 1000);
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

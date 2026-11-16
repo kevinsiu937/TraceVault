@@ -39,8 +39,7 @@ describe("seam B: a tool is trusted when first seen, and a later change is a fin
   function toolChanges(id: string): { subject: string; evidence: readonly { value: string; entry: string }[] }[] {
     const { service, store } = new ServiceAssembly().open(db);
     try {
-      return service
-        .getConfigFindings(id)
+      return (service.getSession(id)?.configFindings ?? [])
         .filter((finding) => finding.ruleId === "tool-changed")
         .map(({ subject, evidence }) => ({ subject, evidence }));
     } finally {

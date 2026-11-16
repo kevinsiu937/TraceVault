@@ -20,6 +20,8 @@ export class ToolClassifier {
     args: Record<string, unknown>,
     outcome: Outcome,
     exitCode: number | null,
+    /** The MCP server names the session's configuration holds; asked for only when the name could be an MCP tool. */
+    mcpServers: () => readonly string[] = () => [],
   ): ClassifiedTool {
     const documentOperation = DOCUMENT_TOOLS[tool];
     if (documentOperation !== undefined) {
@@ -45,7 +47,11 @@ export class ToolClassifier {
     }
 
     if (tool.includes("_")) {
-      const separator = tool.indexOf("_");
+      // OpenCode names an MCP tool "<server>_<tool>" and a server name may hold an underscore, so the longest configured server wins.
+      const server = mcpServers()
+        .filter((name) => tool.startsWith(`${name}_`))
+        .reduce((longest, name) => (name.length > longest.length ? name : longest), "");
+      const separator = server.length > 0 ? server.length : tool.indexOf("_");
       const params = this.digest.describe(args);
       return {
         type: "mcp.call",

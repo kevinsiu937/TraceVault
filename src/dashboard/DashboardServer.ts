@@ -5,20 +5,13 @@ import type { InvestigationServicePort } from "../service/InvestigationServicePo
 import type { ActivityView } from "./ActivityView.js";
 import { ConfigurationView } from "./ConfigurationView.js";
 import { ReportView } from "./ReportView.js";
-import { DetailPaneView } from "./DetailPaneView.js";
 import { EventStream } from "./EventStream.js";
 import { FilterParams } from "./FilterParams.js";
 import { HookBodyReader } from "./HookBodyReader.js";
 import { LocalRequest } from "./LocalRequest.js";
-import { SessionHeaderView } from "./SessionHeaderView.js";
 import type { SessionListView } from "./SessionListView.js";
-import { SessionPageView } from "./SessionPageView.js";
+import type { SessionPageView } from "./SessionPageView.js";
 import { SessionParams } from "./SessionParams.js";
-import { FileRailView } from "./FileRailView.js";
-import { GraphView } from "./GraphView.js";
-import { ReplayBarView } from "./ReplayBarView.js";
-import { WaterfallView } from "./WaterfallView.js";
-import { SubagentPortalView } from "./SubagentPortalView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
 import type { TimelineView } from "./TimelineView.js";
 
@@ -33,24 +26,19 @@ export class DashboardServer {
   private readonly eventStream: EventStream;
   private readonly bodyReader = new HookBodyReader();
   private readonly localRequest = new LocalRequest();
-  private readonly sessionPageView: SessionPageView;
+  private readonly filterParams = new FilterParams();
 
   constructor(
     private readonly service: InvestigationServicePort,
     private readonly view: SessionListView,
     timelineView: TimelineView,
     private readonly activityView: ActivityView,
-    private readonly filterParams: FilterParams = new FilterParams(),
-    sessionPageView?: SessionPageView,
+    private readonly sessionPageView: SessionPageView,
     private readonly configurationView: ConfigurationView = new ConfigurationView(),
     private readonly reportView: ReportView = new ReportView(),
+    private readonly printError: (line: string) => void = (line) => process.stderr.write(line),
   ) {
     this.eventStream = new EventStream(service, timelineView);
-    this.sessionPageView = sessionPageView ?? new SessionPageView(
-      new SessionHeaderView(),
-      [new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView(), new ReplayBarView()],
-      new DetailPaneView(),
-    );
   }
 
   listen(port: number): Promise<number> {
@@ -153,17 +141,12 @@ export class DashboardServer {
           return;
         }
         const sessionId = decodeURIComponent(configMatch[1] ?? "");
-        if (!this.service.hasSession(sessionId)) {
+        const view = this.service.getSession(sessionId);
+        if (view === null) {
           this.send(response, 404, "session not found", "text/plain; charset=utf-8");
           return;
         }
-        const title = this.service.listSessions().find((session) => session.sessionId === sessionId)?.title ?? "";
-        const page = this.configurationView.render(
-          sessionId,
-          title,
-          this.service.getConfiguration(sessionId),
-          this.service.getConfigFindings(sessionId),
-        );
+        const page = this.configurationView.render(sessionId, view.summary.title, view.configuration, view.configFindings);
         this.send(response, 200, page, "text/html; charset=utf-8");
         return;
       }
@@ -190,52 +173,35 @@ export class DashboardServer {
           return;
         }
         const sessionId = decodeURIComponent(sessionMatch[1] ?? "");
-        if (!this.service.hasSession(sessionId)) {
+        const view = this.service.getSession(sessionId, rules, filter);
+        if (view === null) {
           this.send(response, 404, "session not found", "text/plain; charset=utf-8");
           return;
         }
-        const allEntries = this.service.getTimeline(sessionId, undefined, rules);
-        const entries = filter.active ? this.service.getTimeline(sessionId, filter, rules) : allEntries;
-        const sessions = this.service.listSessions();
-        const index = sessions.findIndex((session) => session.sessionId === sessionId);
-        const summary = sessions[index] ?? {
-          sessionId,
-          parentSessionId: null,
-          title: "",
-          agentName: "",
-          startedAt: allEntries[0]?.time ?? "",
-          endedAt: null,
-          eventCount: allEntries.length,
-          gapCount: 0,
-          lastActivityAt: allEntries[0]?.time ?? "",
-          filesTouched: 0,
-          errorCount: 0,
-          deniedCount: 0,
-          lastOutcome: null,
-          density: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          durationMs: null,
-        };
         const context: SessionRenderContext = {
           sessionId,
-          title: summary.title,
-          summary,
-          entries,
-          allEntries,
-          findings: this.service.getFindings(sessionId, rules),
-          configFindingCount: this.service.getConfigFindings(sessionId, rules).length,
-          rules: { viewing: rules, versions: this.service.getRuleVersions(sessionId) },
+          title: view.summary.title,
+          summary: view.summary,
+          entries: view.entries,
+          allEntries: view.allEntries,
+          findings: view.findings,
+          configFindingCount: view.configFindings.length,
+          rules: { viewing: rules, versions: view.ruleVersions },
           filter,
           state,
-          sessions,
-          previousSessionId: index >= 0 ? sessions[index + 1]?.sessionId ?? null : null,
-          nextSessionId: index > 0 ? sessions[index - 1]?.sessionId ?? null : null,
+          children: view.children,
+          previousSessionId: view.previousSessionId,
+          nextSessionId: view.nextSessionId,
         };
         this.send(response, 200, this.sessionPageView.render(context), "text/html; charset=utf-8");
         return;
       }
 
       this.send(response, 404, "not found", "text/plain; charset=utf-8");
-    } catch {
+    } catch (error) {
+      // The path only: a hook body holds the user's commands and file contents.
+      const path = (request.url ?? "/").split("?")[0];
+      this.printError(`tracevault: ${request.method ?? "?"} ${path} failed: ${error instanceof Error ? error.message : String(error)}\n`);
       if (response.headersSent) {
         response.destroy();
         return;

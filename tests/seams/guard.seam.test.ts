@@ -3,28 +3,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
 import { PayloadDigest } from "../../src/capture/PayloadDigest.js";
-import { PluginHookCapture } from "../../src/capture/PluginHookCapture.js";
 import { ToolClassifier } from "../../src/capture/ToolClassifier.js";
 import { GuardAssembly } from "../../src/cli/GuardAssembly.js";
-import { WorkflowScannerAssembly } from "../../src/cli/WorkflowScannerAssembly.js";
-import { ActivityView } from "../../src/dashboard/ActivityView.js";
+import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
 import { DashboardServer } from "../../src/dashboard/DashboardServer.js";
-import { DetailPaneView } from "../../src/dashboard/DetailPaneView.js";
-import { FindingsPanelView } from "../../src/dashboard/FindingsPanelView.js";
-import { SessionHeaderView } from "../../src/dashboard/SessionHeaderView.js";
-import { SessionListView } from "../../src/dashboard/SessionListView.js";
-import { SessionPageView } from "../../src/dashboard/SessionPageView.js";
-import { SkippedCallsView } from "../../src/dashboard/SkippedCallsView.js";
-import { TimelineView } from "../../src/dashboard/TimelineView.js";
 import { CallGuard } from "../../src/plugin/CallGuard.js";
 import { PendingGapStore } from "../../src/plugin/PendingGapStore.js";
 import { TraceVaultPlugin } from "../../src/plugin/TraceVaultPlugin.js";
 import { EventFactory } from "../../src/schema/EventFactory.js";
 import { InvestigationService } from "../../src/service/InvestigationService.js";
-import { SessionFindings } from "../../src/service/SessionFindings.js";
-import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const RULES = join(import.meta.dirname, "../../rules");
@@ -50,19 +38,12 @@ describe("seam B: the opt-in guard refuses a call before it runs", () => {
   let directory: string;
   let store: SqliteEventStore;
   let service: InvestigationService;
+  let server: DashboardServer;
   let sent: unknown[];
 
   beforeEach(() => {
     directory = mkdtempSync(join(tmpdir(), "tracevault-guard-"));
-    store = new SqliteEventStore(join(directory, "events.db"));
-    const factory = new EventFactory();
-    service = new InvestigationService(
-      new PluginHookCapture(new HookPayloadParser(), new ToolClassifier(new PayloadDigest()), factory),
-      store,
-      factory,
-      new TimelineBuilder(),
-      new SessionFindings(new WorkflowScannerAssembly().fromDirectory(RULES)),
-    );
+    ({ service, store, server } = new ServiceAssembly().open(join(directory, "events.db")));
     sent = [];
   });
 
@@ -120,16 +101,8 @@ describe("seam B: the opt-in guard refuses a call before it runs", () => {
     expect(row).toContain('<span class="flag" data-rule="self-modification"');
   });
 
-  /** The session page as the dashboard serves it, with the panes that matter here. */
+  /** The session page as the dashboard serves it. */
   async function sessionPage(): Promise<string> {
-    const server = new DashboardServer(
-      service,
-      new SessionListView(),
-      new TimelineView(),
-      new ActivityView(),
-      undefined,
-      new SessionPageView(new SessionHeaderView(), [new SkippedCallsView(), new FindingsPanelView(), new TimelineView()], new DetailPaneView()),
-    );
     try {
       return await (await fetch(`http://127.0.0.1:${await server.listen(0)}/sessions/${SESSION}`)).text();
     } finally {
@@ -236,7 +209,7 @@ describe("seam B: the opt-in guard refuses a call before it runs", () => {
       await refuse(plugin, { ...REFUSED.input, callID: id }, REFUSED.output.args);
     }
 
-    const ruleIds = service.getFindings(SESSION).map((finding) => finding.ruleId);
+    const ruleIds = service.getSession(SESSION)?.findings.map((finding) => finding.ruleId);
     expect(ruleIds).toContain("probing");
   });
 });

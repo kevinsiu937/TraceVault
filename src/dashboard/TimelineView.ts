@@ -10,14 +10,7 @@ import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
 import { TimelineRow } from "./TimelineRow.js";
 import { TurnDivider } from "./TurnDivider.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 /** A row whose flags changed live. A row the page draws inside a collapsed run also carries that run, redrawn. */
 export interface LiveRowUpdate {
@@ -48,7 +41,7 @@ export class TimelineView implements SessionPaneView {
     const summary = context.filter.active
       ? `${context.entries.length} of ${context.allEntries.length} events`
       : `${context.entries.length} events`;
-    const empty = `<div class="card empty">No events match this filter. <a href="${this.escape(this.params.href(basePath, ActivityFilter.none))}">Clear filters</a></div>`;
+    const empty = `<div class="card empty">No events match this filter. <a href="${HtmlText.escape(this.params.href(basePath, ActivityFilter.none))}">Clear filters</a></div>`;
     const turns = ReplayTimeline.from(context, this.turnBuilder).turns;
     const rows = context.entries.length === 0
       ? ""
@@ -228,9 +221,5 @@ source.onmessage = (message) => {
     return [...counts.entries()]
       .map(([kind, count]) => ({ kind, count }))
       .sort((left, right) => right.count - left.count || left.kind.localeCompare(right.kind));
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

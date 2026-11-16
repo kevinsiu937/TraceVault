@@ -3,17 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { main } from "../../src/cli/index.js";
 import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
-import { ActivityView } from "../../src/dashboard/ActivityView.js";
-import { DashboardServer } from "../../src/dashboard/DashboardServer.js";
-import { DetailPaneView } from "../../src/dashboard/DetailPaneView.js";
-import { FindingsPanelView } from "../../src/dashboard/FindingsPanelView.js";
-import { RulesNoticeView } from "../../src/dashboard/RulesNoticeView.js";
-import { SessionHeaderView } from "../../src/dashboard/SessionHeaderView.js";
-import { SessionListView } from "../../src/dashboard/SessionListView.js";
-import { SessionPageView } from "../../src/dashboard/SessionPageView.js";
-import { TimelineView } from "../../src/dashboard/TimelineView.js";
+import { main } from "../../src/cli/index.js";
 import { EventFactory } from "../../src/schema/EventFactory.js";
 
 const RULES = join(import.meta.dirname, "../../rules");
@@ -59,30 +50,22 @@ describe("a session viewed under the rules then and now", () => {
 
   it("seam C: finds under the stored rules exactly what those rules find when loaded from disk", () => {
     const fromDisk = new ServiceAssembly(then).open(db);
-    const expected = fromDisk.service.getFindings(SESSION);
+    const expected = fromDisk.service.getSession(SESSION)?.findings ?? [];
     fromDisk.store.close();
 
     const { service, store } = today();
     try {
       expect(expected.map((finding) => finding.ruleId)).not.toContain("sensitive-read");
-      expect(service.getFindings(SESSION, "then")).toEqual(expected);
-      expect(service.getFindings(SESSION).map((finding) => finding.ruleId)).toContain("sensitive-read");
-      expect(service.getRuleVersions(SESSION)).toBe("different");
+      expect(service.getSession(SESSION, "then")?.findings).toEqual(expected);
+      expect(service.getSession(SESSION)?.findings.map((finding) => finding.ruleId)).toContain("sensitive-read");
+      expect(service.getSession(SESSION)?.ruleVersions).toBe("different");
     } finally {
       store.close();
     }
   });
 
   async function page(path: string): Promise<string> {
-    const { service, store } = today();
-    const server = new DashboardServer(
-      service,
-      new SessionListView(),
-      new TimelineView(),
-      new ActivityView(),
-      undefined,
-      new SessionPageView(new SessionHeaderView(), [new RulesNoticeView(), new FindingsPanelView(), new TimelineView()], new DetailPaneView()),
-    );
+    const { store, server } = today();
     try {
       return await (await fetch(`http://127.0.0.1:${await server.listen(0)}${path}`)).text();
     } finally {

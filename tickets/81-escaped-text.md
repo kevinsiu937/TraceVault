@@ -8,10 +8,12 @@ Refactor: every rendered page and report keeps its bytes. From the 15 Nov 2026 a
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] One escaping rule exists in the dashboard; no view defines its own
-- [ ] The report for the Phase 4 exit session is byte-identical before and after
-- [ ] The existing "escapes session data in the page" tests pass unchanged
-- [ ] A session whose title, command, file path, gap reason and tool description each hold `<script>` renders none of them as markup, on the session page, the configuration page and the report (Seam A)
-- [ ] Typecheck, build and the full suite pass
+- [x] One escaping rule exists in the dashboard; no view defines its own
+- [x] The report for the Phase 4 exit session is byte-identical before and after
+- [x] The existing "escapes session data in the page" tests pass unchanged
+- [x] A session whose title, command, file path, gap reason and tool description each hold `<script>` renders none of them as markup, on the session page, the configuration page and the report (Seam A)
+- [x] Typecheck, build and the full suite pass
+
+**Done (16 Nov 2026):** `src/dashboard/HtmlText.ts`. Every page and report of the Phase 4 exit database and five other probe databases (a copy of each) rendered the same bytes before and after.

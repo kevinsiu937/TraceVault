@@ -119,6 +119,15 @@ describe("seam B: tracevault harden tightens the project's own configuration", (
     expect(existsSync(join(directory, ".opencode"))).toBe(false);
   });
 
+  it("removes the configuration it created on undo, even after hardening twice", async () => {
+    await main(["harden", "--dir", directory]);
+    await main(["harden", "--dir", directory]);
+    await expect(main(["harden", "--dir", directory, "--undo"])).resolves.toBe(0);
+
+    expect(existsSync(config)).toBe(false);
+    expect(existsSync(join(directory, ".opencode"))).toBe(false);
+  });
+
   it("creates a configuration when the project has none, and undo removes it", async () => {
     await expect(main(["harden", "--dir", directory])).resolves.toBe(0);
     expect(findings(written())).toEqual([]);

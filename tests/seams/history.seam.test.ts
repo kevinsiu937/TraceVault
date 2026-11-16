@@ -7,17 +7,15 @@ import type { DatabaseSync as DatabaseSyncInstance } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
 import { HistoryImport } from "../../src/capture/HistoryImport.js";
 import { ImportedPartMapper } from "../../src/capture/ImportedPartMapper.js";
 import { OpenCodeStoreSource } from "../../src/capture/OpenCodeStoreSource.js";
 import { DenialSignal } from "../../src/capture/DenialSignal.js";
 import { PayloadDigest } from "../../src/capture/PayloadDigest.js";
-import { PluginHookCapture } from "../../src/capture/PluginHookCapture.js";
 import { ToolClassifier } from "../../src/capture/ToolClassifier.js";
+import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
 import { EventFactory } from "../../src/schema/EventFactory.js";
 import { InvestigationService } from "../../src/service/InvestigationService.js";
-import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 import { StoreVerifier } from "../../src/store/StoreVerifier.js";
 
@@ -110,17 +108,11 @@ describe("seam B: import the agent's own session store", () => {
 
   beforeEach(() => {
     directory = mkdtempSync(join(tmpdir(), "tracevault-history-"));
-    store = new SqliteEventStore(join(directory, "events.db"));
+    ({ service, store } = new ServiceAssembly().open(join(directory, "events.db")));
     source = new OpenCodeStoreSource(FIXTURE);
     const factory = new EventFactory("session_store");
     const classifier = new ToolClassifier(new PayloadDigest());
     importer = new HistoryImport(source, store, factory, new ImportedPartMapper(classifier, new DenialSignal()));
-    service = new InvestigationService(
-      new PluginHookCapture(new HookPayloadParser(), classifier, new EventFactory(), new DenialSignal()),
-      store,
-      new EventFactory(),
-      new TimelineBuilder(),
-    );
   });
 
   afterEach(() => {

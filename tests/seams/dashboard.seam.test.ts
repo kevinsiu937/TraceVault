@@ -4,18 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
 import { EventFactory } from "../../src/schema/EventFactory.js";
-import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
-import { PayloadDigest } from "../../src/capture/PayloadDigest.js";
-import { ToolClassifier } from "../../src/capture/ToolClassifier.js";
-import { PluginHookCapture } from "../../src/capture/PluginHookCapture.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
-import { InvestigationService } from "../../src/service/InvestigationService.js";
-import { ActivityView } from "../../src/dashboard/ActivityView.js";
 import { DashboardServer } from "../../src/dashboard/DashboardServer.js";
-import { SessionListView } from "../../src/dashboard/SessionListView.js";
-import { TimelineView } from "../../src/dashboard/TimelineView.js";
-import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 
 const BASH_FIXTURE = new URL("../fixtures/tool-execute-after-bash.json", import.meta.url);
 
@@ -25,6 +17,7 @@ describe("seam A: HTTP request in, rendered page out", () => {
   let store: SqliteEventStore;
   let server: DashboardServer;
   let baseUrl: string;
+  let errors: string[];
 
   function storeEvent(sessionId: string, timestamp: string): void {
     store.append(
@@ -49,14 +42,8 @@ describe("seam A: HTTP request in, rendered page out", () => {
 
   beforeEach(async () => {
     directory = mkdtempSync(join(tmpdir(), "tracevault-dashboard-"));
-    store = new SqliteEventStore(join(directory, "events.db"));
-    const service = new InvestigationService(
-      new PluginHookCapture(new HookPayloadParser(), new ToolClassifier(new PayloadDigest()), factory),
-      store,
-      factory,
-      new TimelineBuilder(),
-    );
-    server = new DashboardServer(service, new SessionListView(), new TimelineView(), new ActivityView());
+    errors = [];
+    ({ store, server } = new ServiceAssembly().open(join(directory, "events.db"), (line) => errors.push(line)));
     const port = await server.listen(0);
     baseUrl = `http://127.0.0.1:${port}`;
   });
@@ -109,6 +96,47 @@ describe("seam A: HTTP request in, rendered page out", () => {
 
     expect(response.status).toBe(400);
     expect(store.listSessions()).toHaveLength(1);
+  });
+
+  it("answers 500 to a request it cannot handle and prints one line naming the path and the error, not the body", async () => {
+    store.close();
+
+    const response = await fetch(`${baseUrl}/hook`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: readFileSync(BASH_FIXTURE, "utf8"),
+    });
+    store = new SqliteEventStore(join(directory, "events.db"));
+
+    expect(response.status).toBe(500);
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toMatch(/\/hook/);
+    expect(errors[0]).toMatch(/not open/);
+    expect(errors[0]).not.toContain("ses_e8cd974edffegftWNtrKV3BXUe");
+  });
+
+  it("answers 500, not 400, when the store fails while naming an MCP tool's server", async () => {
+    store.close();
+
+    const response = await fetch(`${baseUrl}/hook`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ hook: "tool.execute.after", input: { tool: "google_drive_search", sessionID: "ses_mcp", callID: "call_mcp", args: {} }, output: { title: "", metadata: {} } }),
+    });
+    store = new SqliteEventStore(join(directory, "events.db"));
+
+    expect(response.status).toBe(500);
+    expect(errors).toHaveLength(1);
+  });
+
+  it("cuts a long prompt's timeline row to 200 characters", async () => {
+    const text = `${"x".repeat(300)}END`;
+    store.append(factory.promptUser({ sessionId: "ses_long", correlationId: "msg_long", receivedAt: new Date("2026-10-25T10:00:00.000Z") }, { text, message_id: "msg_long", truncated: false }));
+
+    const page = await (await fetch(`${baseUrl}/sessions/ses_long`)).text();
+    const targets = [...page.matchAll(/<span class="target mono">([^<]*)<\/span>/g)].map((match) => match[1]);
+
+    expect(targets).toContain(`${"x".repeat(199)}…`);
   });
 
   it("escapes session data in the page", async () => {

@@ -1,14 +1,7 @@
 import type { TimelineEntry } from "../service/TimelineEntry.js";
 import type { SessionPane } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 export class DetailPaneView implements SessionPane {
   readonly id = "detail";
@@ -27,16 +20,16 @@ export class DetailPaneView implements SessionPane {
 
     return `${heading}
 <dl class="detail-list">
-<div><dt>Event id</dt><dd class="mono detail-target">${this.escape(selected.eventId)}</dd></div>
-<div><dt>Kind</dt><dd class="mono">${this.escape(selected.type)}</dd></div>
-<div><dt>Target</dt><dd class="mono detail-target">${this.escape(selected.target)}</dd></div>
-<div><dt>Outcome</dt><dd><span class="pill ${this.escape(selected.outcome)}">${this.escape(selected.outcome)}</span></dd></div>
+<div><dt>Event id</dt><dd class="mono detail-target">${HtmlText.escape(selected.eventId)}</dd></div>
+<div><dt>Kind</dt><dd class="mono">${HtmlText.escape(selected.type)}</dd></div>
+<div><dt>Target</dt><dd class="mono detail-target">${HtmlText.escape(selected.target)}</dd></div>
+<div><dt>Outcome</dt><dd><span class="pill ${HtmlText.escape(selected.outcome)}">${HtmlText.escape(selected.outcome)}</span></dd></div>
 ${duration}
-<div><dt>Time</dt><dd class="mono">${this.escape(this.wallClock(selected.time))}</dd></div>
+<div><dt>Time</dt><dd class="mono">${HtmlText.escape(this.wallClock(selected.time))}</dd></div>
 </dl>
 <details class="detail-json">
 <summary>JSON</summary>
-<pre>${this.escape(selected.detail)}</pre>
+<pre>${HtmlText.escape(selected.detail)}</pre>
 </details>`;
   }
 
@@ -73,9 +66,5 @@ ${duration}
 
   private wallClock(time: string): string {
     return time.length >= 19 ? time.slice(11, 19) : time;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

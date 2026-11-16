@@ -3,22 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
-import { PayloadDigest } from "../../src/capture/PayloadDigest.js";
-import { PluginHookCapture } from "../../src/capture/PluginHookCapture.js";
-import { ToolClassifier } from "../../src/capture/ToolClassifier.js";
-import { ActivityView } from "../../src/dashboard/ActivityView.js";
+import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
 import { DashboardServer } from "../../src/dashboard/DashboardServer.js";
-import { DetailPaneView } from "../../src/dashboard/DetailPaneView.js";
-import { SessionHeaderView } from "../../src/dashboard/SessionHeaderView.js";
-import { SessionListView } from "../../src/dashboard/SessionListView.js";
-import { SessionPageView } from "../../src/dashboard/SessionPageView.js";
-import { SessionRailView } from "../../src/dashboard/SessionRailView.js";
-import { TimelineView } from "../../src/dashboard/TimelineView.js";
-import { WaterfallView } from "../../src/dashboard/WaterfallView.js";
-import { EventFactory } from "../../src/schema/EventFactory.js";
 import { InvestigationService } from "../../src/service/InvestigationService.js";
-import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const SESSION = "ses_waterfall";
@@ -61,27 +48,7 @@ describe("seam A: the waterfall view", () => {
 
   beforeEach(async () => {
     directory = mkdtempSync(join(tmpdir(), "tracevault-waterfall-"));
-    store = new SqliteEventStore(join(directory, "events.db"));
-    const factory = new EventFactory();
-    const capture = new PluginHookCapture(
-      new HookPayloadParser(),
-      new ToolClassifier(new PayloadDigest()),
-      factory,
-    );
-    service = new InvestigationService(capture, store, factory, new TimelineBuilder());
-    const timelineView = new TimelineView();
-    server = new DashboardServer(
-      service,
-      new SessionListView(),
-      timelineView,
-      new ActivityView(),
-      undefined,
-      new SessionPageView(
-        new SessionHeaderView(),
-        [new SessionRailView(), timelineView, new WaterfallView()],
-        new DetailPaneView(),
-      ),
-    );
+    ({ service, store, server } = new ServiceAssembly().open(join(directory, "events.db")));
     baseUrl = `http://127.0.0.1:${await server.listen(0)}`;
   });
 

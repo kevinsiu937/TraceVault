@@ -1,5 +1,6 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { AgentConfigFile } from "./AgentConfigFile.js";
 
 interface ManifestJson {
   targetFile: string;
@@ -7,47 +8,46 @@ interface ManifestJson {
   previousContent: string | null;
 }
 
+/**
+ * One reversible change to one file, recorded at `path`. Applying keeps the
+ * earliest original, so a second run cannot make undo restore TraceVault's
+ * own bytes; undo puts that original back byte for byte, or deletes a file
+ * that did not exist. The record's format is the one earlier versions wrote.
+ */
 export class InstallManifest {
-  private targetFile = "";
-  private wasPresent = false;
-  private previous: string | null = null;
+  constructor(private readonly path: string) {}
 
-  constructor(targetFile?: string, existed?: boolean, previousContent?: string | null) {
-    if (targetFile !== undefined) {
-      this.targetFile = targetFile;
+  /** True while a change is recorded, in other words while there is something to undo. */
+  applied(): boolean {
+    return existsSync(this.path);
+  }
+
+  apply(target: string, content: string): void {
+    const file = new AgentConfigFile(target);
+    if (!this.applied()) {
+      const existed = file.exists();
+      const data: ManifestJson = { targetFile: target, existed, previousContent: existed ? file.read() : null };
+      mkdirSync(dirname(this.path), { recursive: true });
+      writeFileSync(this.path, `${JSON.stringify(data, null, 2)}\n`, "utf8");
     }
-    if (existed !== undefined) {
-      this.wasPresent = existed;
+    file.write(content);
+  }
+
+  /** Puts the recorded original back and forgets the change; says whether the file existed before. */
+  undo(): boolean {
+    const record = this.load();
+    const file = new AgentConfigFile(record.targetFile);
+    if (record.existed && record.previousContent !== null) {
+      file.write(record.previousContent);
+    } else {
+      file.delete();
     }
-    if (previousContent !== undefined) {
-      this.previous = previousContent;
-    }
+    rmSync(this.path, { force: true });
+    return record.existed;
   }
 
-  get target(): string {
-    return this.targetFile;
-  }
-
-  get existed(): boolean {
-    return this.wasPresent;
-  }
-
-  get previousContent(): string | null {
-    return this.previous;
-  }
-
-  save(path: string): void {
-    const data: ManifestJson = {
-      targetFile: this.targetFile,
-      existed: this.wasPresent,
-      previousContent: this.previous,
-    };
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, `${JSON.stringify(data, null, 2)}\n`, "utf8");
-  }
-
-  load(path: string): void {
-    const parsed = JSON.parse(readFileSync(path, "utf8")) as Partial<ManifestJson>;
+  private load(): ManifestJson {
+    const parsed = JSON.parse(readFileSync(this.path, "utf8")) as Partial<ManifestJson>;
     const previous = parsed.previousContent;
 
     if (
@@ -56,15 +56,9 @@ export class InstallManifest {
       (previous !== null && typeof previous !== "string") ||
       (parsed.existed && previous === null)
     ) {
-      throw new TypeError(`invalid install manifest: ${path}`);
+      throw new TypeError(`invalid install manifest: ${this.path}`);
     }
 
-    this.targetFile = parsed.targetFile;
-    this.wasPresent = parsed.existed;
-    this.previous = previous;
-  }
-
-  delete(path: string): void {
-    rmSync(path, { force: true });
+    return { targetFile: parsed.targetFile, existed: parsed.existed, previousContent: previous };
   }
 }

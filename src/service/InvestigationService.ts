@@ -1,18 +1,17 @@
 import type { CapturePort } from "../capture/CapturePort.js";
 import type { Event } from "../schema/Event.js";
 import type { EventFactory } from "../schema/EventFactory.js";
-import type { Finding } from "../schema/Finding.js";
 import type { EventStorePort } from "../store/EventStorePort.js";
+import type { StoredSession } from "../store/StoredSession.js";
 import { ActivityFilter } from "./ActivityFilter.js";
-import type { ConfigFinding } from "../schema/ConfigFinding.js";
-import type { ConfigurationSnapshot } from "./ConfigurationSnapshot.js";
 import type { InvestigationServicePort, RecordResult } from "./InvestigationServicePort.js";
 import type { SessionActivity } from "./SessionActivity.js";
 import { SessionConfiguration } from "./SessionConfiguration.js";
 import { SessionFindings } from "./SessionFindings.js";
-import type { RuleChoice, RuleHistoryPort, RuleVersions } from "./RuleHistoryPort.js";
+import type { RuleChoice, RuleHistoryPort } from "./RuleHistoryPort.js";
 import { SessionRules } from "./SessionRules.js";
 import type { SessionSummary } from "./SessionSummary.js";
+import type { SessionView } from "./SessionView.js";
 import type { TimelineBuilder } from "./TimelineBuilder.js";
 import type { TimelineEntry } from "./TimelineEntry.js";
 
@@ -45,9 +44,21 @@ export class InvestigationService implements InvestigationServicePort {
 
   recordHookPayload(raw: unknown, receivedAt: Date): RecordResult {
     let event: Event | null;
+    // A store that fails while capture asks for the server names is a service failure, not a bad payload.
+    let storeFailure: { readonly error: unknown } | null = null;
     try {
-      event = this.capture.toEvent(raw, receivedAt);
+      event = this.capture.toEvent(raw, receivedAt, (sessionId) => {
+        try {
+          return this.mcpServers(sessionId);
+        } catch (error) {
+          storeFailure = { error };
+          throw error;
+        }
+      });
     } catch {
+      if (storeFailure !== null) {
+        throw (storeFailure as { readonly error: unknown }).error;
+      }
       // An unreadable payload is a rejected capture, not a service failure.
       return "rejected";
     }
@@ -80,6 +91,14 @@ export class InvestigationService implements InvestigationServicePort {
     return "stored";
   }
 
+  /** The MCP server names in the session's latest recorded configuration. */
+  private mcpServers(sessionId: string): string[] {
+    const snapshots = this.store.listMatching({ sessionId, kinds: ["config.snapshot"], outcomes: [], operations: [], text: "" });
+    const latest = snapshots[snapshots.length - 1];
+    const mcp = latest?.type === "config.snapshot" ? latest.data.config["mcp"] : undefined;
+    return typeof mcp === "object" && mcp !== null ? Object.keys(mcp) : [];
+  }
+
   listSessions(): SessionSummary[] {
     const stored = this.store.listSessions();
     const activity = new Map<string, Event[]>();
@@ -96,26 +115,28 @@ export class InvestigationService implements InvestigationServicePort {
       }
     }
 
-    return stored.map((session) => {
-      const analysed = this.analyse(activity.get(session.sessionId) ?? []);
-      return {
-        sessionId: session.sessionId,
-        parentSessionId: session.parentSessionId,
-        title: session.title,
-        agentName: session.agentName,
-        startedAt: session.startedAt,
-        lastActivityAt: session.lastAt,
-        endedAt: session.lastType === "session.end" ? session.lastAt : null,
-        eventCount: session.eventCount,
-        gapCount: session.gapCount,
-        filesTouched: session.filesTouched,
-        errorCount: session.errorCount,
-        deniedCount: session.deniedCount,
-        lastOutcome: session.lastOutcome,
-        density: analysed.density,
-        durationMs: analysed.durationMs,
-      };
-    });
+    return stored.map((session) => this.summary(session, activity.get(session.sessionId) ?? []));
+  }
+
+  private summary(session: StoredSession, events: readonly Event[]): SessionSummary {
+    const analysed = this.analyse(events.filter((event) => !META_TYPES.has(event.type)));
+    return {
+      sessionId: session.sessionId,
+      parentSessionId: session.parentSessionId,
+      title: session.title,
+      agentName: session.agentName,
+      startedAt: session.startedAt,
+      lastActivityAt: session.lastAt,
+      endedAt: session.lastType === "session.end" ? session.lastAt : null,
+      eventCount: session.eventCount,
+      gapCount: session.gapCount,
+      filesTouched: session.filesTouched,
+      errorCount: session.errorCount,
+      deniedCount: session.deniedCount,
+      lastOutcome: session.lastOutcome,
+      density: analysed.density,
+      durationMs: analysed.durationMs,
+    };
   }
 
   private analyse(events: readonly Event[]): { density: number[]; durationMs: number | null } {
@@ -141,30 +162,37 @@ export class InvestigationService implements InvestigationServicePort {
     return this.store.hasSession(sessionId);
   }
 
-  getTimeline(sessionId: string, filter: ActivityFilter = ActivityFilter.none, rules: RuleChoice = "now"): TimelineEntry[] {
+  getSession(sessionId: string, rules: RuleChoice = "now", filter: ActivityFilter = ActivityFilter.none): SessionView | null {
+    const stored = this.store.listSessions();
+    const index = stored.findIndex((session) => session.sessionId === sessionId);
+    const own = stored[index];
+    if (own === undefined) {
+      return null;
+    }
+    const events = this.store.listBySession(sessionId);
+    const scanners = this.rules.for(sessionId, rules);
+    const allEntries = scanners.findings.flag(this.timeline.build(events), events);
+    const known = this.store.listMatching({ sessionId: null, kinds: ["mcp.tools"], outcomes: [], operations: [], text: "" });
+    return {
+      summary: this.summary(own, events),
+      allEntries,
+      entries: filter.active ? scanners.findings.flag(this.timeline.build(this.store.listMatching(filter.toQuery(sessionId))), events) : allEntries,
+      findings: scanners.findings.of(events),
+      configuration: this.configuration.latest(events),
+      configFindings: scanners.configuration.findings(events, known.filter((event) => event.type === "mcp.tools")),
+      ruleVersions: this.rules.versions(sessionId, events),
+      previousSessionId: stored[index + 1]?.sessionId ?? null,
+      nextSessionId: stored[index - 1]?.sessionId ?? null,
+      children: stored
+        .filter((session) => session.parentSessionId === sessionId)
+        .map((session) => this.summary(session, this.store.listBySession(session.sessionId))),
+    };
+  }
+
+  getTimeline(sessionId: string, filter: ActivityFilter = ActivityFilter.none): TimelineEntry[] {
     const session = this.store.listBySession(sessionId);
     const events = filter.active ? this.store.listMatching(filter.toQuery(sessionId)) : session;
-    return this.rules.for(sessionId, rules).findings.flag(this.timeline.build(events), session);
-  }
-
-  getFindings(sessionId: string, rules: RuleChoice = "now"): Finding[] {
-    return this.rules.for(sessionId, rules).findings.of(this.store.listBySession(sessionId));
-  }
-
-  getRuleVersions(sessionId: string): RuleVersions {
-    return this.rules.versions(sessionId, this.store.listBySession(sessionId));
-  }
-
-  getConfiguration(sessionId: string): ConfigurationSnapshot | null {
-    return this.configuration.latest(this.store.listBySession(sessionId));
-  }
-
-  getConfigFindings(sessionId: string, rules: RuleChoice = "now"): ConfigFinding[] {
-    const known = this.store.listMatching({ sessionId: null, kinds: ["mcp.tools"], outcomes: [], operations: [], text: "" });
-    return this.rules.for(sessionId, rules).configuration.findings(
-      this.store.listBySession(sessionId),
-      known.filter((event) => event.type === "mcp.tools"),
-    );
+    return this.rules.for(sessionId, "now").findings.flag(this.timeline.build(events), session);
   }
 
   listActivity(filter: ActivityFilter = ActivityFilter.none): SessionActivity[] {

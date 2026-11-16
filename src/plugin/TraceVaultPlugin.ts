@@ -85,7 +85,7 @@ export interface TraceVaultHooks {
   event: EventHook;
 }
 
-const PROMPT_LIMIT = 200;
+const PROMPT_LIMIT = 4000;
 
 export class TraceVaultPlugin {
   private readonly delivery: SessionDelivery;
@@ -167,7 +167,7 @@ export class TraceVaultPlugin {
           return;
         }
 
-        // The text is the evidence, so it is kept; 200 chars is the readable cap for one timeline row.
+        // The text is the evidence a rule reads, so most of it is kept; the timeline row cuts it for reading.
         const truncated = text.length > PROMPT_LIMIT;
         await this.send(
           {

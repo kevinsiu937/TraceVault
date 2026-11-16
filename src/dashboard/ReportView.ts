@@ -8,14 +8,7 @@ import { PlainWords } from "./PlainWords.js";
 import { ReportConfigurationView } from "./ReportConfigurationView.js";
 import { ReportEventsView } from "./ReportEventsView.js";
 import { ReportFindingsView } from "./ReportFindingsView.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 const GLOSSARY: readonly [string, string][] = [
   ["AI agent", "A program that uses an AI model to carry out tasks on a computer, such as running commands and editing files."],
@@ -46,14 +39,12 @@ export class ReportView {
   ) {}
 
   render(service: InvestigationServicePort, sessionId: string, rules: RuleChoice = "now"): string {
-    const summary = service.listSessions().find((session) => session.sessionId === sessionId);
-    if (summary === undefined) {
+    const view = service.getSession(sessionId, rules);
+    if (view === null) {
       throw new Error(`no session '${sessionId}'`);
     }
-    const entries = service.getTimeline(sessionId, undefined, rules);
-    const findings = service.getFindings(sessionId, rules);
-    const configFindings = service.getConfigFindings(sessionId, rules);
-    const recorded = service.getConfiguration(sessionId) !== null;
+    const { summary, allEntries: entries, findings, configFindings } = view;
+    const recorded = view.configuration !== null;
     const titles = new Map([...findings, ...configFindings].map((finding) => [finding.ruleId, finding.title]));
 
     return `<!doctype html>
@@ -61,13 +52,13 @@ export class ReportView {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TraceVault report · ${this.escape(sessionId)}</title>
+<title>TraceVault report · ${HtmlText.escape(sessionId)}</title>
 <style>${this.styles()}</style>
 </head>
 <body>
 <main>
 ${this.header(summary, entries.length, [...findings, ...configFindings][0]?.ruleSetDigest)}
-${this.rulesNotice(rules, service.getRuleVersions(sessionId))}
+${this.rulesNotice(rules, view.ruleVersions)}
 ${this.inShort(entries, this.findings.needingALook(entries, findings), recorded, configFindings)}
 ${this.findings.render(entries, findings)}
 ${this.configuration.render(recorded, configFindings)}
@@ -85,18 +76,18 @@ ${this.glossary()}
       summary.endedAt === null
         ? "still running, or its end was not recorded"
         : summary.endedAt.slice(0, 10) === summary.startedAt.slice(0, 10) // both are UTC ISO timestamps
-          ? `<time datetime="${this.escape(summary.endedAt)}">${this.escape(this.words.clock(summary.endedAt))} UTC</time>`
+          ? `<time datetime="${HtmlText.escape(summary.endedAt)}">${HtmlText.escape(this.words.clock(summary.endedAt))} UTC</time>`
           : this.when(summary.endedAt);
     const technical: [string, string][] = [
-      ["Session", `<code>${this.escape(summary.sessionId)}</code>`],
+      ["Session", `<code>${HtmlText.escape(summary.sessionId)}</code>`],
       // shortcut: the digest comes from a finding, so a session no rule matched cannot name it; add a port method if a reader needs it there.
-      ["Rule version", digest === undefined ? "No rule matched this session" : `<code>${this.escape(digest)}</code>`],
+      ["Rule version", digest === undefined ? "No rule matched this session" : `<code>${HtmlText.escape(digest)}</code>`],
       ["Made by", "TraceVault, from recorded actions and written rules. Nothing here is a guess."],
     ];
     return `<header class="report-header">
 <p class="eyebrow">TraceVault session report</p>
 <h1>What an AI agent did</h1>
-<p class="meta">Agent <strong>${this.escape(summary.agentName)}</strong> · ${this.when(summary.startedAt)} to ${end} · <strong>${actions}</strong> ${actions === 1 ? "action" : "actions"} recorded</p>
+<p class="meta">Agent <strong>${HtmlText.escape(summary.agentName)}</strong> · ${this.when(summary.startedAt)} to ${end} · <strong>${actions}</strong> ${actions === 1 ? "action" : "actions"} recorded</p>
 <details><summary>Technical details</summary>${this.terms(technical)}</details>
 </header>`;
   }
@@ -147,7 +138,7 @@ ${this.glossary()}
   }
 
   private when(iso: string): string {
-    return `<time datetime="${this.escape(iso)}">${this.escape(this.words.dateTime(iso))}</time>`;
+    return `<time datetime="${HtmlText.escape(iso)}">${HtmlText.escape(this.words.dateTime(iso))}</time>`;
   }
 
   /** Minimal, high-contrast and readable (ui-ux-pro-max "Minimalism & Swiss Style", slate palette), with system fonts so nothing is fetched. */
@@ -192,9 +183,5 @@ tr:target{outline:2px solid var(--ring)}
 .rules-notice{margin:16px 0 0;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--muted);font-size:14px}
 @media (max-width:480px){h1{font-size:24px}.status div{flex-direction:column;gap:2px}.status dd{text-align:left}}
 @media print{body{background:#fff;font-size:12px}main{max-width:none;padding:0}li,tr{break-inside:avoid}}`;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

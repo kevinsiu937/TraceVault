@@ -1,26 +1,24 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { ActivityView } from "../dashboard/ActivityView.js";
-import { DashboardServer } from "../dashboard/DashboardServer.js";
-import { DetailPaneView } from "../dashboard/DetailPaneView.js";
-import { FileRailView } from "../dashboard/FileRailView.js";
-import { FindingsPanelView } from "../dashboard/FindingsPanelView.js";
-import { RulesNoticeView } from "../dashboard/RulesNoticeView.js";
-import { SkippedCallsView } from "../dashboard/SkippedCallsView.js";
-import { GraphView } from "../dashboard/GraphView.js";
-import { ReplayBarView } from "../dashboard/ReplayBarView.js";
-import { SessionHeaderView } from "../dashboard/SessionHeaderView.js";
-import { SessionListView } from "../dashboard/SessionListView.js";
-import { SessionPageView } from "../dashboard/SessionPageView.js";
-import { SubagentPortalView } from "../dashboard/SubagentPortalView.js";
-import { TimelineView } from "../dashboard/TimelineView.js";
-import { WaterfallView } from "../dashboard/WaterfallView.js";
+import type { CliCommand } from "./CliCommand.js";
+import { CommandOptions } from "./CommandOptions.js";
 import { HistoryImportCommand } from "./HistoryImportCommand.js";
 import { ServiceAssembly } from "./ServiceAssembly.js";
 
-/** Assembles the local service (capture, scanners, dashboard) and starts it on 127.0.0.1. */
-export class RunCommand {
-  async run(port: number, dbPath: string): Promise<number> {
+const DEFAULT_PORT = 4319;
+
+/** `tracevault run`: assembles the local service (capture, scanners, dashboard) and starts it on 127.0.0.1. */
+export class RunCommand implements CliCommand {
+  readonly name = "run";
+  readonly usageOnError = true;
+  readonly usage = `  tracevault run [--port <n>] [--db <path>]   start the local service`;
+
+  constructor(private readonly defaultDbPath: string) {}
+
+  async run(args: readonly string[]): Promise<number> {
+    const flags = CommandOptions.parse(args, { "--port": "port", "--db": "file" });
+    const port = Number(flags["--port"] ?? DEFAULT_PORT);
+    const dbPath = flags["--db"] ?? this.defaultDbPath;
     let assembly: ServiceAssembly;
     try {
       assembly = new ServiceAssembly();
@@ -29,20 +27,7 @@ export class RunCommand {
       return 1;
     }
     mkdirSync(dirname(dbPath), { recursive: true });
-    const { service, store } = assembly.open(dbPath);
-    const timelineView = new TimelineView();
-    const server = new DashboardServer(
-      service,
-      new SessionListView(),
-      timelineView,
-      new ActivityView(),
-      undefined,
-      new SessionPageView(
-        new SessionHeaderView(),
-        [new RulesNoticeView(), new SkippedCallsView(), new FindingsPanelView(), new FileRailView(), timelineView, new WaterfallView(), new GraphView(), new SubagentPortalView(), new ReplayBarView()],
-        new DetailPaneView(),
-      ),
-    );
+    const { store, server } = assembly.open(dbPath);
 
     let importLine: string;
     try {

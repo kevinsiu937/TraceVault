@@ -3,14 +3,7 @@ import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
 import type { SessionParams } from "./SessionParams.js";
 import { WaterfallZoom } from "./WaterfallZoom.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 const TICKS = [0, 1, 2, 3, 4] as const;
 
@@ -65,7 +58,7 @@ export class WaterfallView implements SessionPaneView {
     const ticks = TICKS.map((tick) => {
       const left = this.percent((tick * 100) / (TICKS.length - 1));
       const at = t0 + (span * tick) / (TICKS.length - 1);
-      return `<span class="wf-tick" style="left:${left}%">${this.escape(this.wallClock(at))}</span>`;
+      return `<span class="wf-tick" style="left:${left}%">${HtmlText.escape(this.wallClock(at))}</span>`;
     }).join("");
     const gridlines = TICKS.map((tick) => {
       const left = this.percent((tick * 100) / (TICKS.length - 1));
@@ -152,8 +145,8 @@ ${this.zoom.styles()}`;
     const href = state.href(basePath, { view: "waterfall", event: entry.eventId });
     const label = `${this.wallClock(time)} ${entry.type} ${entry.target} ${entry.outcome} ${this.durationLabel(duration)}`;
 
-    return `<li class="wf-lane" data-event-id="${this.escape(entry.eventId)}" data-kind="${this.escape(entry.type)}" data-outcome="${this.escape(entry.outcome)}">
-<a class="${classes.join(" ")}" href="${this.escape(href)}" style="left:${left}%;width:${width}%" data-left="${left}" data-width="${width}" data-kind="${this.escape(entry.type)}" data-outcome="${this.escape(entry.outcome)}" data-event-id="${this.escape(entry.eventId)}"${selected ? ' aria-current="true"' : ""} aria-label="${this.escape(label)}" title="${this.escape(label)}"></a>
+    return `<li class="wf-lane" data-event-id="${HtmlText.escape(entry.eventId)}" data-kind="${HtmlText.escape(entry.type)}" data-outcome="${HtmlText.escape(entry.outcome)}">
+<a class="${classes.join(" ")}" href="${HtmlText.escape(href)}" style="left:${left}%;width:${width}%" data-left="${left}" data-width="${width}" data-kind="${HtmlText.escape(entry.type)}" data-outcome="${HtmlText.escape(entry.outcome)}" data-event-id="${HtmlText.escape(entry.eventId)}"${selected ? ' aria-current="true"' : ""} aria-label="${HtmlText.escape(label)}" title="${HtmlText.escape(label)}"></a>
 </li>`;
   }
 
@@ -177,8 +170,8 @@ ${this.zoom.styles()}`;
     const href = state.href(basePath, { view: "waterfall", event: entry.eventId });
     const label = `capture gap ${reason} from ${this.wallClock(from)} to ${this.wallClock(to)}`;
 
-    return `<li class="wf-lane" data-event-id="${this.escape(entry.eventId)}" data-kind="capture.gap" data-outcome="gap">
-<a class="wf-gap${selected ? " selected" : ""}" href="${this.escape(href)}" style="left:${left}%;width:${width}%" data-from="${this.escape(rawFrom)}" data-to="${this.escape(rawTo)}" data-kind="capture.gap" data-event-id="${this.escape(entry.eventId)}"${selected ? ' aria-current="true"' : ""} aria-label="${this.escape(label)}"><span class="wf-gap-reason">${this.escape(reason)}</span></a>
+    return `<li class="wf-lane" data-event-id="${HtmlText.escape(entry.eventId)}" data-kind="capture.gap" data-outcome="gap">
+<a class="wf-gap${selected ? " selected" : ""}" href="${HtmlText.escape(href)}" style="left:${left}%;width:${width}%" data-from="${HtmlText.escape(rawFrom)}" data-to="${HtmlText.escape(rawTo)}" data-kind="capture.gap" data-event-id="${HtmlText.escape(entry.eventId)}"${selected ? ' aria-current="true"' : ""} aria-label="${HtmlText.escape(label)}"><span class="wf-gap-reason">${HtmlText.escape(reason)}</span></a>
 </li>`;
   }
 
@@ -214,9 +207,5 @@ ${this.zoom.styles()}`;
 
   private durationLabel(milliseconds: number): string {
     return milliseconds < 1000 ? `${Math.round(milliseconds)}ms` : `${(milliseconds / 1000).toFixed(1)}s`;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

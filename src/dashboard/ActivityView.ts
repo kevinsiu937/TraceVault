@@ -4,14 +4,7 @@ import { DashboardStyle } from "./DashboardStyle.js";
 import { FilterBar } from "./FilterBar.js";
 import { FilterParams } from "./FilterParams.js";
 import { TimelineRow } from "./TimelineRow.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 export class ActivityView {
   private readonly params = new FilterParams();
@@ -58,18 +51,14 @@ ${body}
 
   private group(group: SessionActivity): string {
     const title = group.title.length > 0 ? group.title : group.sessionId;
-    return `<section class="group" data-session-id="${this.escape(group.sessionId)}">
+    return `<section class="group" data-session-id="${HtmlText.escape(group.sessionId)}">
 <header class="group-head">
-<div><a href="/sessions/${encodeURIComponent(group.sessionId)}">${this.escape(title)}</a><div class="muted mono">${this.escape(group.sessionId)}</div></div>
-<div class="muted">${this.escape(group.agentName)} · ${group.entries.length} matching</div>
+<div><a href="/sessions/${encodeURIComponent(group.sessionId)}">${HtmlText.escape(title)}</a><div class="muted mono">${HtmlText.escape(group.sessionId)}</div></div>
+<div class="muted">${HtmlText.escape(group.agentName)} · ${group.entries.length} matching</div>
 </header>
-<ol class="timeline" aria-label="Timeline for ${this.escape(group.sessionId)}">
+<ol class="timeline" aria-label="Timeline for ${HtmlText.escape(group.sessionId)}">
 ${group.entries.map((entry) => this.row.render(entry)).join("\n")}
 </ol>
 </section>`;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

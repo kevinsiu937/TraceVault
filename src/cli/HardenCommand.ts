@@ -34,11 +34,7 @@ export class HardenCommand {
     const scanner = new StaticScanner(new ConfigRuleLoader().loadDirectory(this.rulesDir));
     const { config, changes } = new ConfigHardener().harden(current);
 
-    const manifestPath = join(this.projectDir, MANIFEST_FILE);
-    if (!existsSync(manifestPath)) {
-      new InstallManifest(join(this.projectDir, CONFIG_FILE), existed, text).save(manifestPath);
-    }
-    file.write(`${JSON.stringify(config, null, 2)}\n`);
+    this.manifest().apply(join(this.projectDir, CONFIG_FILE), `${JSON.stringify(config, null, 2)}\n`);
 
     const snapshot = new EventFactory().configSnapshot({ sessionId: "harden", correlationId: null, receivedAt: new Date(0) }, { digest: "sha256:harden", config });
     if (snapshot.type !== "config.snapshot") {
@@ -60,29 +56,25 @@ export class HardenCommand {
 
   /** True while an original is saved, in other words while there is something to undo. */
   hardened(): boolean {
-    return existsSync(join(this.projectDir, MANIFEST_FILE));
+    return this.manifest().applied();
   }
 
   undo(): string {
-    const manifestPath = join(this.projectDir, MANIFEST_FILE);
-    if (!existsSync(manifestPath)) {
+    const manifest = this.manifest();
+    if (!manifest.applied()) {
       throw new Error(`nothing to undo: no ${MANIFEST_FILE.replaceAll("\\", "/")} in ${this.projectDir}`);
     }
-    const manifest = new InstallManifest();
-    manifest.load(manifestPath);
-    const file = new AgentConfigFile(manifest.target);
-    if (manifest.existed && manifest.previousContent !== null) {
-      file.write(manifest.previousContent);
-    } else {
-      file.delete();
-    }
-    manifest.delete(manifestPath);
+    const existed = manifest.undo();
     // shortcut: an empty .opencode folder is removed even if it existed empty before; track the folder in the manifest if that matters.
-    const folder = dirname(manifestPath);
+    const folder = join(this.projectDir, dirname(MANIFEST_FILE));
     if (existsSync(folder) && readdirSync(folder).length === 0) {
       rmdirSync(folder);
     }
-    return manifest.existed ? `restored the original ${CONFIG_FILE}` : `removed the ${CONFIG_FILE} harden created`;
+    return existed ? `restored the original ${CONFIG_FILE}` : `removed the ${CONFIG_FILE} harden created`;
+  }
+
+  private manifest(): InstallManifest {
+    return new InstallManifest(join(this.projectDir, MANIFEST_FILE));
   }
 
   private static parse(text: string): Record<string, unknown> {

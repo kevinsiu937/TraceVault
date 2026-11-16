@@ -2,14 +2,7 @@ import { DashboardStyle } from "./DashboardStyle.js";
 import type { SessionHeaderRenderer } from "./SessionHeaderView.js";
 import type { SessionPane, SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 /**
  * The cockpit shell. It knows four slots and the right-hand detail pane, and
@@ -35,7 +28,7 @@ export class SessionPageView {
       : `<nav class="views" aria-label="Views">${center
           .map((pane) => {
             const current = pane === active;
-            return `<a class="view-tab${current ? " active" : ""}" href="${this.escape(context.state.href(basePath, { view: pane.id }))}"${current ? ' aria-current="true"' : ""}>${this.escape(pane.label)}</a>`;
+            return `<a class="view-tab${current ? " active" : ""}" href="${HtmlText.escape(context.state.href(basePath, { view: pane.id }))}"${current ? ' aria-current="true"' : ""}>${HtmlText.escape(pane.label)}</a>`;
           })
           .join("")}</nav>`;
     const css = [
@@ -61,7 +54,7 @@ export class SessionPageView {
 <style>
 ${css}
 </style>
-<title>TraceVault — ${this.escape(title)}</title>
+<title>TraceVault — ${HtmlText.escape(title)}</title>
 </head>
 <body class="cockpit">
 <div class="cockpit-shell">
@@ -111,9 +104,5 @@ ${script.length > 0 ? `<script>\n${script}\n</script>` : ""}
   .cockpit .rail{display:flex;align-items:baseline;gap:12px;padding:12px 14px}
   .cockpit .rail .pane-empty{margin:0}
 }`;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

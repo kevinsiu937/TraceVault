@@ -1,13 +1,6 @@
 import type { Turn } from "../service/Turn.js";
 import type { ReplayTurnState } from "./ReplayTimeline.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 const PROMPT_LIMIT = 90;
 
@@ -38,7 +31,7 @@ export class TurnDivider {
       meta.push(`${denied} denied`);
     }
 
-    return `<li class="${classes.join(" ")}"><span class="turn-prompt">${this.escape(this.truncate(turn.prompt ?? turn.label))}</span><span class="turn-meta">${this.escape(meta.join(" · "))}</span></li>`;
+    return `<li class="${classes.join(" ")}"><span class="turn-prompt">${HtmlText.escape(this.truncate(turn.prompt ?? turn.label))}</span><span class="turn-meta">${HtmlText.escape(meta.join(" · "))}</span></li>`;
   }
 
   private duration(turn: Turn): string {
@@ -56,9 +49,5 @@ export class TurnDivider {
 
   private truncate(text: string): string {
     return text.length <= PROMPT_LIMIT ? text : `${text.slice(0, PROMPT_LIMIT - 1)}…`;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

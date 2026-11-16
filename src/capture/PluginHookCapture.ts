@@ -16,7 +16,7 @@ export class PluginHookCapture implements CapturePort {
     private readonly digest: PayloadDigest = new PayloadDigest(),
   ) {}
 
-  toEvent(raw: unknown, receivedAt: Date): Event | null {
+  toEvent(raw: unknown, receivedAt: Date, mcpServers: (sessionId: string) => readonly string[] = () => []): Event | null {
     const hook = this.parser.parse(raw);
 
     if (hook.kind === "session.started") {
@@ -90,7 +90,7 @@ export class PluginHookCapture implements CapturePort {
           : "ok";
 
     const exitCode = hook.kind === "tool.after" ? hook.exitCode : null;
-    const classified = this.classifier.classify(hook.tool, hook.args, outcome, exitCode);
+    const classified = this.classifier.classify(hook.tool, hook.args, outcome, exitCode, () => mcpServers(hook.sessionID));
 
     return this.factory.fromClassified(
       {

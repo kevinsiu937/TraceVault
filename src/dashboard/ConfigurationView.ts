@@ -1,20 +1,13 @@
 import type { ConfigFinding, RuleSource } from "../schema/ConfigFinding.js";
 import type { ConfigurationSnapshot } from "../service/ConfigurationSnapshot.js";
 import { DashboardStyle } from "./DashboardStyle.js";
+import { HtmlText } from "./HtmlText.js";
 
 const SOURCE_NAMES: Record<RuleSource["kind"], string> = {
   "owasp-mcp": "OWASP MCP",
   "owasp-agentic": "OWASP Agentic",
   cve: "",
   baseline: "",
-};
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
 };
 
 /** The configuration a session ran under, secrets already replaced, and the static findings on it. */
@@ -25,11 +18,11 @@ export class ConfigurationView {
     const name = title.length > 0 ? title : sessionId;
     const body = snapshot === null
       ? `<p class="empty">No configuration recorded. The session was imported from OpenCode's history, or captured before TraceVault recorded configurations.</p>`
-      : `<p class="sub">Recorded <time datetime="${this.escape(snapshot.recordedAt)}">${this.escape(snapshot.recordedAt)}</time> · <code>${this.escape(snapshot.digest)}</code></p>
+      : `<p class="sub">Recorded <time datetime="${HtmlText.escape(snapshot.recordedAt)}">${HtmlText.escape(snapshot.recordedAt)}</time> · <code>${HtmlText.escape(snapshot.digest)}</code></p>
 ${this.findings(findings)}
 ${this.mcpTools(snapshot.mcpTools)}
 <p class="sub">Secret values were replaced with <code>[redacted]</code> before they left OpenCode.</p>
-<pre class="config-json">${this.escape(JSON.stringify(snapshot.config, null, 2))}</pre>`;
+<pre class="config-json">${HtmlText.escape(JSON.stringify(snapshot.config, null, 2))}</pre>`;
 
     return `<!doctype html>
 <html lang="en">
@@ -46,11 +39,11 @@ ${this.style.css()}
 .mcp-server ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .config-json{margin:16px 0 0;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);font-size:12px;line-height:1.5;overflow:auto}
 </style>
-<title>TraceVault — Configuration — ${this.escape(name)}</title>
+<title>TraceVault — Configuration — ${HtmlText.escape(name)}</title>
 </head>
 <body>
 <main>
-<a class="back" href="/sessions/${encodeURIComponent(sessionId)}">← ${this.escape(name)}</a>
+<a class="back" href="/sessions/${encodeURIComponent(sessionId)}">← ${HtmlText.escape(name)}</a>
 <h1>Configuration</h1>
 ${body}
 </main>
@@ -70,11 +63,11 @@ ${body}
         const source = [SOURCE_NAMES[finding.source.kind], finding.source.id, finding.source.title].filter((part) => part !== undefined && part.length > 0).join(" ");
         const subject = { agent: "Agent", "mcp-server": "MCP server", tool: "Tool" }[finding.subjectKind];
         const evidence = finding.evidence
-          .map((item) => `<li>${item.label === undefined ? "" : `${this.escape(item.label)}: `}<code>${this.escape(item.value)}</code>, from <code>${this.escape(item.entry)}</code></li>`)
+          .map((item) => `<li>${item.label === undefined ? "" : `${HtmlText.escape(item.label)}: `}<code>${HtmlText.escape(item.value)}</code>, from <code>${HtmlText.escape(item.entry)}</code></li>`)
           .join("");
-        return `<li class="config-finding" data-rule="${this.escape(finding.ruleId)}" data-severity="${finding.severity}"><span class="pill">${finding.severity}</span> <strong>${this.escape(finding.ruleId)}</strong> · ${this.escape(source)}
-<p>${subject} <code>${this.escape(finding.subject)}</code>. ${this.escape(finding.explanation)}</p>
-<p class="config-recommendation">What to do: ${this.escape(finding.recommendation)}</p><ul>${evidence}</ul></li>`;
+        return `<li class="config-finding" data-rule="${HtmlText.escape(finding.ruleId)}" data-severity="${finding.severity}"><span class="pill">${finding.severity}</span> <strong>${HtmlText.escape(finding.ruleId)}</strong> · ${HtmlText.escape(source)}
+<p>${subject} <code>${HtmlText.escape(finding.subject)}</code>. ${HtmlText.escape(finding.explanation)}</p>
+<p class="config-recommendation">What to do: ${HtmlText.escape(finding.recommendation)}</p><ul>${evidence}</ul></li>`;
       })
       .join("\n")}</ol>`;
   }
@@ -89,15 +82,11 @@ ${body}
           .map((tool) => {
             const name = typeof tool["name"] === "string" ? tool["name"] : "";
             const description = typeof tool["description"] === "string" ? tool["description"] : "";
-            return `<li><details><summary><code>${this.escape(name)}</code></summary><p>${this.escape(description)}</p><pre class="config-json">${this.escape(JSON.stringify(tool["inputSchema"] ?? {}, null, 2))}</pre></details></li>`;
+            return `<li><details><summary><code>${HtmlText.escape(name)}</code></summary><p>${HtmlText.escape(description)}</p><pre class="config-json">${HtmlText.escape(JSON.stringify(tool["inputSchema"] ?? {}, null, 2))}</pre></details></li>`;
           })
           .join("");
-        return `<section class="mcp-server"><h3><code>${this.escape(server)}</code> · ${tools.length} ${tools.length === 1 ? "tool" : "tools"}</h3><ul>${items}</ul></section>`;
+        return `<section class="mcp-server"><h3><code>${HtmlText.escape(server)}</code> · ${tools.length} ${tools.length === 1 ? "tool" : "tools"}</h3><ul>${items}</ul></section>`;
       })
       .join("\n");
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

@@ -3,20 +3,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { HookPayloadParser } from "../../src/capture/HookPayloadParser.js";
-import { PayloadDigest } from "../../src/capture/PayloadDigest.js";
-import { PluginHookCapture } from "../../src/capture/PluginHookCapture.js";
-import { ToolClassifier } from "../../src/capture/ToolClassifier.js";
-import { main } from "../../src/cli/index.js";
 import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
-import { ActivityView } from "../../src/dashboard/ActivityView.js";
-import { DashboardServer } from "../../src/dashboard/DashboardServer.js";
-import { SessionListView } from "../../src/dashboard/SessionListView.js";
-import { TimelineView } from "../../src/dashboard/TimelineView.js";
+import { main } from "../../src/cli/index.js";
 import type { Event } from "../../src/schema/Event.js";
 import { EventFactory } from "../../src/schema/EventFactory.js";
-import { InvestigationService } from "../../src/service/InvestigationService.js";
-import { TimelineBuilder } from "../../src/service/TimelineBuilder.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const FIXTURES = join(import.meta.dirname, "../fixtures");
@@ -56,14 +46,7 @@ describe("seam A: a session in, one self-contained report file out", () => {
 
   /** Records hook payloads into the test database through the real capture path. */
   function record(...payloads: unknown[]): void {
-    const store = new SqliteEventStore(db);
-    const factory = new EventFactory();
-    const service = new InvestigationService(
-      new PluginHookCapture(new HookPayloadParser(), new ToolClassifier(new PayloadDigest()), factory),
-      store,
-      factory,
-      new TimelineBuilder(),
-    );
+    const { service, store } = new ServiceAssembly().open(db);
     for (const payload of payloads) {
       expect(service.recordHookPayload(payload, new Date("2026-11-09T14:30:00.000Z"))).toBe("stored");
     }
@@ -326,8 +309,7 @@ describe("seam A: a session in, one self-contained report file out", () => {
 
   describe("the Export report link", () => {
     async function served<T>(use: (baseUrl: string) => Promise<T>): Promise<T> {
-      const { service, store } = new ServiceAssembly().open(db);
-      const server = new DashboardServer(service, new SessionListView(), new TimelineView(), new ActivityView());
+      const { store, server } = new ServiceAssembly().open(db);
       try {
         return await use(`http://127.0.0.1:${await server.listen(0)}`);
       } finally {
@@ -357,6 +339,37 @@ describe("seam A: a session in, one self-contained report file out", () => {
 
     it("answers 404 for an unknown session", async () => {
       expect(await served(async (baseUrl) => (await fetch(`${baseUrl}/sessions/ses_unknown/report`)).status)).toBe(404);
+    });
+
+    it("shows markup in a title, command, file path, gap reason and tool description as text on every page", async () => {
+      const raw = "<script>alert(1)</script>";
+      const escaped = "&lt;script&gt;alert(1)&lt;/script&gt;";
+      const factory = new EventFactory();
+      const meta = (seconds: number, correlationId: string | null = null) => ({ sessionId: "ses_markup", correlationId, receivedAt: new Date(Date.UTC(2026, 10, 9, 14, 0, seconds)) });
+      const store = new SqliteEventStore(db);
+      store.append(factory.sessionStart({ ...meta(0), title: `title ${raw}` }));
+      store.append(factory.fromClassified(meta(1, "call_cmd"), { type: "hook.script", data: { hook: "tool.execute.after", target_tool: "bash", target: `echo ${raw}`, exit_code: 0, outcome: "ok" } }));
+      store.append(factory.fromClassified(meta(2, "call_path"), { type: "document.access", data: { path: `/w/${raw}.txt`, operation: "read", outcome: "ok" } }));
+      store.append(factory.captureGap(meta(3), { from: "2026-11-09T14:00:02.000Z", to: "2026-11-09T14:00:03.000Z", reason: `gap ${raw}` }));
+      store.append(factory.configSnapshot(meta(4), { digest: "c1", config: {} }));
+      store.append(factory.mcpTools(meta(5), { server: "probe", digest: "d1", tools: [{ name: "t", description: `tool ${raw}` }] }));
+      store.close();
+
+      const pages = await served(async (baseUrl) =>
+        Promise.all(["", "/config", "/report"].map(async (suffix) => (await fetch(`${baseUrl}/sessions/ses_markup${suffix}`)).text())),
+      );
+
+      for (const page of pages) {
+        expect(page).not.toContain(raw);
+      }
+      const [session = "", config = "", file = ""] = pages;
+      for (const text of [`title ${escaped}`, `echo ${escaped}`, `/w/${escaped}.txt`, `gap ${escaped}`]) {
+        expect(session).toContain(text);
+      }
+      expect(config).toContain(`tool ${escaped}`);
+      for (const text of [`echo ${escaped}`, `/w/${escaped}.txt`, `gap ${escaped}`]) {
+        expect(file).toContain(text);
+      }
     });
   });
 });

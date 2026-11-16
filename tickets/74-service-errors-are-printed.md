@@ -4,8 +4,8 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] A request whose handling throws answers 500 and writes one line naming the path and the error (Seam A)
-- [ ] The line holds no request body
-- [ ] Typecheck, build and the full suite pass
+- [x] A request whose handling throws answers 500 and writes one line naming the path and the error (Seam A)
+- [x] The line holds no request body
+- [x] Typecheck, build and the full suite pass

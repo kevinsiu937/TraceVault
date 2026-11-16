@@ -2,14 +2,7 @@ import { FileRailIndex } from "./FileRailIndex.js";
 import type { FileTouch, FileTouchGroup } from "./FileRailIndex.js";
 import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 const REF_LIMIT = 8;
 
@@ -81,7 +74,7 @@ ${body}`;
     const more = hidden > 0 ? `\n<span class="file-more">+${hidden} more</span>` : "";
 
     return `<details class="file-group">
-<summary title="${this.escape(group.path)}"><span class="file-path">${this.escape(this.shortPath(group.path))}</span><span class="file-count">${group.count}</span></summary>
+<summary title="${HtmlText.escape(group.path)}"><span class="file-path">${HtmlText.escape(this.shortPath(group.path))}</span><span class="file-count">${group.count}</span></summary>
 <div class="file-refs">
 ${refs}${more}
 </div>
@@ -92,7 +85,7 @@ ${refs}${more}
     const href = `${context.state.href(basePath, { view: "list", event: touch.eventId })}#event-${touch.eventId}`;
     const operation = touch.operation.length > 0 ? touch.operation : "access";
 
-    return `<a class="file-ref op-${this.escape(operation)}" href="${this.escape(href)}"><span class="file-ref-time">${this.escape(this.wallClock(touch.time))}</span><span class="file-ref-op">${this.escape(operation)}</span></a>`;
+    return `<a class="file-ref op-${HtmlText.escape(operation)}" href="${HtmlText.escape(href)}"><span class="file-ref-time">${HtmlText.escape(this.wallClock(touch.time))}</span><span class="file-ref-op">${HtmlText.escape(operation)}</span></a>`;
   }
 
   /** The rail is 230px wide, so it names a file by its last two segments. */
@@ -104,9 +97,5 @@ ${refs}${more}
   private wallClock(time: string): string {
     const parsed = Date.parse(time);
     return Number.isFinite(parsed) ? new Date(parsed).toISOString().slice(11, 19) : time;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
   }
 }

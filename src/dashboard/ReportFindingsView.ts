@@ -1,14 +1,7 @@
 import type { Finding } from "../schema/Finding.js";
 import type { TimelineEntry } from "../service/TimelineEntry.js";
 import { PlainWords } from "./PlainWords.js";
-
-const ESCAPES: Record<string, string> = {
-  "&": "&amp;",
-  "<": "&lt;",
-  ">": "&gt;",
-  '"': "&quot;",
-  "'": "&#39;",
-};
+import { HtmlText } from "./HtmlText.js";
 
 /**
  * The report's account of what the agent did: the actions the safety check
@@ -39,10 +32,10 @@ export class ReportFindingsView {
         // A blockable rule matches one event and never tests the outcome, so it always flags the call it refused.
         const finding = findings.find((candidate) => candidate.ruleId === rule);
         const advice = finding === undefined ? null : this.words.advice(finding.recommendation);
-        return `<li class="skipped-call" data-rule="${this.escape(rule)}">The agent tried to ${this.link(entry, true)}. Stopped because: <strong>${this.escape(finding?.title ?? rule)}</strong>.${
-          advice === null ? "" : `\n<p class="todo">What to do: ${this.escape(advice.plain)}</p>`
+        return `<li class="skipped-call" data-rule="${HtmlText.escape(rule)}">The agent tried to ${this.link(entry, true)}. Stopped because: <strong>${HtmlText.escape(finding?.title ?? rule)}</strong>.${
+          advice === null ? "" : `\n<p class="todo">What to do: ${HtmlText.escape(advice.plain)}</p>`
         }
-${this.more([`<p>When: ${this.escape(this.words.dateTime(entry.time))}.</p>`, finding === undefined ? "" : `<p>${this.escape(finding.explanation)}</p>`, this.developer(advice?.developer ?? null), `<p class="rule">Rule: ${this.escape(rule)}.</p>`])}</li>`;
+${this.more([`<p>When: ${HtmlText.escape(this.words.dateTime(entry.time))}.</p>`, finding === undefined ? "" : `<p>${HtmlText.escape(finding.explanation)}</p>`, this.developer(advice?.developer ?? null), `<p class="rule">Rule: ${HtmlText.escape(rule)}.</p>`])}</li>`;
       })
       .join("\n");
     const one = skipped.length === 1;
@@ -61,13 +54,13 @@ ${items}
       .map((finding) => {
         const links = finding.eventIds.map((eventId) => {
           const entry = byId.get(eventId);
-          return entry === undefined ? this.escape(eventId) : `${this.link(entry)}, at ${this.escape(this.words.dateTime(entry.time))}`;
+          return entry === undefined ? HtmlText.escape(eventId) : `${this.link(entry)}, at ${HtmlText.escape(this.words.dateTime(entry.time))}`;
         });
-        const via = finding.matched.length === 0 ? "" : ` (${this.escape(finding.matched.join(", "))})`;
+        const via = finding.matched.length === 0 ? "" : ` (${HtmlText.escape(finding.matched.join(", "))})`;
         const advice = this.words.advice(finding.recommendation);
-        return `<li class="report-finding" data-rule="${this.escape(finding.ruleId)}"><strong>${this.escape(finding.title)}</strong> <span class="severity ${this.escape(finding.severity)}">${this.escape(this.words.severity(finding.severity))}</span>
-<p class="todo">What to do: ${this.escape(advice.plain)}</p>
-${this.more([`<p>${this.escape(finding.explanation)}</p>`, this.developer(advice.developer), `<p>What happened:</p><ul>${links.map((link) => `<li>${link}</li>`).join("")}</ul>`, `<p class="rule">Rule: ${this.escape(finding.ruleId)}${via}.</p>`])}</li>`;
+        return `<li class="report-finding" data-rule="${HtmlText.escape(finding.ruleId)}"><strong>${HtmlText.escape(finding.title)}</strong> <span class="severity ${HtmlText.escape(finding.severity)}">${HtmlText.escape(this.words.severity(finding.severity))}</span>
+<p class="todo">What to do: ${HtmlText.escape(advice.plain)}</p>
+${this.more([`<p>${HtmlText.escape(finding.explanation)}</p>`, this.developer(advice.developer), `<p>What happened:</p><ul>${links.map((link) => `<li>${link}</li>`).join("")}</ul>`, `<p class="rule">Rule: ${HtmlText.escape(finding.ruleId)}${via}.</p>`])}</li>`;
       })
       .join("\n");
     // "In short" already says when nothing matched, so an empty section is left out.
@@ -87,14 +80,10 @@ ${items}
   }
 
   private developer(hint: string | null): string {
-    return hint === null ? "" : `<p class="developer">For the developer: ${this.escape(hint)}</p>`;
+    return hint === null ? "" : `<p class="developer">For the developer: ${HtmlText.escape(hint)}</p>`;
   }
 
   private link(entry: TimelineEntry, tried = false): string {
-    return `<a href="#event-${this.escape(entry.eventId)}">${this.escape(this.words.action(entry, tried))}</a>`;
-  }
-
-  private escape(value: string): string {
-    return value.replace(/[&<>"']/g, (character) => ESCAPES[character] ?? character);
+    return `<a href="#event-${HtmlText.escape(entry.eventId)}">${HtmlText.escape(this.words.action(entry, tried))}</a>`;
   }
 }
