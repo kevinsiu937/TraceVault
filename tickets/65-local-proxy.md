@@ -1,9 +1,23 @@
-# 65 — A local proxy that records where the shell connects
+# 65 — Probe: can a proxy tell which call made a connection?
 
-**What to build:** if ticket 64's probe shows the bash tool inherits `shell.env` variables, the plugin points `HTTPS_PROXY` and `HTTP_PROXY` at a TraceVault proxy on 127.0.0.1. The proxy records each connection's host, without opening encrypted traffic, and a rule flags a host the session has not used before. Tools that ignore proxy variables (`nc`, raw sockets) stay invisible to it.
+**What to build:** The shell proxy (`docs/spec/shell-proxy.md`) attributes a connection to its session and bash call by putting them in the proxy address as user name and password, which clients send as a `Proxy-Authorization` header. Before anything is built, a probe records whether that works:
+- which of `curl`, `git`, `pip`, `npm` and `python3` (urllib) use the proxy variables at all, and which send the header;
+- what the `shell.env` hook receives for a subagent's bash call (its own session id, or the parent's).
 
-**Blocked by:** 64 (waiting on the probe).
+The probe runs a throwaway logging proxy on 127.0.0.1 that answers every request itself and connects nowhere, so no traffic leaves the machine. Each program is asked for `http://tracevault-probe.invalid/` and `https://tracevault-probe.invalid/`.
 
-**Status:** unblocked: ticket 64's probe showed `shell.env` reaches bash (15 Nov 2026). Waiting on Kevin's go
+Originally "A local proxy that records where the shell connects"; that work is now tickets 86 to 89.
 
-- [ ] Spec section written once the probe answers
+**Blocked by:** 64 (done: `shell.env` reaches bash), spec approved (16 Nov 2026).
+
+**Status:** open; the probe is Kevin's to run
+
+Run:
+`TRACEVAULT_PROBE_MODEL=deepseek/deepseek-flash sh docs/probes/scripts/shell-proxy-probe.sh /tmp/tv-shell-proxy`
+
+**Local check, without OpenCode (16 Nov 2026):** the script's proxy and clients were run by hand with fake ids in the proxy address. curl (HTTP and HTTPS), pip, npm and python3 urllib sent the ids. git 2.50.1 sent none, even after a 407 challenge. The live run decides; if git still sends none, its connections are recorded under "unknown call".
+
+- [x] `docs/probes/scripts/shell-proxy-probe.sh` written; it passes the probe-safety seam
+- [ ] Kevin ran it, and the result is recorded here: per program, whether it used the proxy and whether it sent the header; the session id a subagent's call gets
+- [ ] The recorded proxy requests are frozen as a fixture for ticket 86
+- [ ] The spec's blind spots name every program that ignored the proxy or dropped the header

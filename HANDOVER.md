@@ -38,17 +38,20 @@ A local investigation platform for OpenCode agents. It records what an agent did
   - 79: each CLI command is one file implementing `CliCommand` with its own flags; `index.ts` is a table. Not committed yet.
   - 80: `InstallManifest` applies a file change keeping the earliest original and undoes it; `init`, `harden` and `uninstall` only call it. The record's format is unchanged. Not committed yet.
   - 81: views escape through one value object, `HtmlText`; the 24 private copies are gone. Not committed yet.
+  - 82: the rule matcher holds matches waiting at the same step with the same bindings once, so a scan grows with the session, not its square (cold 50,000-event view 1.4 s, was 115 s); the ticket 78 slowdown was the version-2 rules. Not committed yet.
+  - 83: the session timeline shows one page of 500 rows (newest by default, `?page=`, `?event=` opens its page); findings, file rail, header counts and the report still cover the whole session. Not committed yet.
+  - 84: `allowed_by` (escalation-then-use, now version 2) judges a chained command part by part, as OpenCode does: each part's source text, `cd` skipped, every part covered. `EffectivePermissions` needed no change. Not committed yet.
   - 77 to 81 are the refactors from the 15 Nov architecture review, listed above. The review's sixth candidate, the second agent's seam, is a Phase 5 constraint in `docs/ROADMAP.md`.
-- **Gate:** 37 test files, 692 tests. Typecheck and build are clean. The pre-commit hook runs typecheck and the full suite.
+- **Gate:** 39 test files, 706 tests. Typecheck and build are clean. The pre-commit hook runs typecheck and the full suite.
 - **Phase 5 is now a second agent, and the simulator is Phase 6** (Kevin, 15 Nov 2026). Neither has started. Phases 1 to 4 are polished first.
 
 ## Waiting on Kevin's decision
 
 1. **Ticket 65, local proxy.** Unblocked: the ticket 64 probe showed a plugin's `shell.env` hook reaches bash (`HTTPS_PROXY`, `HTTP_PROXY`). Only the spec and ticket exist.
 2. **Candidate tickets, proposed and not yet opened:**
-   - **Chain semantics.** OpenCode checks each part of `a | b && c ; d` against the permission patterns on its own; this was found in the 63 live run. `EffectivePermissions` and the `allowed_by` operator (escalation-then-use) treat the whole line as one command.
+   - **Chain semantics:** done as ticket 84, 16 Nov 2026.
    - **Long sessions:** opened as tickets 82 (rule scan in time that grows with the session) and 83 (timeline pages), 16 Nov 2026.
-   - **No way to accept a changed MCP tool.** `tool-changed` keeps flagging it in every later session.
+   - **No way to accept a changed MCP tool:** ticket 85. Where to record an acceptance is Kevin's call: the options and the recommendation (a `mcp_trust` table pointing at the accepted `mcp.tools` event) are in the ticket. No code yet.
 3. **58 (store repeats once) and 59 (archive after 90 days).** Deferred because the ticket 56 numbers show storage is small. Re-measure on real data first. If 59 is built, it must keep each server's earliest `mcp.tools` list, because 66's baseline is that event.
 
 ## Working with Kevin

@@ -118,7 +118,7 @@ Spec: `docs/spec/evasion-before-phase-5.md`. Kevin runs the probes and the live 
 | 62 | Compare the full path of the file that ran | 61 | done (probe run 15 Nov) |
 | 63 | Validate the evasion rules live, and audit them for false positives | 60, 61, 62 | done (live run and audit 15 Nov) |
 | 64 | Egress by program, and can the shell be routed through a proxy? | 60 | done (probe run 15 Nov) |
-| 65 | A local proxy that records where the shell connects | 64 | unblocked; waiting on Kevin's go |
+| 65 | Probe: can a proxy tell which call made a connection? (the proxy itself is 86 to 89) | 64 | open; probe waiting on Kevin |
 | 66 | Trust an MCP tool when first seen, flag a later change | 41, 55 | done |
 
 ## Semester 1 polish (requested by Kevin, 15 Nov 2026)
@@ -161,10 +161,31 @@ From the "long sessions" candidate in `HANDOVER.md`. Kevin wants 59 first; 59 wa
 
 | # | Ticket | Blocked by | Status |
 |---|---|---|---|
-| 82 | A long session's rules are checked in time that grows with its length | 69 | open |
-| 83 | A long session's page opens in pages | — | open |
+| 82 | A long session's rules are checked in time that grows with its length | 69 | done |
+| 83 | A long session's page opens in pages | — | done |
 
-Frontier: 82, 83.
+### Candidates opened 16 Nov 2026 (after 83)
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 84 | A chained command is judged part by part, as OpenCode judges it | — | done |
+| 85 | A changed MCP tool can be accepted | — | open; design written, waiting on Kevin |
+
+84 and 85 are on the frontier once 82 and 83 are done.
+
+### The shell proxy (spec `docs/spec/shell-proxy.md`, approved 16 Nov 2026)
+
+The proxy records where the agent's shell connects, and never blocks.
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 65 | Probe: can a proxy tell which call made a connection? | 64 | open; probe waiting on Kevin |
+| 86 | The proxy records a connection (tracer bullet) | 65 | open |
+| 87 | The plugin points the shell at the proxy, only when the service answers | 86 | open |
+| 88 | Exfiltration through any program, and the hosts in the report | 86 | open |
+| 89 | The first connection to an unknown host is flagged | 88 | open |
+
+Frontier: 85.
 
 ## Dependency shape
 
