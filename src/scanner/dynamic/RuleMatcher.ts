@@ -10,13 +10,29 @@ interface MatchedEvent {
   readonly label: string | null;
 }
 
-interface PartialMatch {
-  /** In timeline order; the window runs from the first. */
-  readonly events: readonly MatchedEvent[];
-  readonly next: number;
+/** One partial match: its own events, then the run's shared events from `from` on. */
+interface Member {
+  /** Start order: the lower, the older. */
+  readonly seq: number;
+  readonly own: readonly MatchedEvent[];
+  readonly from: number;
+}
+
+/**
+ * Partial matches waiting at the same step with the same bindings. An event
+ * advances all of them or none, and closes only the oldest, so they are held
+ * once and differ only in the events that started them. With a window, a
+ * member joins only if it started no earlier than the youngest, so the ones
+ * that expire are always the oldest.
+ */
+interface Run {
+  next: number;
   /** How many times the current step has matched so far, for a step that repeats. */
-  readonly count: number;
-  readonly bound: Bindings;
+  count: number;
+  bound: Bindings;
+  /** Oldest first. A run still on the first step has exactly one member, since it slides through the window on its own. */
+  members: Member[];
+  shared: MatchedEvent[];
 }
 
 /**
@@ -28,7 +44,8 @@ interface PartialMatch {
  * the oldest; a younger match it would also close stays open as it was.
  */
 export class RuleMatcher {
-  private open: PartialMatch[] = [];
+  private open: Run[] = [];
+  private started = 0;
 
   constructor(
     private readonly rule: Rule,
@@ -37,83 +54,114 @@ export class RuleMatcher {
 
   /** `session` holds what a new match starts out knowing about the session, such as its project folder. */
   observe(eventId: string, at: number, facts: EventFacts, session: Bindings = new Map()): Finding[] {
-    const findings: Finding[] = [];
-    const stillOpen: PartialMatch[] = [];
+    const last = this.rule.steps.length - 1;
+    let closing: { run: Run; label: string | null } | null = null;
     let consumed = false;
 
-    for (const open of this.open) {
-      const partial = this.inWindow(open, at);
-      if (partial === null) {
+    for (const run of this.open) {
+      this.expire(run, at);
+      const step = this.rule.steps[run.next];
+      const hit = run.members.length === 0 || step === undefined ? null : step.match(facts, run.bound);
+      if (hit === null) {
         continue;
       }
-      const advanced = this.advance(partial, eventId, at, facts);
-      if (advanced !== null) {
-        consumed = true;
-      }
-      if (advanced === null || (advanced.next === this.rule.steps.length && findings.length > 0)) {
-        stillOpen.push(partial);
-      } else if (advanced.next === this.rule.steps.length) {
-        findings.push(this.finding(advanced));
-        if (this.rule.steps[partial.next]?.each === true) {
-          stillOpen.push(partial);
+      consumed = true;
+      const done = run.count + 1 >= step!.repeat;
+      if (done && run.next === last) {
+        if (closing === null || run.members[0]!.seq < closing.run.members[0]!.seq) {
+          closing = { run, label: hit.label };
         }
-      } else {
-        stillOpen.push(advanced);
+        continue;
       }
+      run.shared.push({ id: eventId, at, label: hit.label });
+      run.next += done ? 1 : 0;
+      run.count = done ? 0 : run.count + 1;
+      run.bound = hit.bound;
     }
 
-    const started = consumed
-      ? null
-      : this.advance({ events: [], next: 0, count: 0, bound: new Map(session) }, eventId, at, facts);
-    if (started !== null) {
-      if (started.next === this.rule.steps.length) {
-        findings.push(this.finding(started));
-      } else {
-        stillOpen.push(started);
+    const findings: Finding[] = [];
+    if (closing !== null) {
+      const { run, label } = closing;
+      findings.push(this.finding([...this.events(run, run.members[0]!), { id: eventId, at, label }]));
+      if (this.rule.steps[last]?.each !== true) {
+        run.members.shift();
       }
     }
-
-    this.open = stillOpen;
+    if (!consumed) {
+      findings.push(...this.start(eventId, at, facts, session));
+    }
+    this.open = this.open.filter((run) => run.members.length > 0);
     return findings;
   }
 
-  /**
-   * The partial match as it stands at `at`, or null once it has expired. A match
-   * still repeating its first step slides instead: events that have left the
-   * window drop out, and the ones still inside it keep counting.
-   */
-  private inWindow(partial: PartialMatch, at: number): PartialMatch | null {
-    const window = this.rule.window;
-    const first = window === null ? 0 : partial.events.findIndex((event) => window.contains(event.at, at));
-    if (first === 0) {
-      return partial;
-    }
-    if (first < 0 || partial.next !== 0) {
-      return null;
-    }
-    const events = partial.events.slice(first);
-    return { ...partial, events, count: events.length };
-  }
-
-  private advance(partial: PartialMatch, eventId: string, at: number, facts: EventFacts): PartialMatch | null {
-    const step = this.rule.steps[partial.next];
-    const hit = step === undefined ? null : step.match(facts, partial.bound);
+  private start(eventId: string, at: number, facts: EventFacts, session: Bindings): Finding[] {
+    const first = this.rule.steps[0];
+    const hit = first.match(facts, new Map(session));
     if (hit === null) {
-      return null;
+      return [];
     }
-    const count = partial.count + 1;
-    const done = step !== undefined && count >= step.repeat;
-    return {
-      events: [...partial.events, { id: eventId, at, label: hit.label }],
-      next: done ? partial.next + 1 : partial.next,
-      count: done ? 0 : count,
-      bound: hit.bound,
-    };
+    const own = [{ id: eventId, at, label: hit.label }];
+    const done = first.repeat <= 1;
+    if (done && this.rule.steps.length === 1) {
+      return [this.finding(own)];
+    }
+    const member = { seq: this.started++, own, from: 0 };
+    const next = done ? 1 : 0;
+    const twin = next === 0 ? undefined : this.open.find((run) => this.joins(run, next, hit.bound, at));
+    if (twin === undefined) {
+      this.open.push({ next, count: done ? 0 : 1, bound: hit.bound, members: [member], shared: [] });
+    } else {
+      twin.members.push({ ...member, from: twin.shared.length });
+    }
+    return [];
   }
 
-  private finding(match: PartialMatch): Finding {
+  private joins(run: Run, next: number, bound: Bindings, at: number): boolean {
+    const youngest = run.members[run.members.length - 1];
+    return (
+      run.next === next &&
+      run.count === 0 &&
+      youngest !== undefined &&
+      at >= youngest.own[0]!.at &&
+      run.bound.size === bound.size &&
+      [...bound].every(([name, value]) => run.bound.get(name) === value)
+    );
+  }
+
+  /**
+   * Drops the members that have outlived the window by `at`. A run still
+   * repeating its first step slides instead: events that have left the window
+   * drop out, and the ones still inside it keep counting.
+   */
+  private expire(run: Run, at: number): void {
+    const window = this.rule.window;
+    if (window === null) {
+      return;
+    }
+    if (run.next !== 0) {
+      while (run.members.length > 0 && !window.contains(run.members[0]!.own[0]!.at, at)) {
+        run.members.shift();
+      }
+      return;
+    }
+    const member = run.members[0]!;
+    const events = this.events(run, member);
+    const first = events.findIndex((event) => window.contains(event.at, at));
+    if (first < 0) {
+      run.members = [];
+    } else if (first > 0) {
+      run.members = [{ seq: member.seq, own: events.slice(first), from: run.shared.length }];
+      run.count = events.length - first;
+    }
+  }
+
+  private events(run: Run, member: Member): MatchedEvent[] {
+    return [...member.own, ...run.shared.slice(member.from)];
+  }
+
+  private finding(events: readonly MatchedEvent[]): Finding {
     const matched: string[] = [];
-    for (const { label } of match.events) {
+    for (const { label } of events) {
       if (label !== null && label !== matched[matched.length - 1]) {
         matched.push(label);
       }
@@ -126,7 +174,7 @@ export class RuleMatcher {
       title: this.rule.title,
       explanation: this.rule.explanation,
       recommendation: this.rule.recommendation,
-      eventIds: match.events.map((event) => event.id),
+      eventIds: events.map((event) => event.id),
       matched,
     };
   }

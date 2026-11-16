@@ -66,6 +66,45 @@ Recorded 16 Nov 2026 on the same machine, after the session page, the configurat
 - **Warm:** the page and the report no longer read the session five or six times, or every session's events to find one summary. A repeat view of a 10,000-event page went from 563 to 415 ms, and the report from 329 to 176 ms.
 - **Cold:** slower than on 13 Nov, and the timeline row, which ticket 78 did not change, grew by the same factor. Both pay for the first scan of the rules, which has more rules to run since tickets 60 to 66. This run did not separate that from load on the machine, so the cause is the shared scan, not the single read. It is still quadratic in the session's length.
 
+## Matches held once (ticket 82)
+
+Recorded 16 Nov 2026 on the same machine. `RuleMatcher` now keeps partial matches that wait at the same step with the same bindings once, as one run, and closes the oldest of them first. Every rule keeps its findings and their event ids: the counts below match the ticket 78 run, and a Seam C test compares a 2,161-event session with what the old matcher raised.
+
+| Events | Timeline | Session view | Findings | Session page | Page size | Report | Report size |
+|---|---|---|---|---|---|---|---|
+| 1,000 | 51 / 5 | 33 / 11 | 307 | 103 / 58 | 2.2 MB | 31 / 13 | 0.5 MB |
+| 10,000 | 181 / 51 | 195 / 90 | 3,076 | 551 / 412 | 21.9 MB | 268 / 165 | 5.0 MB |
+| 50,000 | 3,191 / 452 | 1,402 / 643 | 15,384 | 3,503 / 2,677 | 110 MB | 3,403 / 2,984 | 25 MB |
+
+- **Cold:** the first view of a 10,000-event session went from 4,894 to 195 ms, and of a 50,000-event one from 114,762 to 1,402 ms. Ten times the events now cost about six times the time, and five times cost about seven.
+- **What is left:** at 50,000 events the cold page and report are limited by building the rows and the HTML, close to their warm times. The cold timeline at 50,000 is one sample and includes the first read of the file.
+
+The scan alone, without the store or the HTML (ms, same synthetic session):
+
+| Events | Old matcher, rules of 12 Nov | Old matcher, today's rules | New matcher, today's rules |
+|---|---|---|---|
+| 1,000 | 36 | 78 | 13 |
+| 4,000 | 306 | 968 | 41 |
+| 8,000 | 957 | 3,276 | 74 |
+
+**Why the ticket 78 cold times were slower than 13 Nov's.** It was the rule set, not the machine. Under the old matcher, today's rules scan the same session about 3.4 times slower than the rules of 12 Nov (`64cfb55`). Two rules account for it at 8,000 events:
+- `runs-written-file` version 2: 1,605 ms, against 635 ms for version 1 on 13 Nov. Its first step now also matches shell writes.
+- `exfiltration-chain` version 2: 1,177 ms, against 473 ms. Its egress step parses the command line.
+
+The old matcher checked every open match against every event, so a dearer condition was paid once per open match. The new matcher checks it once per run.
+
+## Timeline pages (ticket 83)
+
+Recorded 16 Nov 2026 on the same machine, after ticket 82. The session page shows one page of 500 rows, the newest by default. The report is not paged.
+
+| Events | Timeline | Session view | Session page | Page size | Report | Report size |
+|---|---|---|---|---|---|---|
+| 10,000 | 199 / 56 | 212 / 91 | 312 / 183 | 4.3 MB | 272 / 163 | 5.0 MB |
+| 50,000 | 886 / 314 | 1,107 / 479 | 1,719 / 944 | 17.7 MB | 3,580 / 2,990 | 25 MB |
+
+- **Page:** a repeat view of a 50,000-event page went from 2,677 to 944 ms, and its size from 110 to 17.7 MB.
+- **What is left:** the findings panel, which describes the whole session. The synthetic session raises a finding about every three events. At 10,000 events, the panel is 2.5 MB of the 4.3 MB page, and the 500 rows are 0.9 MB. A real session raises far fewer.
+
 ## A new event while the page is open (ticket 69)
 
 Recorded 15 Nov 2026 with `docs/probes/scripts/measure-live.mjs` on the same machine. It times one `POST /hook` into the synthetic session, three samples each, in milliseconds.
@@ -93,7 +132,7 @@ The database holds about 0.9 KB per event, counting the indexes and the hash col
 ## What the numbers call for
 
 - **The findings cache (ticket 57): yes, added.** The session page was over the one-second threshold at 10,000 events. A repeat view is now 0.56 s. The first view of a 10,000-event session is still about 3 s, and of a 50,000-event session about 54 s.
-- **Not fixed by these tickets:** the page renders every row, so a 50,000-event page is 110 MB and takes 3.5 s even when cached. Paging the timeline would fix it.
+- **Not fixed by these tickets:** the page renders every row, so a 50,000-event page is 110 MB and takes 3.5 s even when cached. Paging the timeline would fix it. (Ticket 83 did; see above.)
 - **Ticket 58, storing configurations and tool lists once: no.** They are 2.2 KB per session, under 1% of a 300-event session and less above that.
 - **Ticket 59, automatic archive: not called for by these numbers alone.** At about 0.9 KB per event, a million recorded events is about 0.9 GB. Whether a real database reaches that depends on how much the agent is used, which this probe cannot measure. Two things also grow with the whole database, not one session: the session list, which scans every event on each load (a `shortcut:` comment in `InvestigationService.listSessions`), and the activity page. Measure them on a real database before building 59.
-- **What would fix the cold first view:** incremental matching, or matching the three session-window rules against an index of first-step events instead of every pair. This is not part of these tickets.
+- **What would fix the cold first view:** incremental matching, or matching the three session-window rules against an index of first-step events instead of every pair. This is not part of these tickets. (Ticket 82 did it by holding interchangeable matches once; see above.)

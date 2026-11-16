@@ -6,12 +6,14 @@ Which matches are interchangeable is the design work. A match's events become th
 
 From the "long sessions" candidate in `HANDOVER.md`. `destructive-action`, `exfiltration-chain` and `runs-written-file` are the rules the measurement showed to grow with the square of the session.
 
+**Done (16 Nov 2026):** `RuleMatcher` holds matches that wait at the same step with the same bindings once, as a run that closes its oldest member first. With a window, a match joins a run only if it started no earlier than the run's youngest, so the ones that expire are always the oldest. Every rule keeps its findings; none had to be left alone. `tests/seams/long-session.seam.test.ts` compares 2,161 events with `tests/fixtures/long-session-findings.json`, recorded from the old matcher. Cold session view: 10,000 events 195 ms (was 4,894), 50,000 events 1,402 ms (was 114,762).
+
 **Blocked by:** 69 (done; the scan already resumes where it stopped). Kevin asked for 59 to come first; 59 is waiting on a real database's numbers, so this ticket can start without it.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Every rule's trigger and clean fixtures raise the same findings, with the same event ids, as before (Seam C, unchanged)
-- [ ] A Seam C test of a long session, with many first steps and no window, raises the same findings as the old matcher gave it
-- [ ] Ten times the events cost at most about ten times the scan time, measured by `measure-scale.mjs`
-- [ ] `docs/probes/scale-measurements.md` gets the new cold-scan rows, beside the old ones
-- [ ] Typecheck, build and the full suite pass
+- [x] Every rule's trigger and clean fixtures raise the same findings, with the same event ids, as before (Seam C, unchanged)
+- [x] A Seam C test of a long session, with many first steps and no window, raises the same findings as the old matcher gave it
+- [x] Ten times the events cost at most about ten times the scan time, measured by `measure-scale.mjs`
+- [x] `docs/probes/scale-measurements.md` gets the new cold-scan rows, beside the old ones
+- [x] Typecheck, build and the full suite pass
