@@ -1,5 +1,5 @@
 const DEFAULT_VIEW = "list";
-const PARAM_KEYS = ["view", "event", "q", "from", "to", "t"] as const;
+const PARAM_KEYS = ["view", "event", "q", "from", "to", "t", "page"] as const;
 
 export type SessionParamKey = (typeof PARAM_KEYS)[number];
 
@@ -21,6 +21,7 @@ export class SessionParams {
     readonly from: string | null,
     readonly to: string | null,
     readonly t: string | null,
+    readonly page: string | null,
   ) {}
 
   static parse(url: URL): SessionParams {
@@ -33,6 +34,7 @@ export class SessionParams {
       clean(query.get("from")),
       clean(query.get("to")),
       clean(query.get("t")),
+      clean(query.get("page")),
     );
   }
 

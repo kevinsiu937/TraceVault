@@ -8,6 +8,7 @@ import { RepeatedCallRow } from "./RepeatedCallRow.js";
 import { ReplayTimeline } from "./ReplayTimeline.js";
 import type { SessionPaneView } from "./SessionPaneView.js";
 import type { SessionRenderContext } from "./SessionRenderContext.js";
+import { TimelinePage } from "./TimelinePage.js";
 import { TimelineRow } from "./TimelineRow.js";
 import { TurnDivider } from "./TurnDivider.js";
 import { HtmlText } from "./HtmlText.js";
@@ -33,6 +34,7 @@ export class TimelineView implements SessionPaneView {
     private readonly divider: TurnDivider = new TurnDivider(),
     private readonly grouper: RepeatedCallGrouper = new RepeatedCallGrouper(),
     private readonly repeatRow: RepeatedCallRow = new RepeatedCallRow(row),
+    private readonly pageSize: number = 500,
   ) {}
 
   render(context: SessionRenderContext): string {
@@ -42,7 +44,9 @@ export class TimelineView implements SessionPaneView {
       ? `${context.entries.length} of ${context.allEntries.length} events`
       : `${context.entries.length} events`;
     const empty = `<div class="card empty">No events match this filter. <a href="${HtmlText.escape(this.params.href(basePath, ActivityFilter.none))}">Clear filters</a></div>`;
-    const turns = ReplayTimeline.from(context, this.turnBuilder).turns;
+    const page = this.page(context);
+    // Turns with no row on this page are left out.
+    const turns = ReplayTimeline.from({ ...context, entries: page.entries }, this.turnBuilder).turns.filter(({ turn }) => turn.entries.length > 0);
     const rows = context.entries.length === 0
       ? ""
       : turns
@@ -67,6 +71,7 @@ export class TimelineView implements SessionPaneView {
           .join("\n");
 
     return `<p class="result-count" role="status">${summary} · newest at the bottom</p>
+${this.pageLinks(page, context, basePath)}
 ${this.filterBar.render(basePath, context.filter, { kinds: counts, presets: true, presetBase: basePath })}
 ${context.entries.length === 0 ? empty : ""}
 <ol class="timeline" id="timeline" aria-label="Session timeline">
@@ -77,6 +82,7 @@ ${rows}
   styles(): string {
     return `${this.row.styles()}
 .center .timeline{border-radius:0}
+.pages{display:flex;gap:12px;align-items:baseline;margin:0 0 10px;font-size:13px;color:var(--muted)}
 .center .event{border-bottom:1px solid var(--line)}
 .center .event:last-child{border-bottom:none}
 .center .event-row{color:inherit;text-decoration:none;margin:0}
@@ -130,7 +136,11 @@ ${rows}
     const basePath = `/sessions/${encodeURIComponent(context.sessionId)}`;
     const query = this.params.query(context.filter);
     const streamUrl = `${basePath}/events${query.length > 0 ? `?${query}` : ""}`;
+    const page = this.page(context);
     return `const streamUrl = ${JSON.stringify(streamUrl)};
+// New rows join only the newest page; an older page keeps its rows.
+const timelinePageStart = ${page.start};
+const timelineNewestPage = ${page.newest};
 const timeline = document.getElementById("timeline");
 const source = new EventSource(streamUrl);
 const fromHtml = (html) => {
@@ -154,12 +164,12 @@ source.onmessage = (message) => {
     if (whole && group.querySelector("details").open) replacement.querySelector("details").open = true;
     (whole ? group : existing).replaceWith(replacement);
   }
-  if (entry.html === null) return;
+  if (entry.html === null || !timelineNewestPage || entry.position < timelinePageStart) return;
   if (timeline.querySelector('[data-event-id="' + entry.eventId + '"]') !== null) return;
   const row = fromHtml(entry.html);
   if (row === null) return;
   const events = [...timeline.querySelectorAll("li.event")];
-  const anchor = events[Math.max(0, Math.min(entry.position, events.length))] ?? null;
+  const anchor = events[Math.max(0, Math.min(entry.position - timelinePageStart, events.length))] ?? null;
   let reference = anchor;
   const run = anchor === null ? null : anchor.closest("li.event-group");
   if (run !== null && run.querySelector("li.event") === anchor) {
@@ -207,6 +217,19 @@ source.onmessage = (message) => {
               },
       };
     });
+  }
+
+  private page(context: SessionRenderContext): TimelinePage {
+    return TimelinePage.of(context.entries, this.pageSize, context.state.page, context.state.event);
+  }
+
+  private pageLinks(page: TimelinePage, context: SessionRenderContext, basePath: string): string {
+    if (page.count === 1) {
+      return "";
+    }
+    const link = (number: number, rel: string, text: string): string =>
+      `<a rel="${rel}" href="${HtmlText.escape(context.state.href(basePath, { page: String(number), event: null }))}">${text}</a>`;
+    return `<nav class="pages" aria-label="Pages">${page.number > 1 ? link(page.number - 1, "prev", "← Older") : ""}<span>Page ${page.number} of ${page.count}</span>${page.newest ? "" : link(page.number + 1, "next", "Newer →")}</nav>`;
   }
 
   private liveHref(entry: TimelineEntry): string {

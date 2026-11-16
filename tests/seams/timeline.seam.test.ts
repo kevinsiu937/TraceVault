@@ -206,7 +206,7 @@ describe("seam A: session timeline page", () => {
     expect(body).toContain(">—</span>");
   });
 
-  it("renders a thousand events in one page without dropping any", async () => {
+  it("renders a thousand events in two pages of 500 without dropping any", async () => {
     const base = Date.parse("2026-10-25T12:00:00.000Z");
     for (let index = 0; index < 1000; index += 1) {
       service.recordHookPayload(
@@ -219,9 +219,13 @@ describe("seam A: session timeline page", () => {
     const response = await fetch(`${baseUrl}/sessions/${SESSION}`);
     const body = await response.text();
     const elapsed = performance.now() - start;
+    const older = await (await fetch(`${baseUrl}/sessions/${SESSION}?page=1`)).text();
+    const ids = (page: string): string[] => [...page.matchAll(/class="event" data-event-id="([^"]+)"/g)].map((match) => match[1] ?? "");
 
     expect(response.status).toBe(200);
-    expect((body.match(/class="event" data-event-id="/g) ?? []).length).toBe(1000);
+    expect(ids(body)).toHaveLength(500);
+    expect(ids(older)).toHaveLength(500);
+    expect(new Set([...ids(older), ...ids(body)]).size).toBe(1000);
     expect(elapsed).toBeLessThan(2000);
   });
 
