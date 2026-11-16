@@ -115,10 +115,10 @@ Spec: `docs/spec/evasion-before-phase-5.md`. Kevin runs the probes and the live 
 |---|---|---|---|
 | 60 | Computed programs and wrappers that take a value | 53 | done |
 | 61 | Files written by the shell | 53, 60 | done |
-| 62 | Compare the full path of the file that ran | 61 | done; probe waiting on Kevin |
-| 63 | Validate the evasion rules live, and audit them for false positives | 60, 61, 62 | scripts done; runs waiting on Kevin |
-| 64 | Egress by program, and can the shell be routed through a proxy? | 60 | done; probe waiting on Kevin |
-| 65 | A local proxy that records where the shell connects | 64 | waiting on 64's probe |
+| 62 | Compare the full path of the file that ran | 61 | done (probe run 15 Nov) |
+| 63 | Validate the evasion rules live, and audit them for false positives | 60, 61, 62 | done (live run and audit 15 Nov) |
+| 64 | Egress by program, and can the shell be routed through a proxy? | 60 | done (probe run 15 Nov) |
+| 65 | A local proxy that records where the shell connects | 64 | unblocked; waiting on Kevin's go |
 | 66 | Trust an MCP tool when first seen, flag a later change | 41, 55 | done |
 
 ## Semester 1 polish (requested by Kevin, 15 Nov 2026)
@@ -139,9 +139,9 @@ Phases 1 to 4 are made solid before Phase 5. Found by a live run of the service.
 | 71 | A service on another port still receives events | — | done |
 | 72 | Two writers cannot break the hash chain | — | done |
 | 73 | `tracevault verify` checks the record | 72 | done |
-| 74 | The service says why a request failed | — | open |
-| 75 | A freeze late in a long prompt is still seen | — | open |
-| 76 | An MCP server whose name has an underscore is named correctly | — (probe: Kevin) | open |
+| 74 | The service says why a request failed | — | done |
+| 75 | A freeze late in a long prompt is still seen | — | done |
+| 76 | An MCP server whose name has an underscore is named correctly | — (probe: Kevin) | done |
 
 ### From the 15 Nov 2026 architecture review
 
@@ -149,13 +149,22 @@ Refactors: none changes what a user sees. Candidate 6 of the review (where the s
 
 | # | Ticket | Blocked by | Status |
 |---|---|---|---|
-| 77 | Seam tests run the assembly the user runs | — | open |
-| 78 | One call returns everything about a session | 77 | open |
-| 79 | A CLI command is one file | — | open |
-| 80 | A reversible file change is written once | — (same files as 79; one at a time) | open |
-| 81 | Text reaches a page through one escaping rule | — | open |
+| 77 | Seam tests run the assembly the user runs | — | done |
+| 78 | One call returns everything about a session | 77 | done |
+| 79 | A CLI command is one file | — | done |
+| 80 | A reversible file change is written once | — (same files as 79; one at a time) | done |
+| 81 | Text reaches a page through one escaping rule | — | done |
 
-Frontier: 74, 75, 76, 77, 79, 80, 81.
+### Long sessions (requested by Kevin, 16 Nov 2026)
+
+From the "long sessions" candidate in `HANDOVER.md`. Kevin wants 59 first; 59 waits on a real database's numbers, so these do not wait on it.
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 82 | A long session's rules are checked in time that grows with its length | 69 | open |
+| 83 | A long session's page opens in pages | — | open |
+
+Frontier: 82, 83.
 
 ## Dependency shape
 

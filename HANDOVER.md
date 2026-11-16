@@ -30,9 +30,16 @@ A local investigation platform for OpenCode agents. It records what an agent did
   - 72: an append is one write transaction, so two processes cannot fork the hash chain.
   - 73: `tracevault verify [--db]` checks the chain and exits 1 on a break.
   - 67 to 70 are committed in `199b4fa`, and 71 to 73 in `7854d26`.
-  - 74 to 76 are open, from the 15 Nov audit; see `tickets/README.md`.
-  - 77 to 81 are open refactors from the 15 Nov architecture review: tests through the real assembly (77), one read per session (78, after 77), a command per file (79), one reversible file change (80), one escaping rule (81). The review's sixth candidate, the second agent's seam, is a Phase 5 constraint in `docs/ROADMAP.md`.
-- **Gate:** 37 test files, 675 tests. Typecheck and build are clean. The pre-commit hook runs typecheck and the full suite.
+  - 74: a request that fails prints one line (method, path, error; no body) to the service's error output. Not committed yet.
+  - 75: the plugin keeps 4000 characters of a prompt (was 200), so a late freeze reaches `destructive-action`; the timeline row still shows 200. Not committed yet.
+  - 76: an MCP tool is split at the longest server name in the session's configuration (`google_drive_search` is server `google_drive`), else at the first underscore. Not committed yet.
+  - 77: `ServiceAssembly.open` builds the service and the dashboard (nine panes); `run`, every seam test and the measure scripts use it. Not committed yet.
+  - 78: the session page, configuration page and report each come from one `getSession` call; scale numbers rerun in `docs/probes/scale-measurements.md`. Not committed yet.
+  - 79: each CLI command is one file implementing `CliCommand` with its own flags; `index.ts` is a table. Not committed yet.
+  - 80: `InstallManifest` applies a file change keeping the earliest original and undoes it; `init`, `harden` and `uninstall` only call it. The record's format is unchanged. Not committed yet.
+  - 81: views escape through one value object, `HtmlText`; the 24 private copies are gone. Not committed yet.
+  - 77 to 81 are the refactors from the 15 Nov architecture review, listed above. The review's sixth candidate, the second agent's seam, is a Phase 5 constraint in `docs/ROADMAP.md`.
+- **Gate:** 37 test files, 692 tests. Typecheck and build are clean. The pre-commit hook runs typecheck and the full suite.
 - **Phase 5 is now a second agent, and the simulator is Phase 6** (Kevin, 15 Nov 2026). Neither has started. Phases 1 to 4 are polished first.
 
 ## Waiting on Kevin's decision
@@ -40,7 +47,7 @@ A local investigation platform for OpenCode agents. It records what an agent did
 1. **Ticket 65, local proxy.** Unblocked: the ticket 64 probe showed a plugin's `shell.env` hook reaches bash (`HTTPS_PROXY`, `HTTP_PROXY`). Only the spec and ticket exist.
 2. **Candidate tickets, proposed and not yet opened:**
    - **Chain semantics.** OpenCode checks each part of `a | b && c ; d` against the permission patterns on its own; this was found in the 63 live run. `EffectivePermissions` and the `allowed_by` operator (escalation-then-use) treat the whole line as one command.
-   - **Long sessions.** First open of a 50,000-event session takes 54 s, because `destructive-action`, `exfiltration-chain` and `runs-written-file` grow with the square of the event count. Fix those three rules with incremental matching. The session page renders every row, so it also needs paging.
+   - **Long sessions:** opened as tickets 82 (rule scan in time that grows with the session) and 83 (timeline pages), 16 Nov 2026.
    - **No way to accept a changed MCP tool.** `tool-changed` keeps flagging it in every later session.
 3. **58 (store repeats once) and 59 (archive after 90 days).** Deferred because the ticket 56 numbers show storage is small. Re-measure on real data first. If 59 is built, it must keep each server's earliest `mcp.tools` list, because 66's baseline is that event.
 
