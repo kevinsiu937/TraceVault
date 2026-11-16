@@ -59,6 +59,14 @@ The chips at the top of the page are the same filters in one click. `/activity` 
 - A repeated observation with the same call id is stored twice plus a `capture.duplicate` row; the timeline shows the action once.
 - If the service is unreachable, the plugin remembers the interval and posts a `capture.gap` on recovery; the timeline shows a `gap` row with the reason.
 
+## Checking the record
+
+```bash
+node dist/cli/index.js verify --db data/demo.db
+```
+
+It prints that the record is intact, or the first stored event that was changed or removed, and exits 1 on a break.
+
 ## 4. Reversible install
 
 ```bash

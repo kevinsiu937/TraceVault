@@ -4,9 +4,11 @@
 
 **Blocked by:** 72 (so a chain broken by two writers is not reported as tampering).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] An untouched database prints that it is intact and exits 0 (through the CLI)
-- [ ] A database with one edited row names the session and the reason and exits 1
-- [ ] The usage text lists the command
-- [ ] Typecheck, build and the full suite pass
+- [x] An untouched database prints that it is intact and exits 0 (through the CLI)
+- [x] A database with one edited row names the session and the reason and exits 1
+- [x] The usage text lists the command
+- [x] Typecheck, build and the full suite pass
+
+**Technical notes:** `verify` refuses a path with no database instead of creating one. Opening a database still migrates it (ticket 55), which adds tables and never touches an event row. The chain has no anchor outside the file: someone who rewrites every hash after the edited row is not caught. That limit is unchanged.

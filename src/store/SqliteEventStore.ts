@@ -34,6 +34,8 @@ export class SqliteEventStore implements EventStorePort {
     this.database = new DatabaseSync(dbPath);
     this.chain = chain;
     try {
+      // Another process may hold the file for a moment (an import beside the running service): wait, do not fail.
+      this.database.exec("PRAGMA busy_timeout = 5000");
       migrations.apply(this.database, dbPath);
     } catch (error) {
       this.database.close();
@@ -42,29 +44,37 @@ export class SqliteEventStore implements EventStorePort {
   }
 
   append(event: Event): void {
-    const previous = this.database.prepare("SELECT hash FROM events ORDER BY rowid DESC LIMIT 1").get();
-    const prevHash = previous === undefined ? this.chain.genesis : this.asString(previous["hash"], "hash");
-    const chained: Event = { ...event, prev_hash: prevHash };
-    const hash = this.chain.compute(prevHash, chained);
+    // One write transaction, taken before the read: two processes that both read the same last hash would fork the chain for good.
+    this.database.exec("BEGIN IMMEDIATE");
+    try {
+      const previous = this.database.prepare("SELECT hash FROM events ORDER BY rowid DESC LIMIT 1").get();
+      const prevHash = previous === undefined ? this.chain.genesis : this.asString(previous["hash"], "hash");
+      const chained: Event = { ...event, prev_hash: prevHash };
+      const hash = this.chain.compute(prevHash, chained);
 
-    this.database
-      .prepare(
-        `INSERT INTO events (id, session_id, agent_name, type, timestamp, seq, capture_path, correlation_id, body, prev_hash, hash)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
-        chained.id,
-        chained.session_id,
-        chained.agent.name,
-        chained.type,
-        chained.timestamp,
-        chained.seq,
-        chained.capture_path,
-        chained.correlation_id,
-        JSON.stringify(chained),
-        prevHash,
-        hash,
-      );
+      this.database
+        .prepare(
+          `INSERT INTO events (id, session_id, agent_name, type, timestamp, seq, capture_path, correlation_id, body, prev_hash, hash)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          chained.id,
+          chained.session_id,
+          chained.agent.name,
+          chained.type,
+          chained.timestamp,
+          chained.seq,
+          chained.capture_path,
+          chained.correlation_id,
+          JSON.stringify(chained),
+          prevHash,
+          hash,
+        );
+      this.database.exec("COMMIT");
+    } catch (error) {
+      this.database.exec("ROLLBACK");
+      throw error;
+    }
   }
 
   listBySession(sessionId: string): Event[] {

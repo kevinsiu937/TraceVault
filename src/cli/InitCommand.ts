@@ -7,7 +7,7 @@ import { InstallManifest } from "./InstallManifest.js";
 
 const LOADER_FILE = join(".opencode", "plugin", "tracevault.js");
 const MANIFEST_FILE = join(".opencode", ".tracevault-install.json");
-const HOOK_URL = "http://127.0.0.1:4319/hook";
+const DEFAULT_PORT = 4319;
 
 export class InitCommand {
   private readonly projectDir: string;
@@ -18,7 +18,13 @@ export class InitCommand {
    * `block` installs the opt-in guard, which refuses a call a blockable rule matches. Off by default.
    * `hardener`, when given, also tightens the project's configuration after the install.
    */
-  constructor(projectDir: string, block = false, hardener: HardenCommand | null = null) {
+  constructor(
+    projectDir: string,
+    block = false,
+    hardener: HardenCommand | null = null,
+    /** The port the service listens on; the plugin posts there. */
+    private readonly port: number = DEFAULT_PORT,
+  ) {
     this.projectDir = projectDir;
     this.block = block;
     this.hardener = hardener;
@@ -38,7 +44,12 @@ export class InitCommand {
     loader.write(this.loaderSource());
 
     const installed = `installed TraceVault plugin at ${LOADER_FILE.replaceAll("\\", "/")}${this.block ? " with blocking on" : ""}`;
-    return this.hardener === null ? installed : `${installed}\n${this.harden(this.hardener)}`;
+    const lines = [
+      installed,
+      ...(this.port === DEFAULT_PORT ? [] : [`the plugin posts to port ${this.port}; start the service with: tracevault run --port ${this.port}`]),
+      ...(this.hardener === null ? [] : [this.harden(this.hardener)]),
+    ];
+    return lines.join("\n");
   }
 
   /** A configuration harden refuses to touch must not undo the install: recording still works without it. */
@@ -68,7 +79,7 @@ import { SessionPreamble } from ${JSON.stringify(`${pluginDir}SessionPreamble.js
 import { McpToolRelay } from ${JSON.stringify(`${pluginDir}McpToolRelay.js`)};
 ${guardImport}
 export const TraceVault = async () => {
-  const config = new PluginConfig(${JSON.stringify(HOOK_URL)});
+  const config = new PluginConfig(${JSON.stringify(`http://127.0.0.1:${this.port}/hook`)});
   const relay = new McpToolRelay(${JSON.stringify(process.execPath)}, ${JSON.stringify(relayEntry)}, config.mcpToolsDirectory);
   return new TraceVaultPlugin(new EventForwarder(config), new PendingGapStore(config.gapStatePath), undefined, ${guard}, undefined, new SessionPreamble(undefined, undefined, relay)).hooks();
 };

@@ -132,6 +132,27 @@ describe("seam B: install writes the plugin, uninstall restores the project", ()
     expect(snapshot(projectDir)).toEqual(before);
   });
 
+  it("posts to the port init was given, and to 4319 otherwise", async () => {
+    let output = "";
+    const stdout = vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
+      output += String(chunk);
+      return true;
+    });
+
+    try {
+      await expect(main(["init", "--no-harden", "--dir", projectDir])).resolves.toBe(0);
+      expect(readFileSync(join(projectDir, LOADER), "utf8")).toContain('"http://127.0.0.1:4319/hook"');
+      expect(output).not.toContain("--port");
+      await main(["uninstall", "--dir", projectDir]);
+
+      await expect(main(["init", "--no-harden", "--port", "5000", "--dir", projectDir])).resolves.toBe(0);
+      expect(readFileSync(join(projectDir, LOADER), "utf8")).toContain('"http://127.0.0.1:5000/hook"');
+      expect(output).toContain("start the service with: tracevault run --port 5000");
+    } finally {
+      stdout.mockRestore();
+    }
+  });
+
   it("installs the guard only when init is given --block", () => {
     new InitCommand(projectDir).install();
     const plain = readFileSync(join(projectDir, LOADER), "utf8");

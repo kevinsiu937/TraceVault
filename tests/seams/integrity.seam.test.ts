@@ -1,9 +1,12 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { DatabaseSync as DatabaseSyncInstance } from "node:sqlite";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { main } from "../../src/cli/index.js";
 
 import { EventFactory } from "../../src/schema/EventFactory.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
@@ -113,6 +116,84 @@ describe("seam B: append-only integrity", () => {
       position: 1,
       rowId: 3,
       reason: "broken-link",
+    });
+  });
+
+  it("keeps one unbroken chain when several processes append at once", async () => {
+    const viteNode = join(import.meta.dirname, "../../node_modules/vite-node/vite-node.mjs");
+    const writer = join(import.meta.dirname, "integrity.writer.ts");
+    const writers = ["a", "b", "c"].map((name) => {
+      const child = spawn(process.execPath, [viteNode, writer, dbPath, name, "100"], { stdio: ["pipe", "pipe", "pipe"] });
+      let errors = "";
+      child.stderr.on("data", (chunk) => (errors += String(chunk)));
+      return {
+        child,
+        ready: new Promise<void>((resolve) => child.stdout.once("data", () => resolve())),
+        done: new Promise<string>((resolve) => child.once("exit", (code) => resolve(code === 0 ? "" : errors || `exit ${code}`))),
+      };
+    });
+
+    // Every writer has the database open before any of them appends, so their appends interleave.
+    await Promise.all(writers.map((writer) => writer.ready));
+    writers.forEach((writer) => writer.child.stdin.end("go\n"));
+    const failures = (await Promise.all(writers.map((writer) => writer.done))).filter((failure) => failure !== "");
+
+    expect(failures).toEqual([]);
+    expect(store.listAllOrdered()).toHaveLength(3 + 300);
+    expect(verifier.verify()).toEqual({ ok: true });
+  }, 30_000);
+
+  describe("tracevault verify", () => {
+    let output: string;
+
+    beforeEach(() => {
+      output = "";
+      const capture = (chunk: unknown): boolean => {
+        output += String(chunk);
+        return true;
+      };
+      vi.spyOn(process.stdout, "write").mockImplementation(capture);
+      vi.spyOn(process.stderr, "write").mockImplementation(capture);
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("says an untouched record is intact", async () => {
+      await expect(main(["verify", "--db", dbPath])).resolves.toBe(0);
+
+      expect(output).toContain("the record is intact: 3 events");
+    });
+
+    it("names the session and the reason when a row was edited, and exits 1", async () => {
+      withRawDatabase((database) => {
+        database.prepare("UPDATE events SET body = replace(body, 'echo 1', 'echo tampered') WHERE rowid = 2").run();
+      });
+
+      await expect(main(["verify", "--db", dbPath])).resolves.toBe(1);
+
+      expect(output).toContain(SESSION);
+      expect(output).toContain("was changed after it was recorded");
+    });
+
+    it("still reports a row whose edit removed its session", async () => {
+      withRawDatabase((database) => {
+        database.prepare("UPDATE events SET body = replace(body, 'session_id', 'gone') WHERE rowid = 2").run();
+      });
+
+      await expect(main(["verify", "--db", dbPath])).resolves.toBe(1);
+
+      expect(output).toContain("stored event 2 (session unreadable) was changed after it was recorded");
+    });
+
+    it("refuses a path that holds no database, without creating one", async () => {
+      const missing = join(directory, "nothing.db");
+
+      await expect(main(["verify", "--db", missing])).resolves.toBe(1);
+
+      expect(output).toContain(`no database at ${missing}`);
+      expect(existsSync(missing)).toBe(false);
     });
   });
 });

@@ -9,6 +9,7 @@
  *   import      import every session already in the agent's own store
  *   run         start the local service (capture + scanners + dashboard on 127.0.0.1)
  *   report      write one session as a self-contained HTML report
+ *   verify      check that the stored record has not been changed
  *
  * Only argument parsing and exit codes belong here. Behaviour lives in the
  * component modules so it can be tested without spawning a process.
@@ -26,17 +27,19 @@ import { InitCommand } from "./InitCommand.js";
 import { ReportCommand } from "./ReportCommand.js";
 import { RunCommand } from "./RunCommand.js";
 import { UninstallCommand } from "./UninstallCommand.js";
+import { VerifyCommand } from "./VerifyCommand.js";
 
 export const VERSION = "0.1.0";
 
 const USAGE = `tracevault ${VERSION}
 
 Usage:
-  tracevault init [--dir <path>] [--block] [--no-harden]
+  tracevault init [--dir <path>] [--block] [--no-harden] [--port <n>]
                                           attach TraceVault to a project and make its
                                           opencode.json ask before risky calls;
                                           --block refuses calls a blockable rule matches;
-                                          --no-harden leaves opencode.json alone
+                                          --no-harden leaves opencode.json alone;
+                                          --port is the port the service runs on, if not 4319
   tracevault uninstall [--dir <path>]     remove TraceVault and restore the configuration,
                                           including what init or harden changed
   tracevault harden [--dir <path>] [--undo]   make the project's opencode.json ask before
@@ -46,6 +49,7 @@ Usage:
   tracevault report <session-id> [--db <path>] --out <file> [--rules now|then]
                                           write one session as a self-contained HTML report,
                                           under today's rules or those from when it was recorded
+  tracevault verify [--db <path>]         check that no stored event was changed or removed
   tracevault --version
   tracevault --help
 
@@ -55,9 +59,9 @@ Without --db, the database is tracevault/tracevault.db in your state folder
 
 const DEFAULT_PORT = 4319;
 
-type Command = "init" | "uninstall" | "harden" | "import" | "run" | "report";
+type Command = "init" | "uninstall" | "harden" | "import" | "run" | "report" | "verify";
 
-const COMMANDS: readonly Command[] = ["init", "uninstall", "harden", "import", "run", "report"];
+const COMMANDS: readonly Command[] = ["init", "uninstall", "harden", "import", "run", "report", "verify"];
 
 function isCommand(value: string): value is Command {
   return (COMMANDS as readonly string[]).includes(value);
@@ -123,6 +127,18 @@ export async function main(argv: readonly string[]): Promise<number> {
     }
   }
 
+  if (first === "verify") {
+    try {
+      const { dbPath } = options.parse(argv.slice(1), ["--db"]);
+      const { intact, summary } = new VerifyCommand().run(dbPath);
+      process.stdout.write(`${summary}\n`);
+      return intact ? 0 : 1;
+    } catch (error) {
+      process.stderr.write(`tracevault: ${errorMessage(error)}\n`);
+      return 1;
+    }
+  }
+
   if (first === "harden") {
     try {
       const { directory, undo } = options.parse(argv.slice(1), ["--dir", "--undo"]);
@@ -137,11 +153,11 @@ export async function main(argv: readonly string[]): Promise<number> {
 
   if (first === "init" || first === "uninstall") {
     try {
-      const { directory, block, harden } = options.parse(argv.slice(1), first === "init" ? ["--dir", "--block", "--no-harden"] : ["--dir"]);
+      const { directory, block, harden, port } = options.parse(argv.slice(1), first === "init" ? ["--dir", "--block", "--no-harden", "--port"] : ["--dir"]);
       const hardener = new HardenCommand(directory);
       const summary =
         first === "init"
-          ? new InitCommand(directory, block, harden ? hardener : null).install()
+          ? new InitCommand(directory, block, harden ? hardener : null, port).install()
           : new UninstallCommand(directory, hardener).uninstall();
       process.stdout.write(`${summary}\n`);
       return 0;
