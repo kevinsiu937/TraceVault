@@ -151,6 +151,46 @@ describe("seam B: old sessions move to a monthly archive file", () => {
     expect(verify(archiveFile)).toEqual({ ok: true });
   });
 
+  for (const [month, second] of [
+    ["the same month's file", new Date("2026-11-20T12:00:00.000Z")],
+    ["a later month's file", new Date("2026-12-20T12:00:00.000Z")],
+  ] as const) {
+    it(`archives again after a run emptied the database and a new session was recorded, into ${month}`, () => {
+      record(started("ses_a", "2026-07-01T09:00:00.000Z"), ended("ses_a", "2026-07-01T10:00:00.000Z"));
+      new SqliteSessionArchive(db).archive(NOW, 90);
+      record(started("ses_b", "2026-07-02T09:00:00.000Z"), ended("ses_b", "2026-07-02T10:00:00.000Z"));
+      expect(verify(db)).toEqual({ ok: true });
+
+      const run = new SqliteSessionArchive(db).archive(second, 90);
+      record(started("ses_c", "2026-07-03T09:00:00.000Z"), ended("ses_c", "2026-07-03T10:00:00.000Z"));
+      const third = new SqliteSessionArchive(db).archive(new Date(second.getTime() + 86_400_000), 90);
+
+      const secondFile = join(directory, run?.archive ?? "missing");
+      expect([run?.sessions, third?.sessions]).toEqual([1, 1]);
+      expect(sessionsIn(db)).toEqual([]);
+      expect([...sessionsIn(archiveFile), ...(secondFile === archiveFile ? [] : sessionsIn(secondFile))].sort()).toEqual(["ses_a", "ses_b", "ses_c"]);
+      expect(verify(db)).toEqual({ ok: true });
+      expect(verify(archiveFile)).toEqual({ ok: true });
+      expect(verify(secondFile)).toEqual({ ok: true });
+    });
+  }
+
+  it("archives again after a run moved the chain's last rows while an open session stayed", () => {
+    record(started("ses_open", "2026-07-01T08:00:00.000Z"), started("ses_a", "2026-07-01T09:00:00.000Z"), ended("ses_a", "2026-07-01T10:00:00.000Z"));
+    new SqliteSessionArchive(db).archive(NOW, 90);
+    record(started("ses_b", "2026-07-02T09:00:00.000Z"), ended("ses_b", "2026-07-02T10:00:00.000Z"));
+
+    expect(new SqliteSessionArchive(db).archive(new Date("2026-11-20T12:00:00.000Z"), 90)?.sessions).toBe(1);
+    record(read("ses_open", "src/open.ts", "2026-07-03T09:00:00.000Z"));
+
+    expect(sessionsIn(db)).toEqual(["ses_open"]);
+    expect(sessionsIn(archiveFile)).toEqual(["ses_a", "ses_b"]);
+    expect(verify(db)).toEqual({ ok: true });
+    expect(verify(archiveFile)).toEqual({ ok: true });
+    raw(archiveFile, (database) => database.prepare("UPDATE events SET hash = 'x' WHERE session_id = 'ses_b' AND type = 'session.start'").run());
+    expect(verify(archiveFile)).toMatchObject({ ok: false, sessionId: "ses_b" });
+  });
+
   it("still catches an event removed by hand after an archive run", () => {
     recordOldAndNew();
     new SqliteSessionArchive(db).archive(NOW, 90);

@@ -49,7 +49,14 @@ export class SqliteEventStore implements EventStorePort {
     this.database.exec("BEGIN IMMEDIATE");
     try {
       const previous = this.database.prepare("SELECT hash FROM events ORDER BY rowid DESC LIMIT 1").get();
-      const prevHash = previous === undefined ? this.chain.genesis : this.asString(previous["hash"], "hash");
+      let prevHash = previous === undefined ? this.chain.genesis : this.asString(previous["hash"], "hash");
+      // The chain's last rows may have moved to an archive: link past their anchors, or the next archive run would anchor the same hash twice.
+      const anchor = this.database.prepare("SELECT to_hash FROM chain_anchors WHERE from_hash = ?");
+      const followed = new Set<string>();
+      for (let next = anchor.get(prevHash); next !== undefined && !followed.has(prevHash); next = anchor.get(prevHash)) {
+        followed.add(prevHash);
+        prevHash = this.asString(next["to_hash"], "to_hash");
+      }
       const chained: Event = { ...event, prev_hash: prevHash };
       const hash = this.chain.compute(prevHash, chained);
 
