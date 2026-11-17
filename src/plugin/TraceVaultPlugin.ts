@@ -1,104 +1,22 @@
 import type { CallGuard } from "./CallGuard.js";
 import type { EventForwarderPort } from "./EventForwarderPort.js";
 import type { PendingGapStore } from "./PendingGapStore.js";
-import { PermissionRequests, type PermissionProperties } from "./PermissionRequests.js";
+import type { ToolExecuteInput, TraceVaultHooks } from "./OpenCodeHooks.js";
+import { PermissionRequests } from "./PermissionRequests.js";
 import { SessionDelivery } from "./SessionDelivery.js";
 import { SessionPreamble } from "./SessionPreamble.js";
+import { PendingCalls } from "./PendingCalls.js";
 import { ShellProxies } from "./ShellProxies.js";
-
-interface ToolExecuteInput {
-  tool: string;
-  sessionID: string;
-  callID: string;
-}
-
-interface ToolExecuteAfterInput extends ToolExecuteInput {
-  args: Record<string, unknown>;
-}
-
-interface ToolExecuteBeforeOutput {
-  args: Record<string, unknown>;
-}
-
-interface ToolExecuteAfterOutput {
-  title?: string;
-  metadata?: Record<string, unknown>;
-}
-
-interface ToolPartState {
-  status?: string;
-  input?: Record<string, unknown>;
-  error?: unknown;
-}
-
-interface ToolPart {
-  type?: string;
-  tool?: string;
-  callID?: string;
-  sessionID?: string;
-  state?: ToolPartState;
-}
-
-interface PluginEvent {
-  type?: string;
-  properties?: PermissionProperties & {
-    sessionID?: string;
-    part?: ToolPart;
-    info?: {
-      title?: unknown;
-      parentID?: unknown;
-      directory?: unknown;
-    };
-  };
-}
-
-interface ChatMessageInput {
-  sessionID?: string;
-}
-
-interface MessagePart {
-  type?: string;
-  text?: string;
-}
-
-interface ChatMessageOutput {
-  message?: {
-    id?: string;
-    role?: string;
-    sessionID?: string;
-    time?: {
-      created?: number;
-    };
-  };
-  parts?: MessagePart[];
-}
-
-type ToolBefore = (input: ToolExecuteInput, output: ToolExecuteBeforeOutput) => Promise<void>;
-type ToolAfter = (input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput) => Promise<void>;
-type EventHook = (input: { event: PluginEvent }) => Promise<void>;
-type ChatMessage = (input: ChatMessageInput, output: ChatMessageOutput) => Promise<void>;
-type ShellEnv = (input: { cwd?: string; sessionID?: string; callID?: string }, output: { env: Record<string, string> }) => Promise<void>;
-
-export interface TraceVaultHooks {
-  config: (config: unknown) => Promise<void>;
-  "tool.execute.before": ToolBefore;
-  "tool.execute.after": ToolAfter;
-  "chat.message": ChatMessage;
-  "shell.env": ShellEnv;
-  event: EventHook;
-}
-
-const PROMPT_LIMIT = 4000;
+import { UserPrompt } from "./UserPrompt.js";
 
 export class TraceVaultPlugin {
   private readonly delivery: SessionDelivery;
   private readonly preamble: SessionPreamble;
-  private readonly now: () => number;
   private readonly guard: CallGuard | null;
   private readonly permissions: PermissionRequests;
   private readonly shell: ShellProxies;
-  private readonly pendingArgs = new Map<string, Record<string, unknown>>();
-  private readonly pendingStarts = new Map<string, number>();
+  private readonly pending: PendingCalls;
+  private readonly prompt = new UserPrompt();
 
   constructor(
     forwarder: EventForwarderPort,
@@ -112,7 +30,7 @@ export class TraceVaultPlugin {
   ) {
     this.delivery = new SessionDelivery(forwarder, gaps, preamble);
     this.preamble = preamble;
-    this.now = now;
+    this.pending = new PendingCalls(now);
     this.guard = guard;
     this.permissions = permissions;
     this.shell = shell;
@@ -123,8 +41,7 @@ export class TraceVaultPlugin {
       // OpenCode calls this once, as it loads the plugin, before any session exists.
       config: async (config) => this.preamble.configure(config),
       "tool.execute.before": async (input, output) => {
-        this.pendingArgs.set(this.key(input), output.args);
-        this.pendingStarts.set(this.key(input), this.now());
+        this.pending.start(this.key(input), output.args);
         const verdict = this.guard?.inspect({ ...input, args: output.args });
         if (verdict?.kind === "failed") {
           await this.send({ hook: "guard.failure", ...input, reason: verdict.reason }, input.sessionID);
@@ -134,9 +51,9 @@ export class TraceVaultPlugin {
         }
       },
       "tool.execute.after": async (input, output) => {
-        const key = this.key(input);
-        const args = input.args ?? this.pendingArgs.get(key) ?? {};
-        const durationMs = this.takeDuration(key);
+        const started = this.pending.finish(this.key(input));
+        const args = input.args ?? started.args ?? {};
+        const { durationMs } = started;
         await this.send(
           {
             hook: "tool.execute.after",
@@ -148,44 +65,10 @@ export class TraceVaultPlugin {
         );
       },
       "chat.message": async (input, output) => {
-        const message = output.message;
-        if (message?.role !== "user") {
-          return;
+        const prompt = this.prompt.of(input, output);
+        if (prompt !== null) {
+          await this.send(prompt, prompt.sessionID);
         }
-        const sessionID = message.sessionID ?? input.sessionID;
-        const created = message.time?.created;
-        if (typeof sessionID !== "string" || typeof message.id !== "string") {
-          return;
-        }
-        if (typeof created !== "number" || !Number.isFinite(created)) {
-          return;
-        }
-        const at = new Date(created);
-        if (!Number.isFinite(at.getTime())) {
-          return;
-        }
-
-        const text = (output.parts ?? [])
-          .flatMap((part) => (part.type === "text" && typeof part.text === "string" ? [part.text] : []))
-          .join(" ")
-          .trim();
-        if (text.length === 0) {
-          return;
-        }
-
-        // The text is the evidence a rule reads, so most of it is kept; the timeline row cuts it for reading.
-        const truncated = text.length > PROMPT_LIMIT;
-        await this.send(
-          {
-            hook: "chat.message",
-            sessionID,
-            messageID: message.id,
-            createdAt: at.toISOString(),
-            text: truncated ? text.slice(0, PROMPT_LIMIT) : text,
-            truncated,
-          },
-          sessionID,
-        );
       },
       // Called before each bash call runs; the variables it sets reach that call's shell (probed 15 Nov 2026).
       "shell.env": async (input, output) => {
@@ -246,9 +129,9 @@ export class TraceVaultPlugin {
         if (typeof part.tool !== "string" || typeof part.callID !== "string" || typeof partSession !== "string") {
           return;
         }
-        const key = `${partSession}:${part.callID}`;
-        const args = part.state.input ?? this.pendingArgs.get(key) ?? {};
-        const durationMs = this.takeDuration(key);
+        const started = this.pending.finish(`${partSession}:${part.callID}`);
+        const args = part.state.input ?? started.args ?? {};
+        const { durationMs } = started;
         const blockedBy = this.guard?.refusedBy(partSession, part.callID) ?? null;
         await this.send(
           {
@@ -266,14 +149,6 @@ export class TraceVaultPlugin {
 
   private key(input: ToolExecuteInput): string {
     return `${input.sessionID}:${input.callID}`;
-  }
-
-  // Elapsed time for this call, and drop both records so neither map can grow.
-  private takeDuration(key: string): number | null {
-    const started = this.pendingStarts.get(key);
-    this.pendingArgs.delete(key);
-    this.pendingStarts.delete(key);
-    return started === undefined ? null : Math.max(0, Math.round(this.now() - started));
   }
 
   private send(payload: unknown, sessionID: string): Promise<void> {
