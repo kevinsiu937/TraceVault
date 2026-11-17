@@ -4,7 +4,7 @@
 
 **Blocked by:** None. Follow-up to completed tickets 54 and 68.
 
-**Status:** pending
+**Status:** done
 
 **Priority:** P1.
 
@@ -12,13 +12,13 @@
 
 **Demo:** Harden a project with broad denies and compare its effective permissions before and after. Previously denied operations remain denied through both harden and the default install flow. A permissive project still gains the intended questions before risky operations.
 
-- [ ] Write and run a failing regression at the existing harden/install integration seam before implementing the fix.
-- [ ] Preserve effective denies from an overall catch-all, a permission-specific catch-all, overlapping broader patterns and exact patterns. Include an explicitly allowed exception after a broad deny so rule ordering is respected rather than replacing the policy with blanket refusal.
-- [ ] An originally denied example environment file never becomes allowed through the example-file exception. Unrestricted example-file reads retain their intended behavior.
-- [ ] Exercise both the harden CLI and default init flow through their real assembly. Show persisted configuration decisions rather than calls to internal helpers.
-- [ ] Repeating harden remains idempotent, permissive configurations are still tightened, and undo restores the original bytes.
-- [ ] Keep agent-specific permissions unchanged and continue reporting their remaining risks.
-- [ ] Preserve stage boundaries and constructor-injected collaborators. If a new file structure is needed, present that design decision before implementation.
-- [ ] Typecheck, build and the full suite pass locally.
+- [x] Write and run a failing regression at the existing harden/install integration seam before implementing the fix.
+- [x] Preserve effective denies from an overall catch-all, a permission-specific catch-all, overlapping broader patterns and exact patterns. Include an explicitly allowed exception after a broad deny so rule ordering is respected rather than replacing the policy with blanket refusal.
+- [x] An originally denied example environment file never becomes allowed through the example-file exception. Unrestricted example-file reads retain their intended behavior.
+- [x] Exercise both the harden CLI and default init flow through their real assembly. Show persisted configuration decisions rather than calls to internal helpers.
+- [x] Repeating harden remains idempotent, permissive configurations are still tightened, and undo restores the original bytes.
+- [x] Keep agent-specific permissions unchanged and continue reporting their remaining risks.
+- [x] Preserve stage boundaries and constructor-injected collaborators. If a new file structure is needed, present that design decision before implementation.
+- [x] Typecheck, build and the full suite pass locally.
 
 **Scope:** Fix permission preservation only. No new permission system, blocking mode or phase work.

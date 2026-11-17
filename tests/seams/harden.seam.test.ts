@@ -107,6 +107,63 @@ describe("seam B: tracevault harden tightens the project's own configuration", (
     expect(EffectivePermissions.of(written()).decide("build", "read", ".env.example").action).toBe("allow");
   });
 
+  const STRICTNESS = { allow: 0, ask: 1, deny: 2 } as const;
+  const decide = (configuration: Record<string, unknown>, permission: string, target: string) =>
+    EffectivePermissions.of(configuration).decide("build", permission, target).action;
+
+  // [what the user denied, its permission block, the calls that must not loosen]
+  const DENIALS: readonly (readonly [string, unknown, readonly (readonly [string, string])[]])[] = [
+    ["a read catch-all", { read: { "*": "deny" } }, [["read", ".env.example"], ["read", ".env"], ["read", "src/app.ts"]]],
+    ["a read string", { read: "deny" }, [["read", ".env.example"], ["read", ".env"]]],
+    ["a bash catch-all", { bash: { "*": "deny" } }, [["bash", "rm -rf /"], ["bash", "ls"]]],
+    ["a webfetch catch-all", { webfetch: { "*": "deny" } }, [["webfetch", "https://example.test"]]],
+    ["an edit catch-all", { edit: { "*": "deny" } }, [["edit", "opencode.json"], ["edit", "src/app.ts"]]],
+    ["an overall catch-all", { "*": "deny" }, [["read", ".env.example"], ["read", ".env"], ["bash", "ls"], ["edit", "AGENTS.md"], ["webfetch", "https://example.test"]]],
+    ["an overall string", "deny", [["read", ".env.example"], ["bash", "ls"]]],
+    ["a broader env pattern", { read: { "*.env*": "deny" } }, [["read", ".env.local"], ["read", ".env.example"], ["read", ".env"]]],
+    ["a narrower secret", { read: { "secret*": "deny" } }, [["read", "secret.env"], ["read", "secret.pem"]]],
+    ["a catch-all with an allowed exception", { read: { "*": "deny", "src/*": "allow" } }, [["read", ".env"], ["read", ".env.example"], ["read", "lib/key.ts"]]],
+    ["a deny before a later allow", { bash: { "rm *": "allow", "*": "deny" } }, [["bash", "rm -rf /"], ["bash", "ls"]]],
+  ];
+
+  for (const [command, args] of [
+    ["harden", ["harden"]],
+    ["init", ["init"]],
+  ] as const) {
+    it.each(DENIALS)(`${command} never loosens %s`, async (_, permission, calls) => {
+      const original = { $schema: "https://opencode.ai/config.json", permission };
+      writeFileSync(config, JSON.stringify(original), "utf8");
+
+      await expect(main([...args, "--dir", directory])).resolves.toBe(0);
+
+      for (const [tool, target] of calls) {
+        const now = decide(written(), tool, target);
+        expect(STRICTNESS[now], `${tool} ${target}: ${decide(original, tool, target)} -> ${now}`).toBeGreaterThanOrEqual(STRICTNESS[decide(original, tool, target)]);
+      }
+    });
+  }
+
+  it("keeps an allowed exception after a broad deny instead of refusing everything", async () => {
+    writeFileSync(config, JSON.stringify({ permission: { read: { "*": "deny", "src/*": "allow" }, bash: { "*": "deny", "git status": "allow" } } }), "utf8");
+
+    await main(["harden", "--dir", directory]);
+
+    expect(decide(written(), "read", "src/app.ts")).toBe("allow");
+    expect(decide(written(), "read", "lib/app.ts")).toBe("deny");
+    expect(decide(written(), "bash", "git status")).toBe("ask");
+    expect(decide(written(), "bash", "ls")).toBe("deny");
+  });
+
+  it("writes the same bytes when hardening a hardened file again", async () => {
+    writeFileSync(config, JSON.stringify({ permission: { "*": "deny", read: { "*.env*": "deny" }, bash: { "*": "allow", "rm *": "deny" } } }), "utf8");
+
+    await main(["harden", "--dir", directory]);
+    const once = readFileSync(config, "utf8");
+    await main(["harden", "--dir", directory]);
+
+    expect(readFileSync(config, "utf8")).toBe(once);
+  });
+
   it("puts the original bytes back on undo, even after hardening twice", async () => {
     writeFileSync(config, JSON.stringify(PERMISSIVE, null, 4), "utf8");
     const bytes = readFileSync(config);
