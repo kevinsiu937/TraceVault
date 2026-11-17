@@ -181,11 +181,11 @@ The proxy records where the agent's shell connects, and never blocks.
 |---|---|---|---|
 | 65 | Probe: can a proxy tell which call made a connection? | 64 | done (probes run 16 and 17 Nov) |
 | 86 | The proxy records a connection (tracer bullet) | 65 | done (reworked to the revised spec, 17 Nov) |
-| 87 | The plugin opens a proxy for each bash call | 86 | built; waiting on Kevin's live run |
+| 87 | The plugin opens a proxy for each bash call | 86 | done (live run 17 Nov) |
 | 88 | Exfiltration through any program, and the hosts in the report | 86 | done |
-| 89 | The first connection to an unknown host is flagged | 88 | built; waiting on Kevin's audit run |
+| 89 | The first connection to an unknown host is flagged | 88 | done (audit 17 Nov; rerun after real use) |
 
-Frontier: 87 (Kevin's live run); 89 (Kevin's audit run, after 87's live run).
+Frontier: none open on the proxy. 89's noise is judged again after a few days of real use.
 
 ## Thermo review follow-ups (approved for the backlog)
 
@@ -193,14 +193,14 @@ Four independently verifiable follow-ups from the focused thermo review. Kevin a
 
 | # | Ticket | Blocked by | Priority | Status |
 |---|---|---|---|---|
-| 90 | [Hardening never allows an operation the user denied](90-harden-preserves-effective-denials.md) | — | P1 | pending |
-| 91 | [Recording and archiving continue after the main database becomes empty](91-repeated-archives-preserve-the-chain.md) | — | P2 | pending |
+| 90 | [Hardening never allows an operation the user denied](90-harden-preserves-effective-denials.md) | — | P1 | done |
+| 91 | [Recording and archiving continue after the main database becomes empty](91-repeated-archives-preserve-the-chain.md) | — | P2 | done |
 | 92 | [An archived report preserves its MCP tool comparison context](92-archive-reports-keep-mcp-baselines.md) | — | P2 | pending |
 | 93 | [A secret read and connection within one bash call do not lose their warning](93-same-call-secret-read-and-egress.md) | — | P2 | pending |
 
 Ticket 92 improves the archive-baseline limitation already documented in the scale specification. Tickets 91 and 92 share archive code, so implement them one at a time; neither logically blocks the other. Every ticket includes its reproduction, end-to-end demo and required seam regressions.
 
-Backlog: 90–93, with no open ticket blockers. The active frontier remains 87's live run and 89's audit run. Choose a pending follow-up only when Kevin asks to start it.
+Backlog: 92 and 93 (90 and 91 done, 17 Nov 2026). No proxy ticket is open. Choose a pending follow-up only when Kevin asks to start it.
 
 ## Dependency shape
 

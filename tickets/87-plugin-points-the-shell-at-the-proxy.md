@@ -6,11 +6,13 @@ Spec: `docs/spec/shell-proxy.md` (revised 17 Nov 2026), "Never block".
 
 **Blocked by:** 86.
 
-**Status:** built; waiting on Kevin's live run (17 Nov 2026). Tests: `tests/seams/shell-proxy.seam.test.ts`.
+**Status:** done (17 Nov 2026).
+
+**Live run (17 Nov 2026, OpenCode 1.18.32, deepseek-flash, Kevin's run):** the agent ran `curl -sI https://example.com` and `git ls-remote https://github.com/git/git HEAD`, one bash call each. The database holds `net.connect` example.com:443 under the first call and github.com:443 under the second, both opened, capture path `proxy`; `tracevault verify` passes. `curl -I` also prints the proxy's `HTTP/1.1 200 Connection Established` line, as it does through any proxy. The first attempt recorded nothing: the CLI did nothing when reached through a symlink (macOS `/tmp`, npm's bin link), fixed in `src/cli/index.ts`. Tests: `tests/seams/shell-proxy.seam.test.ts`.
 
 - [x] A bash call's `shell.env` gets proxy variables pointing at its own port, and a connection on that port is stored under that call (Seam B)
 - [x] Two calls get two ports, each attributed to its own call (Seam B)
 - [x] An existing `HTTPS_PROXY` is left unchanged, and the session page says the shell was not watched (Seam B, Seam A)
 - [x] With the service down, the hook still sets the variables and the shell's connections still go through
-- [ ] Kevin's live run: a session where the agent runs `curl` and `git ls-remote` shows both connections under their calls
+- [x] Kevin's live run: a session where the agent runs `curl` and `git ls-remote` shows both connections under their calls
 - [x] Typecheck, build and the full suite pass
