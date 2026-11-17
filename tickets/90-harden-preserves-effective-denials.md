@@ -22,3 +22,5 @@
 - [x] Typecheck, build and the full suite pass locally.
 
 **Scope:** Fix permission preservation only. No new permission system, blocking mode or phase work.
+
+**Follow-up (17 Nov 2026, review R1):** a narrow deny inherited through the overall permission, `{"*":{"rm *":"deny"}}`, raised the generated bash, webfetch, external_directory and doom_loop catch-alls to deny, so `ls` was refused instead of asked. The hardener now keeps every pattern that reaches a key, from its own entry or a wildcard permission, as its own entry after the catch-all. Only a user catch-all can raise the catch-all now. Seam tests cover harden and init: `rm -rf x` stays deny, `ls` asks. Still open: the appended edit and read patterns are raised to deny by any overlapping narrower user deny, for example `*.env*` raising `*.pem` and `rm *` raising `*AGENTS.md`. That only tightens, so it was left alone.

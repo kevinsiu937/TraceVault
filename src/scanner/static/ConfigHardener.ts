@@ -62,7 +62,7 @@ export class ConfigHardener {
     }
     // The managed keys go last: OpenCode lets the last matching rule decide, so they must follow any "*" the user set.
     for (const key of ASK_ALL) {
-      after[key] = ConfigHardener.askAll(key, rules, before[key]);
+      after[key] = ConfigHardener.askAll(key, rules);
     }
     after["edit"] = ConfigHardener.append("edit", rules, before["edit"], SELF, []);
     after["read"] = ConfigHardener.append("read", rules, before["read"], SECRETS, [["*.env.example", "allow"]]);
@@ -76,9 +76,14 @@ export class ConfigHardener {
     return { config: { ...config, permission: after }, changes };
   }
 
-  /** "ask" for everything, keeping the user's patterns only where they are stricter than that. */
-  private static askAll(key: string, rules: readonly Rule[], value: unknown): unknown {
-    const own = Object.keys(ConfigHardener.patterns(value)).filter((pattern) => pattern !== "*");
+  /**
+   * "ask" for everything, keeping the user's patterns only where they are stricter than that.
+   * Every pattern that reaches this key, through its own entry or a wildcard permission like "*",
+   * is kept after the catch-all, so only a user's catch-all can raise it.
+   */
+  private static askAll(key: string, rules: readonly Rule[]): unknown {
+    const reaching = rules.filter((rule) => PermissionPattern.of(rule.permission).allows(key));
+    const own = [...new Set(reaching.map((rule) => rule.pattern))].filter((pattern) => pattern !== "*");
     const resolved = ConfigHardener.tighten(key, rules, [["*", "ask"], ...own.map((pattern) => [pattern, "ask"] as const)]);
     const star = resolved[0]?.[1];
     // An "ask" under an "ask" catch-all says nothing; every other entry stays so a stricter one still decides.
@@ -110,7 +115,7 @@ export class ConfigHardener {
       const entry = PermissionPattern.of(pattern);
       let action = intent;
       relevant.forEach((rule, position) => {
-        const follows = rule.permission === key && later.has(rule.pattern);
+        const follows = later.has(rule.pattern);
         const same = rule.permission === key && rule.pattern === pattern;
         const overridden = !same && relevant.slice(position + 1).some((next) => next.pattern === pattern || next.pattern === "*");
         if (!follows && !overridden && PermissionPattern.of(rule.pattern).overlaps(entry) && ConfigHardener.rank(rule.action) > ConfigHardener.rank(action)) {

@@ -143,6 +143,25 @@ describe("seam B: tracevault harden tightens the project's own configuration", (
     });
   }
 
+  for (const [command, args] of [
+    ["harden", ["harden"]],
+    ["init", ["init"]],
+  ] as const) {
+    it.each([
+      ["the overall permission", { "*": { "rm *": "deny" } }],
+      ["the bash permission", { bash: { "rm *": "deny" } }],
+    ])(`${command} keeps a narrow deny under %s narrow, so other calls ask`, async (_, permission) => {
+      writeFileSync(config, JSON.stringify({ permission }), "utf8");
+
+      await expect(main([...args, "--dir", directory])).resolves.toBe(0);
+
+      expect(decide(written(), "bash", "rm -rf x")).toBe("deny");
+      expect(decide(written(), "bash", "ls")).toBe("ask");
+      expect(decide(written(), "bash", "git status")).toBe("ask");
+      expect(decide(written(), "webfetch", "https://example.test")).toBe("ask");
+    });
+  }
+
   it("keeps an allowed exception after a broad deny instead of refusing everything", async () => {
     writeFileSync(config, JSON.stringify({ permission: { read: { "*": "deny", "src/*": "allow" }, bash: { "*": "deny", "git status": "allow" } } }), "utf8");
 
