@@ -5,8 +5,10 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -299,6 +301,25 @@ describe("seam B: install writes the plugin, uninstall restores the project", ()
       expect(existsSync(join(projectDir, "opencode.json"))).toBe(false);
       expect(output).toContain("not hardened: this project uses opencode.jsonc");
     });
+  });
+});
+
+// The built CLI, as `npm run build` leaves it; npm's global install reaches it through a symlink.
+const BUILT_CLI = join(import.meta.dirname, "../../dist/cli/index.js");
+
+describe.skipIf(!existsSync(BUILT_CLI))("the installed command runs when reached through a symlink", () => {
+  it("prints its version through a symlinked path, as npm's bin link and macOS's /tmp give it", () => {
+    const directory = mkdtempSync(join(tmpdir(), "tracevault-link-"));
+    try {
+      const link = join(directory, "tracevault");
+      symlinkSync(BUILT_CLI, link);
+
+      const result = spawnSync(process.execPath, [link, "--version"], { encoding: "utf8" });
+
+      expect(result.stdout).toMatch(/\d+\.\d+\.\d+/);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });
 

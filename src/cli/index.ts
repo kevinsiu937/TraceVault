@@ -16,6 +16,7 @@
  * here. Each command owns its flags and usage lines in its own file.
  */
 
+import { realpathSync } from "node:fs";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { PluginConfig } from "../plugin/PluginConfig.js";
@@ -89,6 +90,7 @@ export async function main(argv: readonly string[]): Promise<number> {
   }
 }
 
-if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Node loads the real file behind a symlink (npm's bin link, macOS's /tmp), so compare real paths.
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href) {
   process.exitCode = await main(process.argv.slice(2));
 }
