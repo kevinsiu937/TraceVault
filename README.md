@@ -2,88 +2,112 @@
 
 Local investigation platform for AI coding agents.
 
-Existing tools protect a boundary: Pipelock mediates network egress, mcp-firewall guards MCP calls, Rebuff screens text, halo-record seals an audit trail. None of them answers the question that follows every incident — **what did the agent actually do on this machine?**
+Existing tools protect a boundary: Pipelock mediates network egress, mcp-firewall guards MCP calls, Rebuff screens text, halo-record seals an audit trail. None of them answers the question that follows every incident: **what did the agent actually do on this machine?**
 
-TraceVault captures the whole workflow, flags risky configuration and risky sequences, lets a person investigate one session, and produces a report.
+TraceVault records what an OpenCode agent did, flags risky configuration and risky sequences of actions, lets a person investigate one session, and exports a plain-language report.
 
 > IERG4999-8 Final Year Project (PKM2), CUHK — Siu Wai Ka 1155212271 · Hui Siu Hin 1155212273
 > Supervisor: Dr MA Pui Kit, Jack
 
 ## Status
 
-Semester 1 — implementation starting. The submitted proposal (30 Sep 2026) is the binding spec.
-Design documents live in the Obsidian vault at `D:\hermes\obsidian-vault\CUHK\IE FYP\` — `TraceVault-v5-Plan.md` mirrors the proposal, `Proposal-SUBMITTED-TraceVault.md` is the submitted text.
+Phases 1 to 4 are closed (capture, workflow findings, configuration findings, reports), with the hardening, scale and shell-proxy follow-ups done. Phase 5 (a second agent) has not started. The target agent is **OpenCode**.
 
-## Five stages
+Not yet packaged: TraceVault runs from a clone, and its service is started by hand. See [Known limits](#known-limits).
 
+## What it does
+
+| Stage | What you get |
+|---|---|
+| Record | Every tool call, prompt, permission answer and subagent of an OpenCode session, in a local SQLite database whose rows are hash-chained. Earlier history is imported from OpenCode's own store. |
+| Watch the shell's network | Before each bash call, the plugin points the call at a proxy of its own on 127.0.0.1. Each connection is recorded as host and port under the call that made it. Traffic passes through unchanged and is never read. |
+| Workflow findings | YAML rules in `rules/` flag risky sequences: a secret read then sent out, a destructive command after "don't delete", opaque commands, a file written then run, a first connection to an unknown host. |
+| Configuration findings | Rules in `rules/config/` flag a risky `opencode.json` and poisoned or changed MCP tools. |
+| Investigate | A local dashboard: session list, timeline, waterfall, file view, graph, replay, filters, findings linked to their events. |
+| Report | One self-contained HTML file per session, in plain language, with a recommendation for each finding. |
+
+TraceVault observes and reports. Two opt-in exceptions: `init --block` skips a call a blockable rule matches, and `harden` (run by `init` by default) makes the project's `opencode.json` ask before risky calls, so OpenCode itself does the stopping.
+
+## Getting started
+
+Requires Node 24 or later (`node:sqlite`) and OpenCode.
+
+```bash
+git clone <this repo> && cd TraceVault
+npm install
+npm run build
 ```
-Logger → Vulnerability Scanner → Workflow Scanner → Investigator → Report Generator
-                                                              (+ second agent, then Simulator)
+
+Attach TraceVault to a project, then start the service:
+
+```bash
+node dist/cli/index.js init --dir <your project>   # installs the plugin; hardens opencode.json (undo: uninstall)
+node dist/cli/index.js run                         # service and dashboard on http://127.0.0.1:4319
 ```
 
-Semester 1 scope is stages 1–4. A second agent (Phase 5) and the simulator (Phase 6) come after.
+Use OpenCode in that project as usual, with the service running. Open http://127.0.0.1:4319 to see the sessions.
 
-## Logger — three capture paths
+## Commands
 
-| Path | Covers | Why it exists |
-|---|---|---|
-| Plugin hooks | Built-in editing, shell, network tools | Sits inside the agent's dispatch path, so it sees capabilities, not just tool servers |
-| Session stores | Pre-install history, events hooks missed | Agents persist sessions locally; the store backfills |
-| MCP proxy | Every call to an external MCP server | OpenCode's plugin hooks do not fire for MCP tool calls |
+| Command | What it does |
+|---|---|
+| `init [--dir <path>] [--block] [--no-harden] [--port <n>]` | Install the plugin in a project. Hardens `opencode.json` unless `--no-harden`. `--port` when the service is not on 4319. |
+| `run [--port <n>] [--db <path>] [--archive-after <days>]` | Start the service. Imports OpenCode's history first, and moves sessions that ended more than 90 days ago to a monthly archive file (0 turns this off). |
+| `report <session-id> --out <file> [--db <path>] [--rules now\|then]` | Write one session as an HTML report, under today's rules or those in force when it was recorded. |
+| `verify [--db <path>]` | Check that no stored event was changed or removed. Exits 1 on a break. |
+| `trust <server> [--db <path>]` | Accept an MCP server's current tools after a deliberate upgrade. |
+| `harden [--dir <path>] [--undo]` | Make `opencode.json` ask before risky calls, or put the original back. |
+| `import [--db <path>]` | Import OpenCode's existing session history. |
+| `uninstall [--dir <path>]` | Remove the plugin and restore the configuration, including what `init` or `harden` changed. |
 
-Target agent: **OpenCode first** (fully open source, interfaces readable rather than inferred). The design is written against the general mechanism; other agents are additive.
+Run them as `node dist/cli/index.js <command>`. Without `--db`, the database is `tracevault/tracevault.db` in your state folder (`~/.local/state`, or `%LOCALAPPDATA%` on Windows), never the current folder.
+
+A step-by-step walk-through of every feature, with the last recorded run, is in `docs/DEMO.md`.
+
+## Known limits
+
+- **Start the service to see sessions.** While it is down, the plugin keeps what it cannot send in an owner-only outbox (up to 10 MB) and sends it, at the times it happened, on the next event after the service is back. Past 10 MB the oldest are dropped and the session shows a gap.
+- **Not packaged.** No npm release yet; the plugin `init` writes points at this clone's `dist/`, so moving the clone breaks it (run `init` again).
+- **OpenCode only.** A second agent is Phase 5.
+- **Rules read commands as written.** Aliases, functions and variables are not expanded, and a program that ignores proxy variables (`nc`, `ssh`, raw sockets) is not seen by the proxy.
+- Each spec lists its own blind spots under "Known Blind Spots": `docs/spec/`.
 
 ## Non-goals
 
-- No machine learning. Scanner rules are YAML files: every flag explains itself, no training data, reproducible evaluation.
-- No prevention. TraceVault observes and reports; it does not block.
-- No server operated by the project. Everything is local, bound to loopback.
-- No secrets brokering. Existing tools do it better; TraceVault just never logs a key's value.
+- No machine learning. Rules are YAML files: every flag explains itself, with no training data and a reproducible evaluation.
+- No server operated by the project. Everything is local, bound to loopback; the dashboard refuses requests from other web sites.
+- No reading of encrypted traffic, and no secrets brokering. TraceVault never logs a key's value from configuration.
 
 ## Repository layout
 
 ```
 AGENTS.md         working agreement for AI agents (OOD, seam tests, tickets)
-README.md
+HANDOVER.md       current state and open decisions
 docs/
-  spec/phase-1.md   the Phase 1 spec — binding
-  ARCHITECTURE.md   stage contracts, structure rules, expected layout
-  EVENT-SCHEMA.md   the event contract
-  ROADMAP.md        phases 2-6
-  adr/              decision records
-tickets/            10 tracer-bullet tickets + index
-src/                code — folders appear when a ticket needs them
-  cli/              composition root (currently the only file)
-tests/              seam tests + frozen fixtures
-.githooks/          pre-commit gate (typecheck + tests)
+  spec/           one spec per phase and follow-up, each with its known blind spots
+  adr/            decision records
+  probes/         live probes of OpenCode and their recorded results
+  DEMO.md         every feature, step by step
+  ROADMAP.md      phases 2 to 6
+rules/            workflow rules; rules/config/ configuration rules; rules/lists/ shared lists
+src/
+  capture/        hook payloads and the shell proxy to events
+  store/          SQLite event store, hash chain, archive
+  service/        sessions, timelines, findings
+  scanner/        rule engine (dynamic) and configuration scanner (static)
+  dashboard/      HTML views and the HTTP server
+  plugin/         the OpenCode plugin
+  cli/            commands and the composition root
+tests/            seam tests and frozen fixtures
+tickets/          one file per ticket; index in tickets/README.md
+.githooks/        pre-commit gate (typecheck and tests)
 ```
 
-Full Phase 1 layout, file by file, is in `docs/ARCHITECTURE.md`.
-
-## Getting started
+## Development
 
 ```bash
-npm install
-npm run build
-npm test
+npm run typecheck && npm run build && npx vitest run
+git config core.hooksPath .githooks   # once per clone: the pre-commit gate
 ```
 
-Node 24+ required (`node:sqlite`; developed on v24).
-
-## Documentation
-
-- `AGENTS.md` — the working agreement every AI agent in this repo must follow (OOD + two-seam regression tests + ticket discipline)
-- `docs/spec/phase-1.md` — the Phase 1 spec (also published as issue #1)
-- `tickets/` — ten tracer-bullet tickets, index in `tickets/README.md`
-- `docs/ROADMAP.md` — phases 2-6 with exit criteria
-- `docs/ARCHITECTURE.md` — component boundaries, structure rules, expected layout
-- `docs/EVENT-SCHEMA.md` — the shape every capture path emits
-- `docs/adr/` — decision records
-
-## Commit gate
-
-`.githooks/pre-commit` runs typecheck + tests. Enable it once per clone:
-
-```bash
-git config core.hooksPath .githooks
-```
+Read `AGENTS.md` before changing code.
