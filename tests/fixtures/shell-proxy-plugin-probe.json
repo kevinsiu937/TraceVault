@@ -1,0 +1,66 @@
+{
+  "opencode": "1.18.32",
+  "model": "deepseek/deepseek-flash",
+  "recorded": "2026-11-17",
+  "note": "In-plugin proxy, one port per bash call (shell-proxy-plugin-probe.sh). Call 1 ran clients.sh (curl http/https, git :4402, python3 :4405, a background curl 3 s after the call returned); call 2 ran sleep 5.",
+  "records": [
+    {
+      "kind": "loaded",
+      "runtime": "bun 1.3.14"
+    },
+    {
+      "kind": "listen",
+      "port": 53108,
+      "sessionID": "ses_e1adaa12dffev7KVOhI5m5Wq30",
+      "callID": "call_00_bj0vMTCEA3teUSu78AKc0009",
+      "ms": 4
+    },
+    {
+      "kind": "listen",
+      "port": 53110,
+      "sessionID": "ses_e1adaa12dffev7KVOhI5m5Wq30",
+      "callID": "call_01_qMaGI1Kul8mNmQlA5w438595",
+      "ms": 4
+    },
+    {
+      "kind": "request",
+      "port": 53108,
+      "sessionID": "ses_e1adaa12dffev7KVOhI5m5Wq30",
+      "callID": "call_00_bj0vMTCEA3teUSu78AKc0009",
+      "method": "GET",
+      "target": "http://tracevault-probe.invalid/main/curl"
+    },
+    {
+      "kind": "request",
+      "port": 53108,
+      "sessionID": "ses_e1adaa12dffev7KVOhI5m5Wq30",
+      "callID": "call_00_bj0vMTCEA3teUSu78AKc0009",
+      "method": "CONNECT",
+      "target": "tracevault-probe.invalid:443"
+    },
+    {
+      "kind": "request",
+      "port": 53108,
+      "sessionID": "ses_e1adaa12dffev7KVOhI5m5Wq30",
+      "callID": "call_00_bj0vMTCEA3teUSu78AKc0009",
+      "method": "CONNECT",
+      "target": "tracevault-probe.invalid:4402"
+    },
+    {
+      "kind": "request",
+      "port": 53108,
+      "sessionID": "ses_e1adaa12dffev7KVOhI5m5Wq30",
+      "callID": "call_00_bj0vMTCEA3teUSu78AKc0009",
+      "method": "CONNECT",
+      "target": "tracevault-probe.invalid:4405"
+    },
+    {
+      "kind": "request",
+      "port": 53108,
+      "sessionID": "ses_e1adaa12dffev7KVOhI5m5Wq30",
+      "callID": "call_00_bj0vMTCEA3teUSu78AKc0009",
+      "method": "GET",
+      "target": "http://tracevault-probe.invalid/main/background"
+    }
+  ]
+}

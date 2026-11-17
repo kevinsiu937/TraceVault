@@ -27,6 +27,16 @@ Originally "A local proxy that records where the shell connects"; that work is n
 
 Frozen as `tests/fixtures/shell-proxy-probe.json`.
 
+**Second probe, the revised design (17 Nov 2026, OpenCode 1.18.32, deepseek-flash, Kevin's run):** a plugin opened a `node:net` proxy on port 0 in `shell.env`, one per bash call.
+- The plugin runtime is Bun 1.3.14, and the server opened in 4 ms per call.
+- Every request arrived on the port of the call that made it: curl HTTP and HTTPS, git (`:4402`), python3 (`:4405`), and a background curl 3 s after its call returned. git is attributed by port without sending anything.
+- The second call (`sleep 5`) got its own port and received nothing.
+
+The spec was revised on this result (Kevin, 17 Nov 2026). Frozen as `tests/fixtures/shell-proxy-plugin-probe.json`.
+
+Run:
+`TRACEVAULT_PROBE_MODEL=deepseek/deepseek-flash sh docs/probes/scripts/shell-proxy-plugin-probe.sh /tmp/tv-proxy-plugin`
+
 Run:
 `TRACEVAULT_PROBE_MODEL=deepseek/deepseek-flash sh docs/probes/scripts/shell-proxy-probe.sh /tmp/tv-shell-proxy`
 
