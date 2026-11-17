@@ -47,6 +47,7 @@ The command can be written any way; if the program it ends up running honours th
 
 **Rules.**
 - `exfiltration-chain` v3 accepts a `net.connect` as its egress step, so a sensitive read followed by a recorded connection is found whatever the command looked like.
+- `same-call-exfiltration` (ticket 93) flags a bash call that named a sensitive file and has an opened connection recorded for it. The connection arrives before the call is recorded, so `exfiltration-chain`, which needs the read first, cannot see this; the two are tied by session and call id, not by time. A connection that never opened, a connection from another call or session, and a call naming no sensitive file raise nothing. A connection that arrives after its call ended (a background process) comes after the read, so it is `exfiltration-chain`'s case.
 - `new-host` flags the first connection of a session to a host that is not on a list of known hosts (`rules/lists/known-hosts.yaml`: package registries and code hosts).
 
 ## Testing Decisions
@@ -55,7 +56,7 @@ The command can be written any way; if the program it ends up running honours th
 - **Seam B:** two calls get two ports, and a connection on each is attributed to its own call.
 - **Seam B:** an existing proxy variable is left unchanged and a gap is recorded.
 - **Seam A:** the timeline nests the connection under its bash call; the report lists the host.
-- **Seam C:** trigger and clean fixtures for `exfiltration-chain` v3 and `new-host`.
+- **Seam C:** trigger and clean fixtures for `exfiltration-chain` v3, `new-host` and `same-call-exfiltration`, the last in the recorded hook order (connection first).
 - **Live (Kevin):** the probes (tickets 65 and the 17 Nov plugin probe) and a live run that freezes a session with recorded connections.
 
 ## Proposed tickets
@@ -83,6 +84,7 @@ The command can be written any way; if the program it ends up running honours th
 - **The service being down** loses the connections made meanwhile, as it loses every other event; a gap records it.
 - **Host names only:** a connection to a trusted host (a code host, a paste service) can still carry data out, and the proxy cannot tell.
 - **An existing proxy variable** means the shell is not watched for that call.
+- **Order inside one call is unknown.** A connection and a sensitive file named by the same call are flagged as possible exfiltration, not as a proven read-then-upload: the proxy records when a connection opened, and the command is recorded once, when bash ends. A command that names a secret but sends something else is flagged too.
 - **One listening socket per bash call**, held until OpenCode exits.
 
 ## Decisions (Kevin)

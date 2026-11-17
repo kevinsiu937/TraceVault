@@ -1,0 +1,33 @@
+# One bash call connected out through the shell proxy and named a file that
+# holds secrets (ticket 93). The proxy records the connection while bash runs,
+# and the command is recorded only when bash ends, so the connection always
+# comes first here: exfiltration-chain, which needs the read first, cannot see
+# it. The two are tied by session and call id, never by time.
+#
+# Capture cannot tell the order inside the call: the command may have read the
+# file before connecting, after, or never sent it at all. So the finding says
+# "possible". A connection that never opened sent nothing and starts no match.
+# A read in an earlier call, or a connection from a background process that
+# arrives after its call ended, is exfiltration-chain's case, not this one.
+id: same-call-exfiltration
+version: 1
+severity: high
+title: Possibly sent a secret in one command
+explanation: "A single command named a file holding passwords or keys and also connected to a computer on the internet. TraceVault cannot see what the command sent, so sending the secret was possible, not certain."
+recommendation: "Look at the command and the place it connected to, and find out what was sent. If a password or key may have left the computer, change it now. (For the developer: check the bash call and its connection, and rotate the secret.)"
+window: { seconds: 1800 }
+steps:
+  - any:
+      - label: connection through the proxy
+        match:
+          type: { equals: net.connect }
+          outcome: { equals: ok }
+    bind: { call: connected }
+  - any:
+      - label: sensitive file named in the shell
+        match:
+          type: { equals: hook.script }
+          tool: { equals: bash }
+          target: { names: { list: sensitive-paths } }
+          outcome: { in: [ok, error, timeout] }
+          call: { same_as: connected }

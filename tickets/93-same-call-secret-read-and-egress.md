@@ -4,7 +4,7 @@
 
 **Blocked by:** None. Follow-up to tickets 44 and 88 and the implemented per-call proxy path from 86 and 87. The additional local regression does not require Kevin's pending live sign-off for 87; that sign-off remains a separate requirement.
 
-**Status:** pending
+**Status:** done (17 Nov 2026). New rule `same-call-exfiltration` and match operator `same_as`; capture and the proxy are unchanged. Kevin's live sign-off is not needed for this rule; 87's remains separate.
 
 **Priority:** P2.
 
@@ -12,13 +12,13 @@
 
 **Demo:** Replay a frozen sequence with the connection hook before the completion hook for a bash call that names a sensitive read and performs an opened connection. The session and exported report show the possible-exfiltration finding with links to the correct call and connection.
 
-- [ ] Start with a failing Seam B/C regression in the observed hook order. Do not rearrange fixture events merely to make the existing scanner pass.
-- [ ] A single call with explicit read-before-connection evidence raises the intended possible-exfiltration finding, naming its shell and connection evidence.
-- [ ] Associate evidence by session and call identity. An unrelated later read, a different call or another session must not consume an earlier connection as its own exfiltration evidence.
-- [ ] Define and document how ambiguous order, a connection before a read and background connections are represented. Timing that capture cannot establish must not be presented as a proven read-then-upload sequence.
-- [ ] A refused upstream connection is not successful egress, and a call with no sensitive-read evidence produces no new exfiltration-chain finding.
-- [ ] Existing separate-call detection, rule time windows, duplicate handling and per-host new-host behavior continue to pass their Seam C fixtures.
-- [ ] The session page and report expose the finding and its evidence through Seam A; the connection remains associated with its owning bash call.
-- [ ] Use recorded or synthetic local hook sequences in the gate. Do not run a real agent, upload credentials, add wall-clock sleeps or require internet access.
-- [ ] Keep the proxy record-only and preserve event bodies and capture provenance. Any decision that changes stage observability or file structure is presented before implementation.
-- [ ] Typecheck, build and the full suite pass locally.
+- [x] Start with a failing Seam B/C regression in the observed hook order. Do not rearrange fixture events merely to make the existing scanner pass.
+- [x] A single call with explicit read-before-connection evidence raises the intended possible-exfiltration finding, naming its shell and connection evidence.
+- [x] Associate evidence by session and call identity. An unrelated later read, a different call or another session must not consume an earlier connection as its own exfiltration evidence.
+- [x] Define and document how ambiguous order, a connection before a read and background connections are represented. Timing that capture cannot establish must not be presented as a proven read-then-upload sequence.
+- [x] A refused upstream connection is not successful egress, and a call with no sensitive-read evidence produces no new exfiltration-chain finding.
+- [x] Existing separate-call detection, rule time windows, duplicate handling and per-host new-host behavior continue to pass their Seam C fixtures.
+- [x] The session page and report expose the finding and its evidence through Seam A; the connection remains associated with its owning bash call.
+- [x] Use recorded or synthetic local hook sequences in the gate. Do not run a real agent, upload credentials, add wall-clock sleeps or require internet access.
+- [x] Keep the proxy record-only and preserve event bodies and capture provenance. Any decision that changes stage observability or file structure is presented before implementation.
+- [x] Typecheck, build and the full suite pass locally.

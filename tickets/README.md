@@ -196,11 +196,11 @@ Four independently verifiable follow-ups from the focused thermo review. Kevin a
 | 90 | [Hardening never allows an operation the user denied](90-harden-preserves-effective-denials.md) | — | P1 | done |
 | 91 | [Recording and archiving continue after the main database becomes empty](91-repeated-archives-preserve-the-chain.md) | — | P2 | done |
 | 92 | [An archived report preserves its MCP tool comparison context](92-archive-reports-keep-mcp-baselines.md) | — | P2 | pending |
-| 93 | [A secret read and connection within one bash call do not lose their warning](93-same-call-secret-read-and-egress.md) | — | P2 | pending |
+| 93 | [A secret read and connection within one bash call do not lose their warning](93-same-call-secret-read-and-egress.md) | — | P2 | done |
 
 Ticket 92 improves the archive-baseline limitation already documented in the scale specification. Tickets 91 and 92 share archive code, so implement them one at a time; neither logically blocks the other. Every ticket includes its reproduction, end-to-end demo and required seam regressions.
 
-Backlog: 92 and 93 (90 and 91 done, 17 Nov 2026). No proxy ticket is open. Choose a pending follow-up only when Kevin asks to start it.
+Backlog: 92, set aside by Kevin (17 Nov 2026); 90, 91 and 93 are done. No proxy ticket is open. Choose a pending follow-up only when Kevin asks to start it.
 
 ## Dependency shape
 

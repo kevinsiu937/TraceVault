@@ -8,6 +8,7 @@ import { InvokesCondition } from "../scanner/dynamic/InvokesCondition.js";
 import { NamesCondition } from "../scanner/dynamic/NamesCondition.js";
 import { OtherThanCondition } from "../scanner/dynamic/OtherThanCondition.js";
 import { OutsideCondition } from "../scanner/dynamic/OutsideCondition.js";
+import { SameAsCondition } from "../scanner/dynamic/SameAsCondition.js";
 import { RegexCondition } from "../scanner/dynamic/RegexCondition.js";
 import { RunsCondition } from "../scanner/dynamic/RunsCondition.js";
 import { RunsOwnWriteCondition } from "../scanner/dynamic/RunsOwnWriteCondition.js";
@@ -32,6 +33,7 @@ export class WorkflowScannerAssembly {
       outside: OutsideCondition.parse,
       allowed_by: AllowedByCondition.parse,
       other_than: OtherThanCondition.parse,
+      same_as: SameAsCondition.parse,
       invokes: InvokesCondition.parse,
       runs: RunsCondition.parse,
       runs_by_name: RunsCondition.parseByName,
