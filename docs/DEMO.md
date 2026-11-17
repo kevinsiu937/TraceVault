@@ -380,21 +380,15 @@ node dist/cli/index.js verify --db /tmp/tv-trust/demo.db       # still intact
 - Both list "docs: accepted <time>".
 - An agent that runs `tracevault trust`, or writes into the state folder, raises `tracevault-tampering`.
 
-# The shell proxy (ticket 86, in progress)
+# The shell proxy (tickets 86 and 87)
 
-**What it shows:** `tracevault run` also starts a proxy on the service port + 1. A connection through it reaches its host unchanged and appears on the session's timeline as "connected to host:port", under the bash call named in the proxy address. The plugin does not point the shell at it yet (ticket 87), so the demo uses `curl -x` by hand. Spec: `docs/spec/shell-proxy.md`.
+**What it shows:** before each bash call, the plugin opens a proxy on 127.0.0.1 for that call alone and points the call's `HTTPS_PROXY` and `HTTP_PROXY` at it. A connection through it reaches its host unchanged and appears on the session's timeline as "connected to host:port", under that bash call. `tracevault run` opens no proxy itself. Spec: `docs/spec/shell-proxy.md`.
 
 ```bash
-npm run build
-mkdir -p /tmp/tv-proxy && node dist/cli/index.js run --port 4391 --db /tmp/tv-proxy/demo.db &
-# prints "shell proxy on http://127.0.0.1:4392"; if 4392 is taken it prints "shell proxy not started: port 4392 is already in use" and the service still runs
-node -e 'require("http").createServer((q,r)=>r.end("hello\n")).listen(4399,"127.0.0.1")' &
-curl -x http://ses_demo:call_demo@127.0.0.1:4392 http://127.0.0.1:4399/some/path    # hello
-curl -s -o /dev/null -w "%{http_code}\n" -x http://ses_demo:call_demo@127.0.0.1:4392 http://127.0.0.1:4398/  # 502: nothing listens
-node dist/cli/index.js verify --db /tmp/tv-proxy/demo.db
+npm run build && node dist/cli/index.js init && node dist/cli/index.js run &
+opencode run "Use the bash tool twice: 1) curl -sI https://example.com  2) git ls-remote https://github.com/git/git HEAD"
 ```
 
 **Expect:**
-- `http://127.0.0.1:4391/sessions/ses_demo` lists "connected to 127.0.0.1:4399" (ok) and "connected to 127.0.0.1:4398" (error, not opened).
-- The stored event holds host, port, kind, call and whether it opened; the path `/some/path` is nowhere in it.
-- `curl -x http://127.0.0.1:4392 …` with no user name still gets its answer, but nothing is stored yet (Kevin's question in ticket 86).
+- The session page shows "connected to example.com:443" under the `curl` call and "connected to github.com:443" under the `git` call.
+- With `HTTPS_PROXY` already set before OpenCode starts, nothing is pointed anywhere and the session shows a capture gap: "shell not watched for call …: HTTPS_PROXY was already set".

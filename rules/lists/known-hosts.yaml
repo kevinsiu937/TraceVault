@@ -1,0 +1,22 @@
+# Hosts the agent's shell is expected to reach: the default package registries
+# and code hosts. A connection to any other host is new-host's business.
+# Matched by name: `*` covers one label or more, but never the bare name, so
+# `*.github.com` takes api.github.com and github.com is listed on its own.
+# Kept short on purpose: each entry is a place code is fetched from by default.
+# A trusted host can still carry data out; the proxy cannot tell (shell-proxy spec).
+name: known-hosts
+items:
+  - "registry.npmjs.org"        # npm, yarn and pnpm
+  - "pypi.org"                  # pip: the index
+  - "files.pythonhosted.org"    # pip: the packages
+  - "github.com"
+  - "*.github.com"              # api.github.com, codeload.github.com
+  - "*.githubusercontent.com"   # release downloads and raw files
+  - "gitlab.com"
+  - "bitbucket.org"
+  - "crates.io"
+  - "*.crates.io"               # cargo: index.crates.io, static.crates.io
+  - "proxy.golang.org"          # go modules
+  - "sum.golang.org"            # go: the checksum check on every download
+  - "rubygems.org"
+  - "repo.maven.apache.org"     # Maven Central

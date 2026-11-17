@@ -1,0 +1,185 @@
+{
+  "source": "authored",
+  "note": "A bash call installs from npm (a known registry, no finding), then connects to paste.example.test three times, once over plain HTTP on another port, and to cdn.example.test once. Each unknown host is flagged once, on its first connection, however often the session contacts it.",
+  "events": [
+    {
+      "id": "evt_newhost_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-17T09:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_bash",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-17T09:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_newhost",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "npm install && python3 sync.py",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_npm",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-17T09:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "registry.npmjs.org",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_newhost",
+        "opened": true
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_paste_1",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-17T09:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "paste.example.test",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_newhost",
+        "opened": true
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_paste_2",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-17T09:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "paste.example.test",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_newhost",
+        "opened": true
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_cdn",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-17T09:00:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "cdn.example.test",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_newhost",
+        "opened": false
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_paste_3",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-17T09:00:06.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "paste.example.test",
+        "port": 80,
+        "kind": "http",
+        "call_id": "call_newhost",
+        "opened": true
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": [
+    {
+      "rule": "new-host",
+      "events": [
+        "evt_newhost_paste_1"
+      ]
+    },
+    {
+      "rule": "new-host",
+      "events": [
+        "evt_newhost_cdn"
+      ]
+    }
+  ]
+}

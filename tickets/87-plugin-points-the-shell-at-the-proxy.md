@@ -1,16 +1,16 @@
-# 87 — The plugin points the shell at the proxy, only when the service answers
+# 87 — The plugin opens a proxy for each bash call
 
-**What to build:** In the `shell.env` hook, the plugin sets `HTTPS_PROXY` and `HTTP_PROXY` to `http://<session>:<call>@127.0.0.1:<service port + 1>` and adds `localhost,127.0.0.1,::1` to `NO_PROXY`, but only when its last delivery to the service succeeded and a health check answers within 100 ms. Otherwise it sets nothing, the call connects directly, and a `capture.gap` says the shell was not watched. When a proxy variable is already set, the plugin leaves it, and the session page says the shell was not watched. `init --port` writes both ports.
+**What to build:** In the `shell.env` hook, the plugin opens a `ShellProxy` for the call (ticket 86) and sets `HTTPS_PROXY`, `HTTP_PROXY`, `https_proxy` and `http_proxy` to `http://127.0.0.1:<its port>`, and adds `localhost,127.0.0.1,::1` to `NO_PROXY` and `no_proxy`. The port stays open until OpenCode exits, so a background process keeps its call. When a proxy variable is already set, the plugin leaves every variable alone and records a `capture.gap` saying the shell was not watched. When the port cannot be opened, it sets nothing and records the same gap. The TraceVault service being down does not change what the hook does.
 
-Spec: `docs/spec/shell-proxy.md`, "Never block".
+Spec: `docs/spec/shell-proxy.md` (revised 17 Nov 2026), "Never block".
 
 **Blocked by:** 86.
 
-**Status:** open
+**Status:** built; waiting on Kevin's live run (17 Nov 2026). Tests: `tests/seams/shell-proxy.seam.test.ts`.
 
-- [ ] With the service up, a bash call's `shell.env` gets the proxy variables carrying its session and call (Seam B)
-- [ ] With the service down, the hook sets no proxy variable, answers within the time limit, and a gap is recorded once the service is back (Seam B)
-- [ ] An existing `HTTPS_PROXY` is left unchanged, and the session page says the shell was not watched (Seam B, Seam A)
-- [ ] `init --port 5000` makes the plugin use 5001 for the proxy
-- [ ] Kevin's live run: a session where the agent runs `curl` shows the connection under the call
-- [ ] Typecheck, build and the full suite pass
+- [x] A bash call's `shell.env` gets proxy variables pointing at its own port, and a connection on that port is stored under that call (Seam B)
+- [x] Two calls get two ports, each attributed to its own call (Seam B)
+- [x] An existing `HTTPS_PROXY` is left unchanged, and the session page says the shell was not watched (Seam B, Seam A)
+- [x] With the service down, the hook still sets the variables and the shell's connections still go through
+- [ ] Kevin's live run: a session where the agent runs `curl` and `git ls-remote` shows both connections under their calls
+- [x] Typecheck, build and the full suite pass

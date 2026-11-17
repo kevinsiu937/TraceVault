@@ -3,7 +3,6 @@ import { fileURLToPath } from "node:url";
 import { HookPayloadParser } from "../capture/HookPayloadParser.js";
 import { PayloadDigest } from "../capture/PayloadDigest.js";
 import { PluginHookCapture } from "../capture/PluginHookCapture.js";
-import { ShellProxy } from "../capture/ShellProxy.js";
 import { ToolClassifier } from "../capture/ToolClassifier.js";
 import { ActivityView } from "../dashboard/ActivityView.js";
 import { DashboardServer } from "../dashboard/DashboardServer.js";
@@ -38,7 +37,7 @@ import { WorkflowScannerAssembly } from "./WorkflowScannerAssembly.js";
 const RULES_DIR = fileURLToPath(new URL("../../rules", import.meta.url));
 
 /**
- * The investigation service, its dashboard and the shell proxy over one database, with both
+ * The investigation service and its dashboard over one database, with both
  * rule sets loaded. `run`, the report, the probe scripts and the seam tests
  * all build them here, so they exercise the same wiring.
  * Rules load when this is built, so a broken rule file fails before any
@@ -66,7 +65,7 @@ export class ServiceAssembly {
   open(
     dbPath: string,
     printError?: (line: string) => void,
-  ): { readonly service: InvestigationService; readonly store: SqliteEventStore; readonly server: DashboardServer; readonly proxy: ShellProxy } {
+  ): { readonly service: InvestigationService; readonly store: SqliteEventStore; readonly server: DashboardServer } {
     const store = new SqliteEventStore(dbPath);
     const factory = new EventFactory();
     const capture = new PluginHookCapture(new HookPayloadParser(), new ToolClassifier(new PayloadDigest()), factory);
@@ -87,7 +86,6 @@ export class ServiceAssembly {
       undefined,
       printError,
     );
-    const proxy = new ShellProxy((sessionId, data) => service.recordConnection(sessionId, data, new Date()));
-    return { service, store, server, proxy };
+    return { service, store, server };
   }
 }

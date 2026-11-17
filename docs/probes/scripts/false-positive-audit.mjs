@@ -6,7 +6,10 @@
 // It prints counts by default. Command text appears only with --show, and only
 // in this terminal: the script writes nothing into the repository, and the
 // throwaway database lives in the system temp folder and is deleted at the end.
-import { copyFileSync, mkdtempSync, rmSync } from "node:fs";
+// Every rule is listed, a silent one with 0. new-host (ticket 89) fires only on
+// connections the shell proxy recorded, which imported history never has: count
+// it on the TraceVault database of sessions run with the proxy.
+import { copyFileSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,7 +32,11 @@ try {
     process.stdout.write(`${new HistoryImportCommand().run(store)}\n`);
   }
   const scanner = new WorkflowScannerAssembly().fromDirectory(join(repo, "rules"));
-  const byRule = new Map();
+  const byRule = new Map(
+    readdirSync(join(repo, "rules"))
+      .filter((file) => file.endsWith(".yaml"))
+      .map((file) => [file.slice(0, -".yaml".length), { findings: 0, sessions: new Set(), examples: [] }]),
+  );
   const sessions = store.listSessions();
   for (const { sessionId } of sessions) {
     const events = store.listBySession(sessionId);
@@ -47,7 +54,6 @@ try {
   for (const [rule, entry] of rows) {
     process.stdout.write(`  ${rule.padEnd(24)} ${String(entry.findings).padStart(5)} findings in ${entry.sessions.size} sessions\n`);
   }
-  if (rows.length === 0) process.stdout.write("  none\n");
   if (show) {
     for (const [rule, entry] of rows) {
       process.stdout.write(`\n== ${rule}\n`);

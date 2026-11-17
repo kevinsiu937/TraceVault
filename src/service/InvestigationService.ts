@@ -1,7 +1,6 @@
 import type { CapturePort } from "../capture/CapturePort.js";
 import type { Event } from "../schema/Event.js";
 import type { EventFactory } from "../schema/EventFactory.js";
-import type { NetConnectData } from "../schema/NetConnectData.js";
 import type { EventStorePort } from "../store/EventStorePort.js";
 import type { McpTrustPort } from "../store/McpTrustPort.js";
 import type { StoredSession } from "../store/StoredSession.js";
@@ -86,10 +85,6 @@ export class InvestigationService implements InvestigationServicePort {
 
     this.keep(event);
     return "stored";
-  }
-
-  recordConnection(sessionId: string, data: NetConnectData, receivedAt: Date): void {
-    this.keep(this.factory.netConnect({ sessionId, correlationId: null, receivedAt }, data));
   }
 
   private keep(event: Event): void {

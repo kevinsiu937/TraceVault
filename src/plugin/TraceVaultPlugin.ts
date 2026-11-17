@@ -4,6 +4,7 @@ import type { PendingGapStore } from "./PendingGapStore.js";
 import { PermissionRequests, type PermissionProperties } from "./PermissionRequests.js";
 import { SessionDelivery } from "./SessionDelivery.js";
 import { SessionPreamble } from "./SessionPreamble.js";
+import { ShellProxies } from "./ShellProxies.js";
 
 interface ToolExecuteInput {
   tool: string;
@@ -76,12 +77,14 @@ type ToolBefore = (input: ToolExecuteInput, output: ToolExecuteBeforeOutput) => 
 type ToolAfter = (input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput) => Promise<void>;
 type EventHook = (input: { event: PluginEvent }) => Promise<void>;
 type ChatMessage = (input: ChatMessageInput, output: ChatMessageOutput) => Promise<void>;
+type ShellEnv = (input: { cwd?: string; sessionID?: string; callID?: string }, output: { env: Record<string, string> }) => Promise<void>;
 
 export interface TraceVaultHooks {
   config: (config: unknown) => Promise<void>;
   "tool.execute.before": ToolBefore;
   "tool.execute.after": ToolAfter;
   "chat.message": ChatMessage;
+  "shell.env": ShellEnv;
   event: EventHook;
 }
 
@@ -93,6 +96,7 @@ export class TraceVaultPlugin {
   private readonly now: () => number;
   private readonly guard: CallGuard | null;
   private readonly permissions: PermissionRequests;
+  private readonly shell: ShellProxies;
   private readonly pendingArgs = new Map<string, Record<string, unknown>>();
   private readonly pendingStarts = new Map<string, number>();
 
@@ -104,12 +108,14 @@ export class TraceVaultPlugin {
     guard: CallGuard | null = null,
     permissions: PermissionRequests = new PermissionRequests(),
     preamble: SessionPreamble = new SessionPreamble(),
+    shell: ShellProxies = new ShellProxies(),
   ) {
     this.delivery = new SessionDelivery(forwarder, gaps, preamble);
     this.preamble = preamble;
     this.now = now;
     this.guard = guard;
     this.permissions = permissions;
+    this.shell = shell;
   }
 
   hooks(): TraceVaultHooks {
@@ -180,6 +186,19 @@ export class TraceVaultPlugin {
           },
           sessionID,
         );
+      },
+      // Called before each bash call runs; the variables it sets reach that call's shell (probed 15 Nov 2026).
+      "shell.env": async (input, output) => {
+        const { sessionID, callID } = input;
+        if (typeof sessionID !== "string" || typeof callID !== "string") {
+          return;
+        }
+        // Delivery runs beside the forwarding: a service that is down never holds a connection up.
+        const unwatched = await this.shell.point({ sessionID, callID }, output.env, (connection) => void this.send(connection, sessionID));
+        if (unwatched !== null) {
+          const at = new Date().toISOString();
+          await this.send({ hook: "capture.gap", sessionID, from: at, to: at, reason: unwatched }, sessionID);
+        }
       },
       event: async ({ event }) => {
         const sessionID = event.properties?.sessionID;

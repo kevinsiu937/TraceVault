@@ -49,6 +49,7 @@ The last ticket adds an opt-in guard. It refuses a call before it runs when a si
 | `window` | `{ seconds: n }`: the last step must match within n seconds of the match's first event. `session`: no limit inside the session. Required when a rule spans more than one event, through two or more steps or a step that repeats. |
 | `steps` | One or more steps, matched in order. |
 | `blockable` | Optional, `false` by default. `true` lets the opt-in guard refuse a pending call that matches. Allowed only on a rule that matches one event (one step, no repeat) and does not test `outcome`. |
+| `once_per` | Optional. A fact name: a finding is raised only for the first closing event with each value of that fact in the session; later ones with the same value raise nothing (ticket 89). |
 
 A step has exactly one of `match` or `any`, and three optional keys:
 
@@ -65,6 +66,7 @@ The operators:
 | `equals` | a string | is exactly that string |
 | `in` | a list of strings | is one of them |
 | `glob` | a list of path globs | is a path that matches one. `**` spans folders; `*` and `?` stay inside one. Paths and patterns are normalised first |
+| `not_glob` | a list of globs | is present and matches none of them, as `glob` matches them (ticket 89: a host not on `known-hosts`) |
 | `regex` | a regular expression | contains a match, ignoring case |
 | `names` | a list of path globs | is a command line in which one word is a path matching a glob, as `glob` matches it. Spaces, quotes, shell operators, `=` and `@` separate words |
 | `outside` | a binding name | is a path outside the bound folder. A relative path is resolved against that folder |
@@ -97,6 +99,7 @@ An argument written `{ list: <name> }` is replaced by that list's items before t
 | `text` | A user prompt's text. A prompt the agent injected itself has none. |
 | `project` | A session start's project folder. |
 | `call` | A call's id, or the id of the call a permission grant was raised for. |
+| `host` | The host a connection through the shell proxy went to (ticket 89). |
 
 **Matching.** The scanner walks a session's deduplicated events in timeline order. It holds partial matches and raises a finding when the last step matches inside the window. An event that advances an open match does not also start a new one, so a repeated step never yields overlapping findings. A partial match closes once. A last step marked `each` keeps the match open instead, so every later event that matches that step inside the window is its own finding: a `.env` read followed by two `curl` calls yields two findings. One event closes at most one match per rule, the oldest still open.
 

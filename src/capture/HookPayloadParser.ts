@@ -1,3 +1,5 @@
+import type { NetConnectData } from "../schema/NetConnectData.js";
+
 export interface ToolAfterPayload {
   readonly kind: "tool.after";
   readonly tool: string;
@@ -80,6 +82,12 @@ export interface McpToolsPayload {
   readonly tools: readonly Record<string, unknown>[];
 }
 
+export interface NetConnectPayload {
+  readonly kind: "net.connect";
+  readonly sessionID: string;
+  readonly data: NetConnectData;
+}
+
 export type ParsedHook =
   | ToolAfterPayload
   | ToolFailedPayload
@@ -90,7 +98,8 @@ export type ParsedHook =
   | PermissionGrantedPayload
   | GuardFailurePayload
   | ConfigSnapshotPayload
-  | McpToolsPayload;
+  | McpToolsPayload
+  | NetConnectPayload;
 
 export class HookPayloadParser {
   parse(raw: unknown): ParsedHook {
@@ -149,6 +158,9 @@ export class HookPayloadParser {
           return record;
         }),
       };
+    }
+    if (hook === "net.connect") {
+      return this.parseConnection(payload);
     }
     if (hook === "session.created" || hook === "session.idle") {
       const sessionID = this.asString(payload["sessionID"], "sessionID");
@@ -242,6 +254,25 @@ export class HookPayloadParser {
       patterns: patterns as string[],
       reply,
       ...(typeof callID === "string" && callID.length > 0 ? { callID } : {}),
+    };
+  }
+
+  /** Only where the shell connected: any other field the payload carries is not read. */
+  private parseConnection(payload: Record<string, unknown>): NetConnectPayload {
+    const { port, kind, opened } = payload;
+    if (typeof port !== "number" || !Number.isInteger(port) || port < 1 || port > 65535) {
+      throw new TypeError("port must be a TCP port");
+    }
+    if (kind !== "https" && kind !== "http") {
+      throw new TypeError("kind must be https or http");
+    }
+    if (typeof opened !== "boolean") {
+      throw new TypeError("opened must be a boolean");
+    }
+    return {
+      kind: "net.connect",
+      sessionID: this.asString(payload["sessionID"], "sessionID"),
+      data: { host: this.asString(payload["host"], "host"), port, kind, call_id: this.asString(payload["callID"], "callID"), opened },
     };
   }
 

@@ -1,0 +1,196 @@
+{
+  "source": "authored",
+  "note": "Connections to package registries and code hosts on the known-hosts list: npm, PyPI and its file host, GitHub and its content host, crates.io. None is flagged.",
+  "events": [
+    {
+      "id": "evt_newhost_start",
+      "schema_version": 1,
+      "type": "session.start",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-17T09:00:00.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "title": "fixture",
+        "project_dir": "/home/dev/demo"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_bash",
+      "schema_version": 1,
+      "type": "hook.script",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "plugin_hook",
+      "timestamp": "2026-11-17T09:00:01.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": "call_newhost",
+      "prev_hash": null,
+      "data": {
+        "hook": "tool.execute.after",
+        "target_tool": "bash",
+        "target": "npm install && python3 sync.py",
+        "exit_code": 0,
+        "outcome": "ok"
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_npm",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-17T09:00:02.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "registry.npmjs.org",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_newhost",
+        "opened": true
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_pypi",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-17T09:00:03.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "pypi.org",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_newhost",
+        "opened": true
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_pyfiles",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-17T09:00:04.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "files.pythonhosted.org",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_newhost",
+        "opened": true
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_github",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-17T09:00:05.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "github.com",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_newhost",
+        "opened": true
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_ghcontent",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-17T09:00:06.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "objects.githubusercontent.com",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_newhost",
+        "opened": true
+      },
+      "raw_extra": {}
+    },
+    {
+      "id": "evt_newhost_crates",
+      "schema_version": 1,
+      "type": "net.connect",
+      "session_id": "ses_newhost",
+      "agent": {
+        "name": "opencode",
+        "version": "unknown"
+      },
+      "capture_path": "proxy",
+      "timestamp": "2026-11-17T09:00:07.000Z",
+      "seq": null,
+      "duration_ms": null,
+      "correlation_id": null,
+      "prev_hash": null,
+      "data": {
+        "host": "static.crates.io",
+        "port": 443,
+        "kind": "https",
+        "call_id": "call_newhost",
+        "opened": true
+      },
+      "raw_extra": {}
+    }
+  ],
+  "expect": []
+}

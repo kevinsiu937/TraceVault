@@ -46,6 +46,8 @@ interface Run {
 export class RuleMatcher {
   private open: Run[] = [];
   private started = 0;
+  /** For a rule with once_per: the values a finding was already raised for. */
+  private readonly raised = new Set<string>();
 
   constructor(
     private readonly rule: Rule,
@@ -91,6 +93,19 @@ export class RuleMatcher {
       findings.push(...this.start(eventId, at, facts, session));
     }
     this.open = this.open.filter((run) => run.members.length > 0);
+    return this.firstPerValue(findings, facts);
+  }
+
+  /** A finding closes on this event, so its value of the once_per fact is this event's. */
+  private firstPerValue(findings: Finding[], facts: EventFacts): Finding[] {
+    const value = this.rule.oncePer === null ? null : facts.get(this.rule.oncePer);
+    if (value === null || findings.length === 0) {
+      return findings;
+    }
+    if (this.raised.has(value)) {
+      return [];
+    }
+    this.raised.add(value);
     return findings;
   }
 

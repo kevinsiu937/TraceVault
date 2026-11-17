@@ -2,6 +2,7 @@ import { AllowedByCondition } from "../scanner/dynamic/AllowedByCondition.js";
 import { ConditionRegistry } from "../scanner/dynamic/ConditionRegistry.js";
 import { EqualsCondition } from "../scanner/dynamic/EqualsCondition.js";
 import { GlobCondition } from "../scanner/dynamic/GlobCondition.js";
+import { NotGlobCondition } from "../scanner/dynamic/NotGlobCondition.js";
 import { InCondition } from "../scanner/dynamic/InCondition.js";
 import { InvokesCondition } from "../scanner/dynamic/InvokesCondition.js";
 import { NamesCondition } from "../scanner/dynamic/NamesCondition.js";
@@ -25,6 +26,7 @@ export class WorkflowScannerAssembly {
       equals: EqualsCondition.parse,
       in: InCondition.parse,
       glob: GlobCondition.parse,
+      not_glob: NotGlobCondition.parse,
       names: NamesCondition.parse,
       regex: RegexCondition.parse,
       outside: OutsideCondition.parse,

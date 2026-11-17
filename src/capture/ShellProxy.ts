@@ -1,124 +1,147 @@
-import { createServer, type IncomingMessage, request as forward, type Server, type ServerResponse } from "node:http";
-import { connect } from "node:net";
-import type { Duplex } from "node:stream";
-import type { NetConnectData } from "../schema/NetConnectData.js";
+import { connect, createServer, type Server, type Socket } from "node:net";
 
 const LOOPBACK = "127.0.0.1";
-// Meant for the proxy, never for the host behind it: the first carries the session and call.
-const PROXY_HEADERS = new Set(["proxy-authorization", "proxy-connection"]);
+const HEAD_END = "\r\n\r\n";
+// A request head larger than this is not a proxy request; the connection is dropped, not buffered forever.
+const HEAD_LIMIT = 64 * 1024;
+// Meant for the proxy or for one hop, never for the host behind it.
+const HOP_HEADERS = /^(proxy-[^:]*|connection|keep-alive):/i;
+
+/** The bash call that owns a proxy: every connection on its port is that call's. */
+export interface ShellProxyOwner {
+  readonly sessionID: string;
+  readonly callID: string;
+}
+
+/** The `/hook` payload for one connection: where it went, never a path, header or body. */
+export interface NetConnectHook {
+  readonly hook: "net.connect";
+  readonly sessionID: string;
+  readonly callID: string;
+  readonly host: string;
+  readonly port: number;
+  readonly kind: "https" | "http";
+  readonly opened: boolean;
+}
+
+interface Target {
+  readonly host: string;
+  readonly port: number;
+  readonly kind: "https" | "http";
+  /** What the upstream receives before the client's remaining bytes: nothing for a tunnel, the rewritten head for a plain request. */
+  readonly head: Buffer;
+}
 
 /**
- * A forwarding proxy for the agent's shell, on 127.0.0.1. It passes every
- * byte through unchanged and never refuses a connection; for each one it
- * hands over only the host, the port, the kind and whether the upstream
- * opened, attributed to the session and call named in the proxy address.
+ * A forwarding proxy for one bash call, on 127.0.0.1 and a port the system
+ * picks. It handles `CONNECT host:port` and absolute-URL plain HTTP, passes
+ * the bytes through unchanged, never refuses, and hands over one
+ * `net.connect` per connection. Written on `node:net` only: that is what the
+ * 17 Nov 2026 probe proved in OpenCode's Bun plugin runtime.
  */
 export class ShellProxy {
-  private server: Server | null = null;
+  constructor(
+    private readonly owner: ShellProxyOwner,
+    private readonly record: (connection: NetConnectHook) => void,
+  ) {}
 
-  constructor(private readonly record: (sessionId: string, data: NetConnectData) => void) {}
-
-  listen(port: number): Promise<number> {
-    const server = createServer((request, response) => this.relay(request, response));
-    server.on("connect", (request: IncomingMessage, client: Duplex, head: Buffer) => this.tunnel(request, client, head));
+  /** Resolves with the port. The server does not keep the process alive, and stays open until it exits. */
+  listen(): Promise<number> {
+    const server: Server = createServer({ allowHalfOpen: true }, (client) => this.serve(client));
     return new Promise((resolve, reject) => {
       server.once("error", reject);
-      server.listen(port, LOOPBACK, () => {
-        this.server = server;
-        const address = server.address();
-        resolve(typeof address === "object" && address !== null ? address.port : port);
+      server.listen(0, LOOPBACK, () => {
+        server.unref();
+        resolve((server.address() as { port: number }).port);
       });
     });
   }
 
-  close(): Promise<void> {
-    const server = this.server;
-    this.server = null;
-    server?.closeAllConnections();
-    return new Promise((resolve) => (server === null || server === undefined ? resolve() : server.close(() => resolve())));
+  private serve(client: Socket): void {
+    let buffered = Buffer.alloc(0);
+    const read = (chunk: Buffer): void => {
+      buffered = Buffer.concat([buffered, chunk]);
+      const end = buffered.indexOf(HEAD_END);
+      if (end < 0) {
+        if (buffered.length > HEAD_LIMIT) {
+          client.destroy();
+        }
+        return;
+      }
+      client.off("data", read);
+      client.pause();
+      const target = this.target(buffered.subarray(0, end).toString("latin1"));
+      if (target === null) {
+        client.end("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
+        return;
+      }
+      this.forward(client, target, buffered.subarray(end + HEAD_END.length));
+    };
+    client.on("data", read);
+    client.on("error", () => client.destroy());
   }
 
-  /** `CONNECT host:port`: the client's bytes, encrypted or not, go through untouched. */
-  private tunnel(request: IncomingMessage, client: Duplex, head: Buffer): void {
-    const { hostname, port } = new URL(`http://${request.url ?? ""}`);
-    const host = hostname.replace(/^\[(.*)\]$/, "$1");
-    const target = Number(port || 443);
-    const upstream = connect(target, host);
+  private forward(client: Socket, target: Target, rest: Buffer): void {
+    const upstream = connect({ host: target.host, port: target.port, allowHalfOpen: true });
     let opened = false;
     upstream.once("connect", () => {
       opened = true;
-      this.note(request, { host, port: target, kind: "https", opened });
-      client.write("HTTP/1.1 200 Connection Established\r\n\r\n");
-      upstream.write(head);
+      this.note(target, true);
+      if (target.kind === "https") {
+        client.write("HTTP/1.1 200 Connection Established\r\n\r\n");
+      }
+      upstream.write(Buffer.concat([target.head, rest]));
       upstream.pipe(client);
       client.pipe(upstream);
     });
     upstream.on("error", () => {
       if (!opened) {
-        this.note(request, { host, port: target, kind: "https", opened });
-        client.end("HTTP/1.1 502 Bad Gateway\r\n\r\n");
+        this.note(target, false);
+        client.end("HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n");
         return;
       }
       client.destroy();
     });
-    client.on("error", () => upstream.destroy());
+    // A normal end travels through the pipes; an aborted client takes its upstream with it.
+    client.on("close", () => upstream.destroy());
   }
 
-  /** An absolute-URL request (`GET http://host/path`): forwarded with its headers and body, minus the proxy's own headers. */
-  private relay(request: IncomingMessage, response: ServerResponse): void {
+  /** The destination of a request head, or null when it is not a proxy request. */
+  private target(head: string): Target | null {
+    const [requestLine = "", ...headers] = head.split("\r\n");
+    const [method, address, version] = requestLine.split(" ");
+    if (method === undefined || address === undefined || version === undefined) {
+      return null;
+    }
+    if (method.toUpperCase() === "CONNECT") {
+      const match = /^(?:\[([^\]]+)\]|([^:[\]]+)):(\d+)$/.exec(address);
+      const port = Number(match?.[3]);
+      const host = match?.[1] ?? match?.[2];
+      return host === undefined || !this.validPort(port) ? null : { host, port, kind: "https", head: Buffer.alloc(0) };
+    }
     let url: URL;
     try {
-      url = new URL(request.url ?? "");
+      url = new URL(address);
     } catch {
-      response.writeHead(400).end();
-      return;
+      return null;
     }
-    const host = url.hostname.replace(/^\[(.*)\]$/, "$1");
     const port = Number(url.port || 80);
-    const headers: string[] = [];
-    for (let index = 0; index < request.rawHeaders.length; index += 2) {
-      if (!PROXY_HEADERS.has((request.rawHeaders[index] ?? "").toLowerCase())) {
-        headers.push(request.rawHeaders[index] ?? "", request.rawHeaders[index + 1] ?? "");
-      }
+    if (url.protocol !== "http:" || !this.validPort(port)) {
+      return null;
     }
-    let opened = false;
-    const outgoing = forward({ host, port, method: request.method, path: `${url.pathname}${url.search}`, headers, agent: false }, (answer) => {
-      response.writeHead(answer.statusCode ?? 502, answer.statusMessage, answer.rawHeaders);
-      answer.pipe(response);
-    });
-    outgoing.on("socket", (socket) =>
-      socket.once("connect", () => {
-        opened = true;
-        this.note(request, { host, port, kind: "http", opened });
-      }),
-    );
-    outgoing.on("error", () => {
-      if (!opened) {
-        this.note(request, { host, port, kind: "http", opened });
-      }
-      if (!response.headersSent) {
-        response.writeHead(502).end();
-        return;
-      }
-      response.destroy();
-    });
-    request.pipe(outgoing);
+    // Origin form for the host, and one request per upstream: a kept-alive client could otherwise send the next request, for another host, to this one.
+    const kept = headers.filter((line) => !HOP_HEADERS.test(line));
+    const rewritten = [`${method} ${url.pathname}${url.search} ${version}`, ...kept, "Connection: close"].join("\r\n");
+    return { host: url.hostname.replace(/^\[(.*)\]$/, "$1"), port, kind: "http", head: Buffer.from(`${rewritten}${HEAD_END}`, "latin1") };
   }
 
-  /** The proxy address's user name is the session, its password the call. Any value is accepted: this is attribution, not authentication. */
-  private note(request: IncomingMessage, connection: Omit<NetConnectData, "call_id">): void {
-    const [scheme, encoded] = (request.headers["proxy-authorization"] ?? "").split(" ");
-    const credentials = scheme?.toLowerCase() === "basic" && encoded !== undefined ? Buffer.from(encoded, "base64").toString("utf8") : "";
-    const split = credentials.indexOf(":");
-    // Clients decode the proxy address's user name and password before they encode the header.
-    const sessionId = split < 0 ? credentials : credentials.slice(0, split);
-    const callId = split < 0 ? "" : credentials.slice(split + 1);
-    if (sessionId === "") {
-      // shortcut: a connection that names no session (git's) is forwarded but not recorded; where to store it is Kevin's decision (ticket 86).
-      return;
-    }
+  private validPort(port: number): boolean {
+    return Number.isInteger(port) && port > 0 && port < 65536;
+  }
+
+  private note(target: Target, opened: boolean): void {
     try {
-      this.record(sessionId, { ...connection, call_id: callId === "" ? null : callId });
+      this.record({ hook: "net.connect", ...this.owner, host: target.host, port: target.port, kind: target.kind, opened });
     } catch {
       // A proxy that cannot record still forwards.
     }

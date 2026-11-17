@@ -1,3 +1,4 @@
+import type { FactName } from "../../schema/EventFacts.js";
 import type { Severity } from "../../schema/Finding.js";
 import type { DurationWindow } from "./DurationWindow.js";
 import type { RuleStep } from "./RuleStep.js";
@@ -18,5 +19,7 @@ export class Rule {
     readonly window: DurationWindow | null,
     /** The opt-in guard may refuse a pending call that matches this rule. */
     readonly blockable: boolean = false,
+    /** A finding is raised only for the first closing event with each value of this fact. */
+    readonly oncePer: FactName | null = null,
   ) {}
 }

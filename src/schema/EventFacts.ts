@@ -2,7 +2,7 @@ import type { Event } from "./Event.js";
 import type { EventType } from "./EventType.js";
 
 /** The facts a rule may test. A rule naming anything else fails to load. */
-export type FactName = "type" | "target" | "outcome" | "operation" | "path" | "tool" | "text" | "project" | "call";
+export type FactName = "type" | "target" | "outcome" | "operation" | "path" | "tool" | "text" | "project" | "call" | "host";
 
 export const FACT_NAMES: readonly FactName[] = [
   "type",
@@ -14,6 +14,7 @@ export const FACT_NAMES: readonly FactName[] = [
   "text",
   "project",
   "call",
+  "host",
 ];
 
 /** A call is something the agent did; the rest are boundaries and capture bookkeeping. */
@@ -59,6 +60,7 @@ export class EventFacts {
         text: event.type === "prompt.user" && !harness ? event.data.text : null,
         project: event.type === "session.start" ? (event.data.project_dir ?? null) : null,
         call: EventFacts.call(event),
+        host: event.type === "net.connect" ? event.data.host : null,
       },
       CALLS[event.type],
       harness,

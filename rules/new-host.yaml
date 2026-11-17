@@ -1,0 +1,19 @@
+# The agent's shell connects to a host that is not a package registry or code
+# host on the list known-hosts (ticket 89). Only the shell proxy records
+# connections, so this sees what honours the proxy variables (shell-proxy spec).
+# A host is flagged once per session, on its first connection, however often
+# it is contacted again, on any port, and whether or not the connection opened:
+# an attempt still names where the agent tried to go.
+# Built last and low on purpose (Kevin, 16 Nov 2026): a pip install from a new
+# mirror fires it, and it can be dropped without touching the proxy.
+id: new-host
+version: 1
+severity: low
+title: Connected to a new place on the internet
+explanation: "The agent's shell connected to a computer on the internet that is not one of the usual places code is downloaded from. That can be normal, such as a new download site, or it can be data being sent somewhere it should not go."
+recommendation: "Look at which command made the connection and whether you expected it. If you do not recognise the place, find out what was sent there. (For the developer: check the host and the bash call it nests under; add the host to rules/lists/known-hosts.yaml if it is a registry you use.)"
+once_per: host
+steps:
+  - match:
+      type: { equals: net.connect }
+      host: { not_glob: { list: known-hosts } }

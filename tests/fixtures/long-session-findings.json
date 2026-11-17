@@ -1,6 +1,6 @@
 {
   "source": "authored",
-  "note": "Findings the matcher before ticket 82 raised on the long session built in tests/seams/long-session.seam.test.ts. Frozen as the reference the merged matcher must reproduce. Ticket 88 added three exfiltration-chain trigger rows. Without them the merged matcher still gives the pre-82 reference exactly (checked 16 Nov 2026); with them a new .env read is the earliest open read for later chains, so this file is now the merged matcher's output on the longer session.",
+  "note": "Findings the matcher before ticket 82 raised on the long session built in tests/seams/long-session.seam.test.ts. Frozen as the reference the merged matcher must reproduce. Ticket 88 added three exfiltration-chain trigger rows. Without them the merged matcher still gives the pre-82 reference exactly (checked 16 Nov 2026); with them a new .env read is the earliest open read for later chains, so this file is now the merged matcher's output on the longer session. Ticket 89 added one new-host row: the paste host is flagged on its first connection only, not once per cycle.",
   "expect": [
     {"rule": "destructive-action", "events": ["evt_long_0_evt_freeze_freeze", "evt_long_0_evt_freeze_rm"]},
     {"rule": "destructive-action", "events": ["evt_long_0_evt_freeze_freeze", "evt_long_0_evt_freeze_delete"]},
@@ -30,6 +30,7 @@
     {"rule": "shell-sensitive-read", "events": ["evt_long_0_evt_exfil_ssh"]},
     {"rule": "sensitive-read", "events": ["evt_long_0_evt_exfil_proxy_env"]},
     {"rule": "exfiltration-chain", "events": ["evt_long_0_evt_exfil_env", "evt_long_0_evt_exfil_proxy_connect"]},
+    {"rule": "new-host", "events": ["evt_long_0_evt_exfil_proxy_connect"]},
     {"rule": "opaque-execution", "events": ["evt_long_0_evt_exfil_opaque"]},
     {"rule": "shell-sensitive-read", "events": ["evt_long_0_evt_exfil_opaque"]},
     {"rule": "runs-written-file", "events": ["evt_long_0_evt_runs_w_build", "evt_long_0_evt_runs_r_build"]},

@@ -7,7 +7,6 @@ import { ServiceAssembly } from "../../src/cli/ServiceAssembly.js";
 import { main } from "../../src/cli/index.js";
 import type { Event } from "../../src/schema/Event.js";
 import { EventFactory } from "../../src/schema/EventFactory.js";
-import type { NetConnectData } from "../../src/schema/NetConnectData.js";
 import { SqliteEventStore } from "../../src/store/SqliteEventStore.js";
 
 const FIXTURES = join(import.meta.dirname, "../fixtures");
@@ -54,10 +53,12 @@ describe("seam A: a session in, one self-contained report file out", () => {
     store.close();
   }
 
-  /** Records connections into the test session through the same path the shell proxy uses. */
-  function connect(...connections: NetConnectData[]): void {
+  /** Records connections into the test session as the plugin posts them from a call's proxy. */
+  function connect(...connections: { host: string; port: number; kind: "https" | "http"; callID: string; opened: boolean }[]): void {
     const { service, store } = new ServiceAssembly().open(db);
-    connections.forEach((data, index) => service.recordConnection(SESSION, data, new Date(Date.UTC(2026, 10, 9, 14, 30, index))));
+    connections.forEach((connection, index) =>
+      expect(service.recordHookPayload({ hook: "net.connect", sessionID: SESSION, ...connection }, new Date(Date.UTC(2026, 10, 9, 14, 30, index)))).toBe("stored"),
+    );
     store.close();
   }
 
@@ -240,9 +241,9 @@ describe("seam A: a session in, one self-contained report file out", () => {
   it("lists each host the shell contacted once, with how many connections and the first call that made one", async () => {
     const [curl, wget] = TRIGGER.filter((event) => event.type === "hook.script");
     connect(
-      { host: "example.test", port: 443, kind: "https", call_id: curl?.correlation_id ?? null, opened: true },
-      { host: "pypi.org", port: 443, kind: "https", call_id: null, opened: true },
-      { host: "example.test", port: 443, kind: "https", call_id: wget?.correlation_id ?? null, opened: true },
+      { host: "example.test", port: 443, kind: "https", callID: curl?.correlation_id ?? "", opened: true },
+      { host: "pypi.org", port: 443, kind: "https", callID: "call_not_recorded", opened: true },
+      { host: "example.test", port: 443, kind: "https", callID: wget?.correlation_id ?? "", opened: true },
     );
 
     const html = await report();
@@ -370,7 +371,7 @@ describe("seam A: a session in, one self-contained report file out", () => {
     });
 
     it("downloads the same bytes the CLI writes when the shell contacted hosts", async () => {
-      connect({ host: "example.test", port: 443, kind: "https", call_id: null, opened: true });
+      connect({ host: "example.test", port: 443, kind: "https", callID: "call_not_recorded", opened: true });
       const written = await report();
       const body = await served(async (baseUrl) => (await fetch(`${baseUrl}/sessions/${SESSION}/report`)).text());
 

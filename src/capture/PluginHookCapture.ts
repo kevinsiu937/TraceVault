@@ -79,6 +79,10 @@ export class PluginHookCapture implements CapturePort {
       );
     }
 
+    if (hook.kind === "net.connect") {
+      return this.factory.netConnect({ sessionId: hook.sessionID, correlationId: null, receivedAt }, hook.data);
+    }
+
     const blockedBy = hook.kind === "tool.failed" ? hook.blockedBy : undefined;
     const outcome: Outcome =
       hook.kind === "tool.failed"

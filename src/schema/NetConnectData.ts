@@ -8,7 +8,7 @@ export interface NetConnectData {
   readonly port: number;
   /** `https` for a CONNECT tunnel, `http` for a plain request. */
   readonly kind: "https" | "http";
-  /** The bash call the proxy address named. */
+  /** The bash call that owns the proxy port the connection arrived on. */
   readonly call_id: string | null;
   readonly opened: boolean;
 }

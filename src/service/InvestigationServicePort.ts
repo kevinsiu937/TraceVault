@@ -1,4 +1,3 @@
-import type { NetConnectData } from "../schema/NetConnectData.js";
 import type { ActivityFilter } from "./ActivityFilter.js";
 import type { ArchiveRun } from "./ArchiveRun.js";
 import type { SessionActivity } from "./SessionActivity.js";
@@ -11,8 +10,6 @@ export type RecordResult = "stored" | "ignored" | "rejected";
 
 export interface InvestigationServicePort {
   recordHookPayload(raw: unknown, receivedAt: Date): RecordResult;
-  /** A connection the shell proxy forwarded for a session's bash call. */
-  recordConnection(sessionId: string, data: NetConnectData, receivedAt: Date): void;
   listSessions(): SessionSummary[];
   /** Every archive run that moved sessions out of this database, newest first. */
   listArchiveRuns(): ArchiveRun[];

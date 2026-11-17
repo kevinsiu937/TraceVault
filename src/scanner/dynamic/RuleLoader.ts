@@ -1,3 +1,4 @@
+import { FACT_NAMES, type FactName } from "../../schema/EventFacts.js";
 import type { Severity } from "../../schema/Finding.js";
 import { DurationWindow } from "./DurationWindow.js";
 import { Rule } from "./Rule.js";
@@ -6,7 +7,7 @@ import { RuleYaml } from "../rules/RuleYaml.js";
 import type { RuleStep } from "./RuleStep.js";
 import type { RuleStepLoader } from "./RuleStepLoader.js";
 
-const RULE_KEYS = ["id", "version", "severity", "title", "explanation", "recommendation", "window", "steps", "blockable"] as const;
+const RULE_KEYS = ["id", "version", "severity", "title", "explanation", "recommendation", "window", "steps", "blockable", "once_per"] as const;
 const SEVERITIES: readonly Severity[] = ["low", "medium", "high"];
 
 type Fields = Record<string, unknown>;
@@ -51,7 +52,20 @@ export class RuleLoader {
     const window = this.window(fields, file, spansEvents);
     const blockable = this.blockable(fields, file, spansEvents || steps.some((step) => step.tests("outcome")));
 
-    return new Rule(id, version, severity as Severity, title, explanation, recommendation, steps, window, blockable);
+    const oncePer = this.oncePer(fields, file);
+
+    return new Rule(id, version, severity as Severity, title, explanation, recommendation, steps, window, blockable, oncePer);
+  }
+
+  private oncePer(fields: Fields, file: string): FactName | null {
+    if (!Object.hasOwn(fields, "once_per")) {
+      return null;
+    }
+    const fact = fields["once_per"];
+    if (typeof fact !== "string" || !(FACT_NAMES as readonly string[]).includes(fact)) {
+      throw new RuleLoadError(file, "once_per", `must name a fact (known: ${FACT_NAMES.join(", ")})`);
+    }
+    return fact as FactName;
   }
 
   private stepList(fields: Fields, file: string): readonly [RuleStep, ...RuleStep[]] {

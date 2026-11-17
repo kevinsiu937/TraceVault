@@ -261,6 +261,12 @@ steps:
     expect(load()).toThrow(/probe\.yaml: blockable: must be true or false/);
   });
 
+  it.each(["colour", "[host]"])("refuses once_per naming %s instead of a fact", (value) => {
+    write("probe.yaml", VALID.replace("steps:", `once_per: ${value}\nsteps:`));
+
+    expect(load()).toThrow(/probe\.yaml: once_per: must name a fact/);
+  });
+
   it("rejects a match operator it does not know", () => {
     write("probe.yaml", VALID.replace("{ equals: document.access }", "{ like: document.access }"));
 

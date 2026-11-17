@@ -1,6 +1,5 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import type { ShellProxy } from "../capture/ShellProxy.js";
 import type { CliCommand } from "./CliCommand.js";
 import { CommandOptions } from "./CommandOptions.js";
 import { HistoryImportCommand } from "./HistoryImportCommand.js";
@@ -10,7 +9,7 @@ import { ServiceAssembly } from "./ServiceAssembly.js";
 const DEFAULT_PORT = 4319;
 const DEFAULT_ARCHIVE_AFTER_DAYS = 90;
 
-/** `tracevault run`: assembles the local service (capture, scanners, dashboard) and starts it on 127.0.0.1, with the shell proxy on the next port. */
+/** `tracevault run`: assembles the local service (capture, scanners, dashboard) and starts it on 127.0.0.1. */
 export class RunCommand implements CliCommand {
   readonly name = "run";
   readonly usageOnError = true;
@@ -33,7 +32,7 @@ export class RunCommand implements CliCommand {
       return 1;
     }
     mkdirSync(dirname(dbPath), { recursive: true });
-    const { store, server, proxy } = assembly.open(dbPath);
+    const { store, server } = assembly.open(dbPath);
 
     // Before the import, which skips archived sessions, so nothing moved here comes straight back.
     let archiveLine: string;
@@ -53,8 +52,7 @@ export class RunCommand implements CliCommand {
 
     try {
       const listening = await server.listen(port);
-      const proxyLine = await this.startProxy(proxy, listening + 1);
-      process.stdout.write(`${archiveLine}\n${importLine}\ntracevault listening on http://127.0.0.1:${listening}\n${proxyLine}\nevents db: ${dbPath}\n`);
+      process.stdout.write(`${archiveLine}\n${importLine}\ntracevault listening on http://127.0.0.1:${listening}\nevents db: ${dbPath}\n`);
       return 0;
     } catch (error) {
       store.close();
@@ -64,16 +62,6 @@ export class RunCommand implements CliCommand {
       }
       process.stderr.write(`tracevault: failed to start: ${this.message(error)}\n`);
       return 1;
-    }
-  }
-
-  /** The service runs without the proxy rather than not at all: the shell then connects directly, unwatched. */
-  private async startProxy(proxy: ShellProxy, port: number): Promise<string> {
-    try {
-      return `shell proxy on http://127.0.0.1:${await proxy.listen(port)}`;
-    } catch (error) {
-      const inUse = typeof error === "object" && error !== null && "code" in error && error.code === "EADDRINUSE";
-      return `shell proxy not started: ${inUse ? `port ${port} is already in use` : this.message(error)}`;
     }
   }
 
