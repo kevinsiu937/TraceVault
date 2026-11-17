@@ -32,18 +32,23 @@ TraceVault observes and reports. Two opt-in exceptions: `init --block` skips a c
 
 Requires Node 24 or later (`node:sqlite`) and OpenCode.
 
+TraceVault is not on npm yet. Build a package from a clone and install it:
+
 ```bash
 git clone <this repo> && cd TraceVault
 npm install
-npm run build
+npm pack                                 # builds, then writes tracevault-0.1.0.tgz
+npm install -g ./tracevault-0.1.0.tgz    # the tarball can be copied to another machine first
 ```
 
 Attach TraceVault to a project, then start the service:
 
 ```bash
-node dist/cli/index.js init --dir <your project>   # installs the plugin; hardens opencode.json (undo: uninstall)
-node dist/cli/index.js run                         # service and dashboard on http://127.0.0.1:4319
+tracevault init --dir <your project>   # installs the plugin; hardens opencode.json (undo: uninstall)
+tracevault run                         # service and dashboard on http://127.0.0.1:4319
 ```
+
+To run from the clone instead, `npm run build` and use `node dist/cli/index.js` wherever this README says `tracevault`.
 
 Use OpenCode in that project as usual, with the service running. Open http://127.0.0.1:4319 to see the sessions.
 
@@ -60,14 +65,14 @@ Use OpenCode in that project as usual, with the service running. Open http://127
 | `import [--db <path>]` | Import OpenCode's existing session history. |
 | `uninstall [--dir <path>]` | Remove the plugin and restore the configuration, including what `init` or `harden` changed. |
 
-Run them as `node dist/cli/index.js <command>`. Without `--db`, the database is `tracevault/tracevault.db` in your state folder (`~/.local/state`, or `%LOCALAPPDATA%` on Windows), never the current folder.
+Run them as `tracevault <command>` (from a clone: `node dist/cli/index.js <command>`). Without `--db`, the database is `tracevault/tracevault.db` in your state folder (`~/.local/state`, or `%LOCALAPPDATA%` on Windows), never the current folder.
 
 A step-by-step walk-through of every feature, with the last recorded run, is in `docs/DEMO.md`.
 
 ## Known limits
 
 - **Start the service to see sessions.** While it is down, the plugin keeps what it cannot send in an owner-only outbox (up to 10 MB) and sends it, at the times it happened, on the next event after the service is back. Past 10 MB the oldest are dropped and the session shows a gap.
-- **Not packaged.** No npm release yet; the plugin `init` writes points at this clone's `dist/`, so moving the clone breaks it (run `init` again).
+- **Not on npm.** Install from a tarball made with `npm pack`. The plugin `init` writes points at the installed package, or at the clone's `dist/` when run from a clone; after reinstalling elsewhere or moving the clone, run `init` again.
 - **OpenCode only.** A second agent is Phase 5.
 - **Rules read commands as written.** Aliases, functions and variables are not expanded, and a program that ignores proxy variables (`nc`, `ssh`, raw sockets) is not seen by the proxy.
 - Each spec lists its own blind spots under "Known Blind Spots": `docs/spec/`.
@@ -107,6 +112,8 @@ tickets/          one file per ticket; index in tickets/README.md
 
 ```bash
 npm run typecheck && npm run build && npx vitest run
+bun tests/bun/plugin-smoke.mjs            # the built plugin under Bun, as OpenCode runs it
+node tests/package/install-smoke.mjs     # pack, install the tarball, run the installed CLI
 git config core.hooksPath .githooks   # once per clone: the pre-commit gate
 ```
 

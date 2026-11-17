@@ -209,6 +209,8 @@ Kevin asked on 17 Nov 2026 what is left to use TraceVault in production. Spec: `
 | # | Ticket | Blocked by | Status |
 |---|---|---|---|
 | 94 | [Nothing is lost while the service is down](94-outbox.md) | — | done |
+| 95 | [The plugin is tested under Bun in CI](95-bun-smoke.md) | — | built; awaits CI's Bun run |
+| 96 | [TraceVault installs from a package](96-package.md) | 95 | done |
 
 Frontier: none open.
 

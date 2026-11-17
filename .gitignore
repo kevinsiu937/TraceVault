@@ -14,6 +14,7 @@ sessions/
 captures/
 
 # Reports and generated artifacts
+*.tgz
 reports/
 *.pdf
 !docs/**/*.pdf

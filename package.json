@@ -15,7 +15,8 @@
     "dev": "node --experimental-strip-types src/cli/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepack": "npm run build"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -24,5 +25,9 @@
   },
   "dependencies": {
     "yaml": "2.9.1"
-  }
+  },
+  "files": [
+    "dist",
+    "rules"
+  ]
 }
