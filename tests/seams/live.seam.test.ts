@@ -238,6 +238,32 @@ describe("seam A: live timeline updates", () => {
     expect(header).toContain('data-rule="exfiltration-chain"');
   });
 
+  it("nests a streamed connection under its bash call when that call completes", async () => {
+    const controller = new AbortController();
+    const stream = await fetch(`${baseUrl}/sessions/${SESSION}/events`, { signal: controller.signal });
+    const reader = stream.body?.getReader();
+    expect(reader).toBeDefined();
+
+    service.recordHookPayload(
+      { hook: "net.connect", sessionID: SESSION, callID: "call_curl", host: "example.test", port: 443, kind: "https", opened: true },
+      new Date("2026-10-25T10:00:01.000Z"),
+    );
+    service.recordHookPayload(toolAfter("bash", { command: "curl https://example.test" }, "call_curl"), new Date("2026-10-25T10:00:02.000Z"));
+    const connectionId = service.getTimeline(SESSION).find((entry) => entry.type === "net.connect")?.eventId;
+    const callId = service.getTimeline(SESSION).find((entry) => entry.type === "hook.script")?.eventId;
+
+    const payloads = await collect(
+      reader as ReadableStreamDefaultReader<Uint8Array>,
+      (received) => received.some((payload) => payload.eventId === callId),
+    );
+    controller.abort();
+
+    expect(payloads.find((payload) => payload.eventId === connectionId)?.html).not.toContain("data-parent=");
+    const update = payloads.find((payload) => payload.eventId === callId)?.updates.find((candidate) => candidate.eventId === connectionId);
+    expect(update?.html).toContain(`data-parent="${callId}"`);
+    expect(update?.html).toContain('class="event nested"');
+  });
+
   it("drops live events outside the selected time range", async () => {
     service.recordHookPayload(toolAfter("read", { filePath: "seeded.ts" }, "call_seeded"), new Date("2026-10-25T10:00:00.000Z"));
 

@@ -16,3 +16,5 @@ Spec: `docs/spec/shell-proxy.md` (revised 17 Nov 2026).
 - [x] The service no longer opens a proxy port; `run` prints no proxy line
 - [x] `tracevault verify` passes on a database with `net.connect` events
 - [x] Typecheck, build and the full suite pass
+
+**Follow-up (17 Nov 2026, review R2):** an already-open live page now nests a connection when its bash call completes; the stream re-sends a row whose parent changed, not only one whose flags changed (`tests/seams/live.seam.test.ts`).
