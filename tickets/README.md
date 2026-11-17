@@ -118,7 +118,7 @@ Spec: `docs/spec/evasion-before-phase-5.md`. Kevin runs the probes and the live 
 | 62 | Compare the full path of the file that ran | 61 | done (probe run 15 Nov) |
 | 63 | Validate the evasion rules live, and audit them for false positives | 60, 61, 62 | done (live run and audit 15 Nov) |
 | 64 | Egress by program, and can the shell be routed through a proxy? | 60 | done (probe run 15 Nov) |
-| 65 | Probe: can a proxy tell which call made a connection? (the proxy itself is 86 to 89) | 64 | done (probe run 16 Nov) |
+| 65 | Probe: can a proxy tell which call made a connection? (the proxy itself is 86 to 89) | 64 | done (probes run 16 and 17 Nov) |
 | 66 | Trust an MCP tool when first seen, flag a later change | 41, 55 | done |
 
 ## Semester 1 polish (requested by Kevin, 15 Nov 2026)
@@ -179,13 +179,28 @@ The proxy records where the agent's shell connects, and never blocks.
 
 | # | Ticket | Blocked by | Status |
 |---|---|---|---|
-| 65 | Probe: can a proxy tell which call made a connection? | 64 | done (probe run 16 Nov) |
-| 86 | The proxy records a connection (tracer bullet) | 65 | in progress; built except a connection that names no session (question for Kevin in the ticket) |
-| 87 | The plugin points the shell at the proxy, only when the service answers | 86 | open |
+| 65 | Probe: can a proxy tell which call made a connection? | 64 | done (probes run 16 and 17 Nov) |
+| 86 | The proxy records a connection (tracer bullet) | 65 | done (reworked to the revised spec, 17 Nov) |
+| 87 | The plugin opens a proxy for each bash call | 86 | built; waiting on Kevin's live run |
 | 88 | Exfiltration through any program, and the hosts in the report | 86 | done |
-| 89 | The first connection to an unknown host is flagged | 88 | open |
+| 89 | The first connection to an unknown host is flagged | 88 | built; waiting on Kevin's audit run |
 
-Frontier: 86 (waiting on Kevin: where a connection with no session is stored) and 89.
+Frontier: 87 (Kevin's live run); 89 (Kevin's audit run, after 87's live run).
+
+## Thermo review follow-ups (approved for the backlog)
+
+Four independently verifiable follow-ups from the focused thermo review. Kevin approved this breakdown for later work. All remain pending; recording them does not start implementation or Phase 5.
+
+| # | Ticket | Blocked by | Priority | Status |
+|---|---|---|---|---|
+| 90 | [Hardening never allows an operation the user denied](90-harden-preserves-effective-denials.md) | — | P1 | pending |
+| 91 | [Recording and archiving continue after the main database becomes empty](91-repeated-archives-preserve-the-chain.md) | — | P2 | pending |
+| 92 | [An archived report preserves its MCP tool comparison context](92-archive-reports-keep-mcp-baselines.md) | — | P2 | pending |
+| 93 | [A secret read and connection within one bash call do not lose their warning](93-same-call-secret-read-and-egress.md) | — | P2 | pending |
+
+Ticket 92 improves the archive-baseline limitation already documented in the scale specification. Tickets 91 and 92 share archive code, so implement them one at a time; neither logically blocks the other. Every ticket includes its reproduction, end-to-end demo and required seam regressions.
+
+Backlog: 90–93, with no open ticket blockers. The active frontier remains 87's live run and 89's audit run. Choose a pending follow-up only when Kevin asks to start it.
 
 ## Dependency shape
 
