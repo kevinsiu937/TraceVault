@@ -202,6 +202,16 @@ Ticket 92 improves the archive-baseline limitation already documented in the sca
 
 Backlog: 92, set aside by Kevin (17 Nov 2026); 90, 91 and 93 are done. No proxy ticket is open. Choose a pending follow-up only when Kevin asks to start it.
 
+## Production readiness
+
+Kevin asked on 17 Nov 2026 what is left to use TraceVault in production. Spec: `docs/spec/outbox.md`.
+
+| # | Ticket | Blocked by | Status |
+|---|---|---|---|
+| 94 | [Nothing is lost while the service is down](94-outbox.md) | — | done |
+
+Frontier: none open.
+
 ## Dependency shape
 
 ### Phase 1

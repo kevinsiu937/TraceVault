@@ -7,6 +7,9 @@ import type { Event } from "../schema/Event.js";
 import type { EventFactory } from "../schema/EventFactory.js";
 import type { Outcome } from "../schema/Outcome.js";
 
+// The plugin's clock may run a little ahead of the service's.
+const CLOCK_JITTER_MS = 5000;
+
 export class PluginHookCapture implements CapturePort {
   constructor(
     private readonly parser: HookPayloadParser,
@@ -16,8 +19,11 @@ export class PluginHookCapture implements CapturePort {
     private readonly digest: PayloadDigest = new PayloadDigest(),
   ) {}
 
-  toEvent(raw: unknown, receivedAt: Date, mcpServers: (sessionId: string) => readonly string[] = () => []): Event | null {
+  toEvent(raw: unknown, arrivedAt: Date, mcpServers: (sessionId: string) => readonly string[] = () => []): Event | null {
     const hook = this.parser.parse(raw);
+    // A payload sent late from the plugin's outbox sorts when it was observed, never later than it arrived.
+    const observedAt = this.parser.observedAt(raw);
+    const receivedAt = observedAt !== null && observedAt.getTime() <= arrivedAt.getTime() + CLOCK_JITTER_MS ? observedAt : arrivedAt;
 
     if (hook.kind === "session.started") {
       return this.factory.sessionStart({

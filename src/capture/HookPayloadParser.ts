@@ -183,6 +183,13 @@ export class HookPayloadParser {
     throw new TypeError(`unsupported hook '${hook}'`);
   }
 
+  /** The time the plugin observed the payload, or null when it carries none that reads as a time. */
+  observedAt(raw: unknown): Date | null {
+    const value = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>)["observedAt"] : undefined;
+    const at = typeof value === "string" ? new Date(value) : null;
+    return at !== null && Number.isFinite(at.getTime()) ? at : null;
+  }
+
   private parseToolAfter(payload: Record<string, unknown>): ToolAfterPayload {
     const input = this.asRecord(payload["input"], "input");
     const output = this.asRecord(payload["output"], "output");

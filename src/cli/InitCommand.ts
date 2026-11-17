@@ -65,11 +65,12 @@ import { PluginConfig } from ${JSON.stringify(`${pluginDir}PluginConfig.js`)};
 import { TraceVaultPlugin } from ${JSON.stringify(`${pluginDir}TraceVaultPlugin.js`)};
 import { SessionPreamble } from ${JSON.stringify(`${pluginDir}SessionPreamble.js`)};
 import { McpToolRelay } from ${JSON.stringify(`${pluginDir}McpToolRelay.js`)};
+import { Outbox } from ${JSON.stringify(`${pluginDir}Outbox.js`)};
 ${guardImport}
 export const TraceVault = async () => {
   const config = new PluginConfig(${JSON.stringify(`http://127.0.0.1:${this.port}/hook`)});
   const relay = new McpToolRelay(${JSON.stringify(process.execPath)}, ${JSON.stringify(relayEntry)}, config.mcpToolsDirectory);
-  return new TraceVaultPlugin(new EventForwarder(config), new PendingGapStore(config.gapStatePath), undefined, ${guard}, undefined, new SessionPreamble(undefined, undefined, relay)).hooks();
+  return new TraceVaultPlugin(new EventForwarder(config), new PendingGapStore(config.gapStatePath), undefined, ${guard}, undefined, new SessionPreamble(undefined, undefined, relay), undefined, new Outbox(config.outboxDirectory)).hooks();
 };
 `;
   }

@@ -1,5 +1,6 @@
 import type { CallGuard } from "./CallGuard.js";
 import type { EventForwarderPort } from "./EventForwarderPort.js";
+import type { Outbox } from "./Outbox.js";
 import type { PendingGapStore } from "./PendingGapStore.js";
 import type { ToolExecuteInput, TraceVaultHooks } from "./OpenCodeHooks.js";
 import { PermissionRequests } from "./PermissionRequests.js";
@@ -27,8 +28,10 @@ export class TraceVaultPlugin {
     permissions: PermissionRequests = new PermissionRequests(),
     preamble: SessionPreamble = new SessionPreamble(),
     shell: ShellProxies = new ShellProxies(),
+    /** Null keeps no payload the service refused: only a gap records it. */
+    outbox: Outbox | null = null,
   ) {
-    this.delivery = new SessionDelivery(forwarder, gaps, preamble);
+    this.delivery = new SessionDelivery(forwarder, gaps, preamble, outbox);
     this.preamble = preamble;
     this.pending = new PendingCalls(now);
     this.guard = guard;

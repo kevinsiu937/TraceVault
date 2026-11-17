@@ -65,6 +65,7 @@ describe("seam B: install writes the plugin, uninstall restores the project", ()
     expect(loader).toContain("TraceVaultPlugin");
     expect(loader).toContain("EventForwarder");
     expect(loader).toContain("PluginConfig");
+    expect(loader).toContain("new Outbox(config.outboxDirectory)");
 
     const manifest = JSON.parse(readFileSync(join(projectDir, MANIFEST), "utf8")) as {
       targetFile: string;

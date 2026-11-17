@@ -31,4 +31,9 @@ export class PluginConfig {
   get mcpToolsDirectory(): string {
     return join(dirname(this.gapPath), "mcp-tools");
   }
+
+  /** Where payloads the service could not take wait, beside the gap state. */
+  get outboxDirectory(): string {
+    return join(dirname(this.gapPath), "outbox");
+  }
 }

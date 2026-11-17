@@ -392,3 +392,23 @@ opencode run "Use the bash tool twice: 1) curl -sI https://example.com  2) git l
 **Expect:**
 - The session page shows "connected to example.com:443" under the `curl` call and "connected to github.com:443" under the `git` call.
 - With `HTTPS_PROXY` already set before OpenCode starts, nothing is pointed anywhere and the session shows a capture gap: "shell not watched for call …: HTTPS_PROXY was already set".
+
+# Outbox (ticket 94)
+
+**What it shows:** while the service is down, the plugin keeps each payload in its own outbox file (`~/.local/state/tracevault/outbox/<pid>-<start>.jsonl`, owner-only) instead of dropping it. On the next payload that gets through, it sends the outbox first, oldest first; each event is stored at the time the plugin observed it. Spec: `docs/spec/outbox.md`.
+
+```bash
+npm run build && node dist/cli/index.js init
+# Service NOT running. In OpenCode, in this project:
+#   1) send a prompt
+#   2) ask: "Use the bash tool: curl -sI https://example.com"
+ls -l ~/.local/state/tracevault/outbox/        # one .jsonl file, -rw-------
+node dist/cli/index.js run &                    # start the service
+# In the same (or any) OpenCode window: send one more prompt
+node dist/cli/index.js verify                   # intact
+```
+
+**Expect:**
+- The outbox folder is empty again after the last prompt.
+- The session page shows the first prompt, the `curl` call with "connected to example.com:443" under it, then the last prompt, at the times they happened, not at the restart time.
+- No "capture endpoint unavailable" gap. A gap with reason "outbox full" appears only if more than 10 MB waited.

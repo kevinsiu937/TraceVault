@@ -121,6 +121,7 @@ describe("seam B: a user prompt becomes the first timeline entry", () => {
       createdAt: "2026-10-26T14:31:07.314Z",
       text: "Reply with exactly PROBE-ONE",
       truncated: false,
+      observedAt: expect.any(String),
     });
   });
 
